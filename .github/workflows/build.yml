@@ -22,6 +22,10 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Type check
+        run: npx tsc --noEmit
+      - name: Lint
+        run: npm run lint
       - name: Build
         run: npm run build
         env:
@@ -32,3 +36,14 @@ jobs:
           VITE_SITE_URL: https://19-58.net/velo
           VITE_BASE_PATH: /velo/
           VITE_TROOP_STRAVA_CLUB_URL: https://www.strava.com/clubs/Chevaliers58
+      - name: Verify deployment output
+        run: |
+          test -f .output/public/index.html
+          test -f .output/server/index.mjs
+          find .output -maxdepth 2 -type d -print
+      - name: Upload build output for inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: chevaliers58-build-output
+          path: .output
+          retention-days: 7
