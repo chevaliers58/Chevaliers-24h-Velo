@@ -3,6 +3,7 @@
 // Persists in localStorage with high-fidelity seed data and real-time subscriber events.
 
 import { TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
+import { TROOP_NAME } from "@/lib/troop-config";
 
 export type PatrolCategory = "homme" | "femme" | "staff";
 
@@ -236,7 +237,7 @@ const SEED_TIMELINE: TimelineEvent[] = [];
 const SEED_COUNTDOWN: CountdownConfig = {
   id: "countdown-main",
   title: "Fin du Défi Vélo des Patrouilles 2026",
-  subtitle: "Rassemblement de troupe et remise du Grand Trophée ALEZAN 42",
+  subtitle: `Rassemblement de troupe et remise du Grand Trophée ${TROOP_NAME}`,
   target_date: "2026-11-15T18:00:00",
   is_active: true,
 };
