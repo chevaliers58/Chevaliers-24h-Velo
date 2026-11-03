@@ -180,25 +180,23 @@ Deno.serve(async (request) => {
       : json({ ok: true });
   }
   if (body.action === "admin-status") {
-    const isMasterAdmin = false; // Admin access comes only from the user_roles table.
-    if (!isMasterAdmin) {
-      const [roleResult, profileResult] = await Promise.all([
-        admin
-          .from("user_roles")
-          .select("user_id")
-          .eq("user_id", authData.user.id)
-          .eq("role", "admin")
-          .maybeSingle(),
-        admin.from("profiles").select("is_admin").eq("id", authData.user.id).maybeSingle(),
-      ]);
-      const roleError = roleResult.error ?? profileResult.error;
-      if (roleError) {
-        console.error("Vérification du rôle admin impossible", roleError);
-        return json({ error: `Vérification du rôle admin impossible : ${roleError.message}` }, 500);
-      }
-      if (!roleResult.data && !profileResult.data?.is_admin)
-        return json({ error: "Accès réservé au staff" }, 403);
+    const [roleResult, profileResult] = await Promise.all([
+      admin
+        .from("user_roles")
+        .select("user_id")
+        .eq("user_id", authData.user.id)
+        .eq("role", "admin")
+        .maybeSingle(),
+      admin.from("profiles").select("is_admin").eq("id", authData.user.id).maybeSingle(),
+    ]);
+    const roleError = roleResult.error ?? profileResult.error;
+    if (roleError) {
+      console.error("Vérification du rôle admin impossible", roleError);
+      return json({ error: "Vérification du rôle admin impossible." }, 500);
     }
+    if (!roleResult.data && !profileResult.data?.is_admin)
+      return json({ error: "Accès réservé au staff" }, 403);
+
     const [profilesResult, installationsResult, subscriptionsResult] = await Promise.all([
       admin.from("profiles").select("id,full_name,totem").order("full_name"),
       admin.from("app_installations").select("user_id,platform,last_seen_at"),
