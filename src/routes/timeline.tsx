@@ -12,7 +12,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/useAuth";
 import { SITE_URL, TROOP_NAME } from "@/lib/troop-config";
-import { supabase } from "@/integrations/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -26,6 +27,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+
+const supabase = supabaseClient as unknown as SupabaseClient;
 
 export type TimelineEvent = {
   id: string;
@@ -211,7 +214,7 @@ function TimelinePage() {
   const openCreateModal = () => {
     setEditingId(null);
     setEditingMilestoneKm(null);
-    setFormDateStr(new Date().toISOString().split("T")[0]); // Date du jour par défaut
+    setFormDateStr(new Date().toISOString().slice(0, 10)); // Date du jour par défaut
     setFormTitle("");
     setFormDescription("");
     setFormImageUrl("");
