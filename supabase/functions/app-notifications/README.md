@@ -8,7 +8,7 @@ La fonction envoie les notifications inscrites dans `app_notifications` et reço
 2. Enregistrer les clés dans les secrets du projet Supabase (Dashboard → Edge Functions → Secrets ou Supabase CLI) :
 
    ```sh
-   supabase secrets set VAPID_PUBLIC_KEY="<clé publique>" VAPID_PRIVATE_KEY="<clé privée>" VAPID_SUBJECT="https://alezan42-cycling.lesscoutsdemoustier.be"
+   supabase secrets set SITE_URL="https://<votre-domaine>" VAPID_PUBLIC_KEY="<clé publique>" VAPID_PRIVATE_KEY="<clé privée>" VAPID_SUBJECT="mailto:<contact-de-la-troupe>"
    ```
 
    Garder la clé privée secrète. Le sujet peut être l’URL publique du site.
