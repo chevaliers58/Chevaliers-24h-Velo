@@ -87,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!profError && prof) {
         const patrolData = prof.patrols;
-        const isMasterAdmin = currentUser.email?.toLowerCase() === "baudeletgauthier@gmail.com";
+        const isMasterAdmin = false; // No source-troupe email has implicit admin privileges.
         const isChef = isMasterAdmin || isStaffPatrol(patrolData);
 
         setProfile({
@@ -122,7 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const metaYear = meta["scout_year"] ? Number(meta["scout_year"]) : null;
         const metaPatrol = (meta["patrol_id"] as string) || null;
         const metaPhone = (meta["phone"] as string) || null;
-        const isChef = currentUser.email?.toLowerCase() === "baudeletgauthier@gmail.com";
+        const isChef = false;
 
         try {
           const { data: createdProf, error: createErr } = await supabase
@@ -187,7 +187,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .getPatrols()
             .find((p: DbLocalPatrol) => p.id === localProf.patrol_id);
           const isChef =
-            currentUser.email?.toLowerCase() === "baudeletgauthier@gmail.com" ||
+            false ||
             localProf.is_chef ||
             localPatrol?.name?.toLowerCase().includes("staff");
 
@@ -212,18 +212,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const metaName = (meta["full_name"] as string) || (meta["name"] as string) || null;
           const metaTotem = (meta["totem"] as string) || null;
           const metaQuali = (meta["quali"] as string) || null;
-          const isChef = currentUser.email?.toLowerCase() === "baudeletgauthier@gmail.com";
+          const isChef = false;
 
           setProfile({
             id: currentUser.id,
             email: currentUser.email ?? null,
-            full_name: metaName || (isChef ? "Gauthier Baudelet" : "Scout"),
-            totem: metaTotem || (isChef ? "Aigle" : null),
-            quali: metaQuali || (isChef ? "Visionnaire" : null),
+            full_name: metaName || "Scout",
+            totem: metaTotem,
+            quali: metaQuali,
             scout_year: null,
             phone: null,
             strava_url: null,
-            patrol_id: isChef ? "patrol-staff" : null,
+            patrol_id: null,
             patrol_name: isChef ? TROOP_STAFF_PATROL_NAME : null,
             is_chef: isChef,
             onboarded: isChef,
@@ -231,8 +231,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // 2. Check admin status in profiles.is_admin, user_roles table or hardcoded master admin
-      const isMasterAdmin = currentUser.email?.toLowerCase() === "baudeletgauthier@gmail.com";
+      // 2. Check admin status only from this project’s assigned roles.
+      const isMasterAdmin = false;
       if (isMasterAdmin) {
         setIsAdmin(true);
       } else if (prof?.is_admin) {
