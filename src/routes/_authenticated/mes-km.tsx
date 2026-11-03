@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { TROOP_NAME } from "@/lib/troop-config";
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
 import {
@@ -40,7 +41,7 @@ export const Route = createFileRoute("/_authenticated/mes-km")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Mes kilomètres — ALEZAN 42" },
+      { title: `Mes kilomètres — ${TROOP_NAME}` },
       {
         name: "description",
         content:
