@@ -1,5 +1,8 @@
 project_id = "qxlsdauqoivqhoojlrwk"
 
+[functions.menage]
+verify_jwt = false
+
 [functions.pending-activity-alert]
 verify_jwt = false
 
