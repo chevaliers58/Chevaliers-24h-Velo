@@ -74,9 +74,6 @@ begin
   insert into public.profiles (id, email, full_name)
   values (new.id, new.email, coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name'));
   insert into public.user_roles (user_id, role) values (new.id, 'user');
-  if lower(new.email) = 'baudeletgauthier@gmail.com' then
-    insert into public.user_roles (user_id, role) values (new.id, 'admin');
-  end if;
   return new;
 end; $$;
 create trigger on_auth_user_created after insert on auth.users
