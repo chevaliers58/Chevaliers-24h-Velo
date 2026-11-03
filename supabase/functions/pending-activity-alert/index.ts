@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
       from,
       to: recipients,
       subject: `Défi vélo scout : ${pendingCount} activités à approuver`,
-      text: `Il y a actuellement ${pendingCount} activités en attente d’approbation.\n\n${SITE_URL ? new URL("/admin", SITE_URL).toString() : "Configurez SITE_URL dans les secrets Supabase pour afficher le lien d’administration."}`,
+      text: `Il y a actuellement ${pendingCount} activités en attente d’approbation.\n\n${SITE_URL ? new URL("admin", `${SITE_URL}/`).toString() : "Configurez SITE_URL dans les secrets Supabase pour afficher le lien d’administration."}`,
     }),
   });
 
