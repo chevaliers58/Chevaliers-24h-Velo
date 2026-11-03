@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
+import { TROOP_NAME } from "@/lib/troop-config";
 
 export interface CyclistProfile {
   id: string;
@@ -258,7 +259,7 @@ export function Leaderboard({ className }: { className?: string }) {
               <span>Classement Général Individuel</span>
             </div>
             <h2 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              Les Rouleurs de l'ALEZAN 42
+              Les Rouleurs de {TROOP_NAME}
             </h2>
             <p className="text-sm text-muted-foreground">
               Données directes synchronisées en temps réel depuis Supabase
