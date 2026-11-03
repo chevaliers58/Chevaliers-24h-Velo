@@ -22,6 +22,7 @@ import { AnimationToggle } from "@/components/AnimationToggle";
 import { THEME_BOOT_SCRIPT } from "@/lib/seasonalTheme";
 import { APP_BOOT_SCRIPT } from "@/lib/standalone";
 import { supabase } from "@/integrations/supabase/client";
+import { TROOP_NAME } from "@/lib/troop-config";
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
@@ -102,13 +103,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { name: "theme-color", content: "#a84300" },
+      { name: "theme-color", content: "#173f5f" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
-      { name: "apple-mobile-web-app-title", content: "ALEZAN 42" },
-      { title: "ALEZAN 42 — Défi vélo des patrouilles" },
+      { name: "apple-mobile-web-app-title", content: TROOP_NAME },
+      { title: `${TROOP_NAME} — Défi vélo des patrouilles` },
       { name: "description", content: "Concours de kilomètres à vélo entre patrouilles scoutes." },
-      { property: "og:title", content: "ALEZAN 42 — Défi vélo des patrouilles" },
+      { property: "og:title", content: `${TROOP_NAME} — Défi vélo des patrouilles` },
       {
         property: "og:description",
         content: "Concours de kilomètres à vélo entre patrouilles scoutes.",
