@@ -43,8 +43,8 @@ Pour travailler en local sur le projet :
 1. Installer [Git](https://git-scm.com), [Node.js 22](https://nodejs.org) et [VS Code](https://code.visualstudio.com).
 2. Cloner le dépôt :
    ```bash
-   git clone https://github.com/Gauthierbdlt/scout-cycle-challenge.git
-   cd scout-cycle-challenge
+   git clone https://github.com/chevaliers58/Chevaliers-24h-Velo.git
+   cd Chevaliers-24h-Velo
    ```
 3. Installer les dépendances :
    ```bash
