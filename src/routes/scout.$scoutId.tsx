@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { TROOP_NAME } from "@/lib/troop-config";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
