@@ -18,8 +18,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/useAuth";
+import { TROOP_NAME } from "@/lib/troop-config";
 import { cn } from "@/lib/utils";
-import logoAlezan from "@/assets/logo-alezan-clair.png";
 import { HeaderTrim } from "@/components/SeasonalDecor";
 import { PwaInstallButton } from "@/components/PwaInstallButton";
 import { AppTabBar } from "@/components/app/AppTabBar";
@@ -172,7 +172,7 @@ export function SiteHeader() {
         <HeaderTrim />
         {/* Main Bar */}
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-3 py-2 sm:px-4 sm:py-3">
-          {/* Brand Logo & by Aquila */}
+          {/* Identité de la troupe */}
           <Link
             to="/"
             onClick={() => {
@@ -180,24 +180,23 @@ export function SiteHeader() {
             }}
             className="flex items-center gap-2.5 group shrink-0"
           >
-            <span className="grid h-9 w-12 sm:h-10 sm:w-14 place-items-center transition-transform group-hover:scale-105">
-              <img
-                src={logoAlezan}
-                alt="Logo Alezan 42 Cycling Team"
-                className="h-full w-full object-contain"
-              />
+            <span
+              aria-label="Fleur de lys scoute"
+              className="grid h-9 w-12 sm:h-10 sm:w-14 place-items-center text-3xl sm:text-4xl transition-transform group-hover:scale-105"
+            >
+              ⚜️
             </span>
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="font-display text-sm sm:text-lg font-black tracking-wider text-white">
-                  ALEZAN-42
+                  {TROOP_NAME}
                 </span>
                 <span className="hidden rounded-full bg-orange-500/20 border border-orange-500/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-300 sm:inline-block">
                   Défi Vélo
                 </span>
               </div>
               <p className="text-[10px] text-amber-300/80 font-medium tracking-wide leading-none sm:text-[11px]">
-                by Aquila 🦅
+                Troupe scoute
               </p>
             </div>
           </Link>
