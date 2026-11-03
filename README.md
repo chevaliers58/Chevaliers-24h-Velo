@@ -1,6 +1,6 @@
-# Scout Cycle Challenge — ALEZAN 42
+# Défi sportif scout — application de gestion de troupe
 
-Concours de vélo entre patrouilles scoutes pour déterminer qui parcourt le plus de kilomètres chaque semaine, centré autour de la région de **Moustier-sur-Sambre** et **Jemeppe-sur-Sambre**.
+Application de défi sportif entre patrouilles scoutes, à personnaliser selon le nom et la région de votre troupe.
 
 ## 🚀 Fonctionnalités Clés
 
@@ -13,7 +13,7 @@ Concours de vélo entre patrouilles scoutes pour déterminer qui parcourt le plu
   - Centrage dynamique et zoom automatique sur un parcours au clic.
 - **Comptes à Rebours Multiples :** Gestion dynamique de plusieurs échéances de la troupe (grand camp, fin du défi, rassemblements) directement configurables depuis l'interface ou le panneau d'administration et synchronisées via Supabase.
 - **Panneau d'Administration (`/admin`) :** 
-  - Réservé aux administrateurs (ex: `baudeletgauthier@gmail.com`).
+  - Réservé aux comptes explicitement associés au rôle `admin` dans votre base Supabase.
   - Validation ou refus des captures d'écran de preuves de sorties.
   - Gestion des patrouilles et des rôles des membres.
 
