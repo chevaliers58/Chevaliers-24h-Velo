@@ -1,4 +1,6 @@
-# 🗄️ Schéma de la Base de Données — ALEZAN 42
+# 🗄️ Ancien schéma documentaire — base de données
+
+> ⚠️ **Document historique — ne pas exécuter ces exemples SQL.** Les politiques ci-dessous sont obsolètes et certaines sont volontairement permissives pour illustrer une ancienne version. Pour installer une nouvelle troupe, utiliser exclusivement les migrations revues de `supabase/migrations/` et les tests de `supabase/tests/`. Ne jamais importer les comptes, profils, activités ou fichiers de la troupe source.
 
 Ce fichier contient l'intégralité des scripts SQL nécessaires pour recréer l'architecture de la base de données dans un nouveau projet Supabase (tables, politiques RLS et configuration).
 
