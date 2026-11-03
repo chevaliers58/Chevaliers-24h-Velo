@@ -129,7 +129,7 @@ export const Route = createFileRoute("/timeline")({
         content:
           `Retrace l'histoire, les camps d'été et les défis vélo des années précédentes de la troupe ${TROOP_NAME}.`,
       },
-      { property: "og:title", content: "Timeline & Rétrospectives — ALEZAN 42" },
+      { property: "og:title", content: `Timeline & Rétrospectives — ${TROOP_NAME}` },
       {
         property: "og:description",
         content: "Retrouve les archives photos, albums Drive et souvenirs des patrouilles.",
