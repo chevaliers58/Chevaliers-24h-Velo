@@ -59,8 +59,8 @@ export function PwaInstallButton() {
         size="sm"
         variant="ghost"
         onClick={() => void install()}
-        title="Installer {TROOP_NAME} sur ce téléphone"
-        aria-label="Installer {TROOP_NAME} sur ce téléphone"
+        title={`Installer ${TROOP_NAME} sur ce téléphone`}
+        aria-label={`Installer ${TROOP_NAME} sur ce téléphone`}
         className="h-9 gap-1.5 rounded-lg px-2.5 text-white/90 hover:bg-white/15 hover:text-white"
       >
         <Download className="h-4 w-4" />
