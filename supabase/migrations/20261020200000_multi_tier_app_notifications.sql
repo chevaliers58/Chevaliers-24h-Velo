@@ -96,7 +96,7 @@ end;
 $$;
 
 create or replace function public.notify_admins_activity_pending()
-returns trigger language plpgsql security definer set search_path = public as $
+returns trigger language plpgsql security definer set search_path = public as $function$
 declare
   scout_name text;
 begin
@@ -117,7 +117,7 @@ begin
   on conflict (dedupe_key) do nothing;
   return new;
 end;
-$;
+$function$;
 drop trigger if exists trg_notify_aquila_activity_pending on public.activities;
 drop trigger if exists trg_notify_admins_activity_pending on public.activities;
 create trigger trg_notify_admins_activity_pending
