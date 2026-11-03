@@ -67,7 +67,7 @@ export const Route = createFileRoute("/solidarite")({
         content:
           `Objectifs solidaires, 24h et marche parrainée de la troupe ${TROOP_NAME} au profit de l'ASBL Profitivisme.`,
       },
-      { property: "og:title", content: "ASBL Profitivisme & Solidarité — ALEZAN 42" },
+      { property: "og:title", content: `ASBL Profitivisme & Solidarité — ${TROOP_NAME}` },
       {
         property: "og:description",
         content:
