@@ -97,7 +97,7 @@ export function SiteHeader() {
     {
       to: "/timeline",
       label: "Timeline",
-      description: "Historique et grands événements de l'ALEZAN 42",
+      description: `Historique et grands événements de ${TROOP_NAME}`,
       icon: History,
     },
     {
