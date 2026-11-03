@@ -13,7 +13,7 @@ La fonction envoie les notifications inscrites dans `app_notifications` et reço
 
    Garder la clé privée secrète. Le sujet peut être l’URL publique du site.
 
-3. Appliquer `supabase/migrations/20261020190000_app_push_notifications.sql` si elle ne l’a pas déjà été, puis la nouvelle migration `supabase/migrations/20261020193000_admin_managed_app_notifications.sql`. Cette dernière ajoute les réglages administrables, remplace le palier par défaut de 500 km par 1000 km et active l’alerte à Aquila lors d’une inscription. La première migration planifie l’envoi chaque minute avec la clé cron existante.
+3. Appliquer `supabase/migrations/20261020190000_app_push_notifications.sql` si elle ne l’a pas déjà été, puis la nouvelle migration `supabase/migrations/20261020193000_admin_managed_app_notifications.sql`. Cette dernière ajoute les réglages administrables, remplace le palier par défaut de 500 km par 1000 km et envoie une notification à chaque administrateur lorsqu’un nouveau scout s’inscrit. La première migration planifie l’envoi chaque minute avec la clé cron existante.
 4. Déployer la fonction Edge mise à jour : `supabase functions deploy app-notifications`.
 5. Dans l’application installée, chaque scout peut accepter l’invitation à activer les notifications ou utiliser la cloche. Le texte précise les types d’alertes : rappel du dimanche (si activé), paliers et messages ponctuels. Sur iPhone/iPad, il faut d’abord ajouter l’app à l’écran d’accueil ; l’autorisation doit être demandée depuis l’app installée.
 
