@@ -39,7 +39,7 @@ export const Route = createFileRoute("/auth")({
     meta: [
       { title: `Connexion & Inscription — ${TROOP_NAME}` },
       { name: "description", content: "Connecte-toi pour enregistrer tes kilomètres à vélo." },
-      { property: "og:title", content: "Connexion & Inscription — ALEZAN 42" },
+      { property: "og:title", content: `Connexion & Inscription — ${TROOP_NAME}` },
       { property: "og:description", content: "Rejoins le défi vélo des patrouilles." },
     ],
   }),
