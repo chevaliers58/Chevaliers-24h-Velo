@@ -64,9 +64,19 @@ async function handleEvent(event: StravaEvent) {
     .maybeSingle();
   if (!connection) return;
 
-  const prior = await admin.from("activities").select("id").eq("strava_activity_id", event.object_id).maybeSingle();
+  const prior = await admin
+    .from("activities")
+    .select("id,user_id")
+    .eq("strava_activity_id", event.object_id)
+    .maybeSingle();
   if (event.aspect_type === "delete" || event.updates?.private === "true") {
-    if (prior.data?.id) await admin.from("activities").delete().eq("strava_activity_id", event.object_id);
+    if (prior.data?.id && prior.data.user_id === connection.user_id) {
+      await admin
+        .from("activities")
+        .delete()
+        .eq("id", prior.data.id)
+        .eq("user_id", connection.user_id);
+    }
     return;
   }
   if (event.aspect_type !== "create" && event.aspect_type !== "update") return;
