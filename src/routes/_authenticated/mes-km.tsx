@@ -47,7 +47,7 @@ export const Route = createFileRoute("/_authenticated/mes-km")({
         content:
           "Enregistre tes sorties vélo, course à pied ou marche avec capture, Strava ou GPX.",
       },
-      { property: "og:title", content: "Mes kilomètres — ALEZAN 42" },
+      { property: "og:title", content: `Mes kilomètres — ${TROOP_NAME}` },
       {
         property: "og:description",
         content: "Ajoute tes km de vélo, course à pied et marche pour ta patrouille.",
