@@ -16,6 +16,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TROOP_NAME } from "@/lib/troop-config";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -30,14 +31,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/useAuth";
 import { db } from "@/lib/database";
 import { ForgotPassword } from "@/components/ForgotPassword";
-import logoAlezanComplet from "@/assets/logo-alezan.png";
 import { isStaffPatrol, isTroopStaffPatrol, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Connexion & Inscription — ALEZAN 42" },
+      { title: `Connexion & Inscription — ${TROOP_NAME}` },
       { name: "description", content: "Connecte-toi pour enregistrer tes kilomètres à vélo." },
       { property: "og:title", content: "Connexion & Inscription — ALEZAN 42" },
       { property: "og:description", content: "Rejoins le défi vélo des patrouilles." },
@@ -367,7 +367,7 @@ function AuthPage() {
       setBusy(false);
 
       if (authData.session) {
-        toast.success("Compte scout créé avec succès dans Supabase ! Bienvenue sur l'ALEZAN 42.");
+        toast.success(`Compte scout créé avec succès dans Supabase ! Bienvenue chez ${TROOP_NAME}.`);
       } else {
         toast.success(
           "Compte créé dans Supabase ! Si la confirmation par e-mail est active, vérifie ta boîte de réception.",
@@ -404,13 +404,14 @@ function AuthPage() {
 
         {/* Header Icon & Title */}
         <div className="text-center">
-          <img
-            src={logoAlezanComplet}
-            alt="Alezan 42 Cycling Team"
-            className="mx-auto h-24 w-auto drop-shadow-sm"
-          />
+          <div
+            aria-label="Fleur de lys scoute"
+            className="mx-auto grid h-24 w-24 place-items-center text-7xl drop-shadow-sm"
+          >
+            ⚜️
+          </div>
           <h1 className="mt-4 font-display text-2xl sm:text-3xl font-black text-foreground">
-            Défi Vélo ALEZAN 42
+            Défi Vélo {TROOP_NAME}
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
             Plateforme officielle de comptabilisation des kilomètres de la troupe
