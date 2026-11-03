@@ -1,5 +1,5 @@
 // =====================================================================
-// Fonction Edge « menage » : ménage automatique du site Alezan 42
+// Fonction Edge « menage » : ménage des données de la troupe
 //
 // Appelée chaque nuit par pg_cron (en-tête x-cron-secret) ou par un admin
 // depuis la page Admin (jeton de session). Elle :
