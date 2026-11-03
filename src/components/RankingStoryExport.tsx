@@ -15,6 +15,7 @@ import { computeJerseys, type JerseyCandidate } from "@/lib/jerseys";
 import { formatKm, rankPatrols, useTroopData, type AppPeriod } from "@/lib/appData";
 import { isStaffPatrol } from "@/lib/categories";
 import { toast } from "sonner";
+import { TROOP_NAME, SITE_URL } from "@/lib/troop-config";
 
 type JerseyType = "yellow" | "polka" | "white";
 type JerseyCategory = "homme" | "femme";
@@ -115,7 +116,7 @@ export function RankingStoryExport() {
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = `classement-alezan42-${period}.png`;
+      anchor.download = `classement-${TROOP_NAME.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${period}.png`;
       anchor.click();
       window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
       setOpen(false);
@@ -304,7 +305,7 @@ function drawStory(
   ctx.textAlign = "center";
   ctx.fillStyle = "rgba(255,250,241,.88)";
   ctx.font = "500 19px Georgia, serif";
-  ctx.fillText("Chaque sortie compte · alezan42-cycling.pages.dev", width / 2, height - 90);
+  ctx.fillText(`Chaque sortie compte · ${SITE_URL.replace("https://", "").replace("http://", "") || TROOP_NAME}`, width / 2, height - 90);
 }
 
 function sectionTitle(ctx: CanvasRenderingContext2D, text: string, y: number) {
