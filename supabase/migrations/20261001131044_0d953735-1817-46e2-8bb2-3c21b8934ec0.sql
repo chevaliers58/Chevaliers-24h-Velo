@@ -147,7 +147,6 @@ begin
   if _make_admin then
     insert into public.user_roles(user_id, role) values (uid,'admin') on conflict do nothing;
   else
-    if lower(_email) = 'baudeletgauthier@gmail.com' then raise exception 'Admin principal non modifiable'; end if;
     delete from public.user_roles where user_id = uid and role='admin';
   end if;
 end; $$;
