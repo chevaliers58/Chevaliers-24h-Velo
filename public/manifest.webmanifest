@@ -1,8 +1,8 @@
 {
   "id": "/velo/",
-  "name": "Défi sportif de la troupe",
-  "short_name": "Défi",
-  "description": "Les kilomètres et défis des patrouilles de votre troupe.",
+  "name": "Chevaliers 58 — Défi sportif",
+  "short_name": "Chevaliers 58",
+  "description": "Les kilomètres et défis des patrouilles des Chevaliers 58.",
   "lang": "fr-BE",
   "start_url": "/velo/app",
   "scope": "/velo/",
