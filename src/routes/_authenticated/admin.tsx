@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { TROOP_NAME } from "@/lib/troop-config";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -62,7 +63,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Administration — ALEZAN 42" },
+      { title: `Administration — ${TROOP_NAME}` },
       {
         name: "description",
         content: "Gestion des patrouilles, des membres et validation des sorties.",
@@ -370,7 +371,7 @@ function Admin() {
               <span>Panneau d'Administration</span>
             </div>
             <h1 className="mt-2 font-display text-xl font-black text-foreground sm:text-3xl">
-              Gestion de l'ALEZAN 42
+              Gestion de {TROOP_NAME}
             </h1>
             <p className="hidden text-xs text-muted-foreground sm:block">
               Valide les kilomètres, configure les badges de la semaine et organise les patrouilles
