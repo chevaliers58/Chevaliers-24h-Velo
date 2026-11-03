@@ -71,30 +71,27 @@ end;
 $$;
 revoke execute on function public.notify_app_distance_milestones() from public, anon, authenticated;
 
-create or replace function public.notify_aquila_new_signup()
-returns trigger language plpgsql security definer set search_path = public as $$
-declare aquila_id uuid;
+create or replace function public.notify_admins_new_signup()
+returns trigger language plpgsql security definer set search_path = public as $
 begin
-  select id into aquila_id
-    from public.profiles
-   where lower(trim(coalesce(totem, ''))) = 'aquila'
-     and id <> new.id
-   limit 1;
-  if aquila_id is null then return new; end if;
-
-  insert into public.app_notifications(user_id, kind, title, body, href)
-  values (
-    aquila_id,
+  insert into public.app_notifications(user_id, kind, title, body, href, dedupe_key)
+  select
+    ur.user_id,
     'new_signup',
-    'Un nouveau scout nous rejoint !',
-    coalesce(nullif(trim(new.totem), ''), nullif(trim(new.full_name), ''), 'Un scout') || ' vient de s’inscrire. Bienvenue dans la troupe !',
-    '/'
-  );
+    'Nouvelle inscription',
+    coalesce(nullif(trim(new.totem), ''), nullif(trim(new.full_name), ''), 'Un scout')
+      || ' vient de s’inscrire. Bienvenue dans la troupe !',
+    '/',
+    'new-signup:' || new.id::text || ':' || ur.user_id::text
+  from public.user_roles ur
+  where ur.role = 'admin'
+  on conflict (dedupe_key) do nothing;
   return new;
 end;
-$$;
+$;
 drop trigger if exists trg_notify_aquila_new_signup on public.profiles;
-create trigger trg_notify_aquila_new_signup
+drop trigger if exists trg_notify_admins_new_signup on public.profiles;
+create trigger trg_notify_admins_new_signup
   after insert on public.profiles
-  for each row execute function public.notify_aquila_new_signup();
-revoke execute on function public.notify_aquila_new_signup() from public, anon, authenticated;
+  for each row execute function public.notify_admins_new_signup();
+revoke execute on function public.notify_admins_new_signup() from public, anon, authenticated;
