@@ -36,8 +36,8 @@ L'application fonctionne avec un backend cloud gratuit fourni par [Supabase](htt
 
 1. Crée un compte gratuit sur le [Supabase Dashboard](https://supabase.com/dashboard).
 2. Crée un **nouveau projet** (choisis une région proche de chez toi, par exemple *West EU*).
-3. Va dans l'onglet **SQL Editor** de ton projet et exécute les scripts de [`database-schema.md`](./database-schema.md), table par table, pour créer : `patrols`, `profiles`, `activities`, `countdowns` et `proposed_routes`, ainsi que leurs politiques de sécurité ([RLS](https://supabase.com/docs/guides/database/postgres/row-level-security)).
-4. Crée un **bucket de stockage** nommé `proofs` dans l'onglet [Storage](https://supabase.com/docs/guides/storage) et rends-le **public** (il contient les captures d'écran de preuves et les fichiers GPX).
+3. Lie le projet avec `supabase link --project-ref <project-ref>`, puis applique les migrations versionnées après revue et tests locaux (`supabase db push`). Les migrations créent les tables, règles RLS et le bucket `proofs`.
+4. Vérifie dans Supabase que les tables métier, les politiques RLS et le bucket `proofs` ont bien été créés.
 5. Récupère tes clés d'API : **URL du projet** et **clé `anon` publique**, dans *Project Settings > API* ([documentation](https://supabase.com/docs/guides/api/api-keys)).
 
 > ⚠️ N'utilise **jamais** la clé `service_role` dans le code du site : elle donne tous les droits et ne doit rester que côté serveur.
@@ -50,7 +50,7 @@ L'application fonctionne avec un backend cloud gratuit fourni par [Supabase](htt
 
 ```env
 VITE_SUPABASE_URL=https://ton-projet-supabase.supabase.co
-VITE_SUPABASE_ANON_KEY=ta-cle-anon-publique
+VITE_SUPABASE_PUBLISHABLE_KEY=ta-cle-publishable
 ```
 
 - Le préfixe `VITE_` est obligatoire pour que [Vite](https://vite.dev/guide/env-and-mode) expose ces variables au site.
@@ -82,7 +82,7 @@ Pense aussi à adapter les textes visibles (nom de la troupe, titre du défi, lo
    ```
 
 2. Crée un compte utilisateur directement depuis l'application, sur la page de connexion (`/auth`).
-3. Va dans ton tableau de bord Supabase, dans la table `user_roles` (ou attribue les droits d'administration selon le système de rôles de ta version du code), pour lier ton adresse email au rôle `admin`.
+3. Après avoir créé ton compte dans l’application, remplace l’adresse dans `supabase/bootstrap_admin.sql` puis exécute ce script une seule fois dans le SQL Editor du nouveau projet. Il attribue le rôle `admin` au premier compte sans privilège codé en dur.
 4. Connecte-toi : tu as maintenant accès au panneau d'administration (`/admin`) pour :
    - créer tes propres patrouilles (ex : Renards, Faucons, Libellules) ;
    - valider ou refuser les sorties déclarées ;
@@ -97,7 +97,7 @@ Tu peux déployer ton application gratuitement et en quelques clics sur :
 - [Vercel](https://vercel.com) ([guide Vite sur Vercel](https://vercel.com/docs/frameworks/vite))
 - [Netlify](https://www.netlify.com) ([guide Vite sur Netlify](https://docs.netlify.com/build/frameworks/framework-setup-guides/vite/))
 
-N'oublie pas d'ajouter tes variables d'environnement (`VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY`) dans les paramètres de déploiement de ta plateforme d'hébergement.
+N'oublie pas d'ajouter tes variables d'environnement (`VITE_SUPABASE_URL` et `VITE_SUPABASE_PUBLISHABLE_KEY`) dans les paramètres de déploiement de ta plateforme d'hébergement.
 
 Une fois le site en ligne, ajoute son adresse dans Supabase (*Authentication > URL Configuration*) pour que la connexion et les liens de confirmation par email fonctionnent depuis ton domaine.
 
@@ -107,10 +107,10 @@ Une fois le site en ligne, ajoute son adresse dans Supabase (*Authentication > U
 
 - [ ] Dépôt forké et dépendances installées
 - [ ] Projet Supabase créé et scripts SQL exécutés
-- [ ] Bucket `proofs` créé et public
+- [ ] Bucket `proofs` créé par les migrations
 - [ ] Fichier `.env` renseigné (et absent de GitHub)
 - [ ] Couleurs et textes adaptés à la troupe
-- [ ] Compte admin créé et rôle attribué
+- [ ] Compte admin créé et rôle attribué via `supabase/bootstrap_admin.sql`
 - [ ] Patrouilles et compte à rebours créés depuis `/admin`
 - [ ] Site déployé avec les variables d'environnement
 - [ ] URL du site ajoutée dans la configuration d'authentification Supabase
