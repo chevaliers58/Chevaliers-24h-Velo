@@ -3,6 +3,7 @@ import { useLocation } from "@tanstack/react-router";
 import { BellRing, Download, Smartphone, X } from "lucide-react";
 import { useAuth } from "@/lib/useAuth";
 import { isStandalone } from "@/lib/standalone";
+import { TROOP_NAME } from "@/lib/troop-config";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -111,7 +112,7 @@ export function AppInstallGuide() {
               <p className="font-semibold">
                 {standalone
                   ? "Reste au courant, sans spam"
-                  : "L’app Alezan 42, toujours à portée de main"}
+                  : `L’app ${TROOP_NAME}, toujours à portée de main`}
               </p>
               <p className="mt-1 text-sm leading-snug text-muted-foreground">
                 {standalone
@@ -139,7 +140,7 @@ export function AppInstallGuide() {
         <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg">
           <DialogHeader className="text-left">
             <DialogTitle className="font-display text-xl font-black">
-              Installer l’application Alezan 42
+              Installer l’application {TROOP_NAME}
             </DialogTitle>
             <DialogDescription>
               Gratuite, sans passer par l’App Store ou le Play Store. Connecte-toi avec le même
@@ -153,7 +154,7 @@ export function AppInstallGuide() {
                 <li>Ouvre le site dans Safari.</li>
                 <li>Appuie sur le bouton Partager.</li>
                 <li>Choisis « Sur l’écran d’accueil », puis « Ajouter ».</li>
-                <li>Ouvre l’icône Alezan 42 et connecte-toi.</li>
+                <li>Ouvre l’icône {TROOP_NAME} et connecte-toi.</li>
               </ol>
               <p className="mt-2 text-xs text-muted-foreground">
                 Pour les notifications push sur iPhone, ouvre ensuite l’application installée et
@@ -177,7 +178,7 @@ export function AppInstallGuide() {
                 <li>Ouvre le site dans Chrome ou Edge.</li>
                 <li>
                   Utilise l’icône d’installation dans la barre d’adresse, ou le menu du navigateur
-                  puis « Installer Alezan 42 ».
+                  puis « Installer {TROOP_NAME} ».
                 </li>
               </ol>
             </section>
