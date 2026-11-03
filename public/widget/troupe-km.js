@@ -1,15 +1,15 @@
 /*!
- * Widget « Défi kilomètres la troupe » — à intégrer sur un autre site.
+ * Widget « Défi kilomètres de la troupe » — à intégrer sur un autre site.
  *
  *   <div data-troupe-km data-sections="total,patrouilles,scouts" data-period="semaine"></div>
- *   <script src="https://troupe-cycling.lesscoutsdemoustier.be/widget/troupe-km.js" defer></script>
+ *   <script src="https://<votre-domaine>/widget/troupe-km.js" defer></script>
  *
  * Options (attributs facultatifs) :
  *   data-sections : total, patrouilles, scouts (séparés par des virgules) — défaut « total,patrouilles »
  *   data-period   : semaine | mois | tout — défaut « semaine »
  *   data-limit    : nombre de lignes par classement — défaut 5
  *   data-theme    : clair | sombre — défaut « clair »
- *   data-titre    : titre affiché — défaut « Défi kilomètres la troupe »
+ *   data-titre    : titre affiché — défaut « Défi kilomètres de la troupe »
  *
  * Données : uniquement les vues publiques (mêmes informations que le site pour un visiteur
  * sans compte : km validés, patrouilles, totem ou prénom abrégé). Aucun cookie.
@@ -17,7 +17,7 @@
 (function () {
   "use strict";
   var script = document.currentScript;
-  var SUPABASE_URL = ((script && script.getAttribute("data-supabase-url")) || "").replace(/\\/+$/, "");
+  var SUPABASE_URL = ((script && script.getAttribute("data-supabase-url")) || "").replace(/\/+$/, "");
   var KEY = (script && script.getAttribute("data-supabase-key")) || "";
   var SITE = (script && script.getAttribute("data-site-url")) || "";
   var CACHE_MS = 5 * 60 * 1000;
