@@ -68,7 +68,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
         name: "description",
         content: "Gestion des patrouilles, des membres et validation des sorties.",
       },
-      { property: "og:title", content: "Administration — ALEZAN 42" },
+      { property: "og:title", content: `Administration — ${TROOP_NAME}` },
       { property: "og:description", content: "Espace admin du défi vélo." },
     ],
   }),
