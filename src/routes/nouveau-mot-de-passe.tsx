@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/nouveau-mot-de-passe")({
   ssr: false,
-  head: () => ({ meta: [{ title: "Nouveau mot de passe — ALEZAN 42" }] }),
+  head: () => ({ meta: [{ title: `Nouveau mot de passe — ${TROOP_NAME}` }] }),
   component: NewPasswordPage,
 });
 
