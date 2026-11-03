@@ -26,7 +26,7 @@ import { TROOP_NAME } from "@/lib/troop-config";
 import appCss from "../styles.css?url";
 
 const BASE_URL = import.meta.env.BASE_URL;
-const assetUrl = (path: string) => `${BASE_URL}${path.replace(/^\\/+/, "")}`;
+const assetUrl = (path: string) => `${BASE_URL}${path.startsWith("/") ? path.slice(1) : path}`;
 
 function NotFoundComponent() {
   return (
