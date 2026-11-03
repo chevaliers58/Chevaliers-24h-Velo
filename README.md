@@ -90,20 +90,27 @@ touche aux mêmes fichiers.
 
 ---
 
-## 🌍 Mise en ligne (Cloudflare Pages)
+## 🌍 Mise en ligne
 
-Le site est **100 % statique** : toute la logique tourne dans le navigateur et parle directement à
-Supabase. La sécurité est assurée par les règles RLS de la base, pas par un serveur.
+Le build utilise actuellement Nitro avec le preset `node-server`. Il génère un serveur
+(`.output/server/index.mjs`) et les ressources web (`.output/public`). Il ne faut donc pas
+considérer ce dépôt comme un export Pages statique validé tant que les contrôles CI n'ont pas
+confirmé les deux sorties.
 
-Réglages du projet Cloudflare Pages :
+Pour un hébergement Node, lancer `npm run build`, puis
+`node .output/server/index.mjs`.
 
-| Réglage | Valeur |
-|---|---|
-| Framework preset | None |
-| Build command | `npm run build` |
-| Build output directory | `.output/public` |
-| Variable d'environnement | `NODE_VERSION` = `22` |
-| Variables d'environnement | `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID`, `VITE_TROOP_NAME`, `VITE_SITE_URL`, `VITE_TROOP_STRAVA_CLUB_URL` |
+Pour Cloudflare, il reste à choisir et valider l'adaptateur approprié (Cloudflare Workers ou
+publication statique Pages si le build et le routage SPA le permettent). Ne pas configurer la
+production à partir d'anciens réglages Pages sans vérifier l'artefact du build.
 
-Après la première mise en ligne, ajouter l'adresse du site dans Supabase →
+Le site est préparé pour le sous-chemin `/velo` avec `VITE_BASE_PATH=/velo/` et
+`VITE_SITE_URL=https://19-58.net/velo`. Le domaine doit router ce préfixe vers l'application ;
+relier seulement le domaine à un projet Pages ne suffit pas nécessairement.
+
+Variables de build : `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`,
+`VITE_SUPABASE_PROJECT_ID`, `VITE_TROOP_NAME`, `VITE_SITE_URL`,
+`VITE_BASE_PATH`, `VITE_TROOP_STRAVA_CLUB_URL`.
+
+Après mise en ligne, ajouter l'adresse publique dans Supabase →
 Authentication → URL Configuration (*Site URL* et *Redirect URLs*).
