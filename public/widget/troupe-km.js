@@ -16,9 +16,10 @@
  */
 (function () {
   "use strict";
-  var SUPABASE_URL = "https://civblymnwigeayfecujp.supabase.co";
-  var KEY = "sb_publishable_Rs7_eLIv_g7FcK2R1Hz8cw_rc6qLJfs";
-  var SITE = "https://troupe-cycling.lesscoutsdemoustier.be";
+  var script = document.currentScript;
+  var SUPABASE_URL = ((script && script.getAttribute("data-supabase-url")) || "").replace(/\\/+$/, "");
+  var KEY = (script && script.getAttribute("data-supabase-key")) || "";
+  var SITE = (script && script.getAttribute("data-site-url")) || "";
   var CACHE_MS = 5 * 60 * 1000;
 
   var nf = new Intl.NumberFormat("fr-BE", { maximumFractionDigits: 1 });
