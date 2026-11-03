@@ -28,11 +28,19 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 function createSupabaseClient() {
   // The browser must use only this troupe's project credentials from its
   // Vite environment. Never hard-code project URLs or API keys in this file.
-  const processEnv = typeof process !== "undefined" ? process.env : undefined;\n  const rawUrl =\n    import.meta.env?.["VITE_SUPABASE_URL"] ?? processEnv?.["VITE_SUPABASE_URL"] ?? processEnv?.["SUPABASE_URL"];
+  const processEnv = typeof process !== "undefined" ? process.env : undefined;
+  const rawUrl =
+    import.meta.env?.["VITE_SUPABASE_URL"] ??
+    processEnv?.["VITE_SUPABASE_URL"] ??
+    processEnv?.["SUPABASE_URL"];
   const SUPABASE_URL =
     typeof rawUrl === "string" ? rawUrl.replace(/\/rest\/v1\/?$/, "").replace(/\/+$/, "") : "";
 
-  const SUPABASE_PUBLISHABLE_KEY =\n    import.meta.env?.["VITE_SUPABASE_PUBLISHABLE_KEY"] ??\n    processEnv?.["VITE_SUPABASE_PUBLISHABLE_KEY"] ??\n    processEnv?.["SUPABASE_PUBLISHABLE_KEY"] ??\n    "";
+  const SUPABASE_PUBLISHABLE_KEY =
+    import.meta.env?.["VITE_SUPABASE_PUBLISHABLE_KEY"] ??
+    processEnv?.["VITE_SUPABASE_PUBLISHABLE_KEY"] ??
+    processEnv?.["SUPABASE_PUBLISHABLE_KEY"] ??
+    "";
 
   if (SUPABASE_PUBLISHABLE_KEY.startsWith("sb_secret_")) {
     console.error("[Supabase] A secret API key must never be used in the browser.");
