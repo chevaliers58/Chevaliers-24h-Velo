@@ -63,9 +63,9 @@ export const SEASONAL_THEMES: SeasonalThemeMeta[] = [
     id: "default",
     label: "Standard",
     emoji: "🚲",
-    description: "Couleurs Alezan, aucune décoration",
+    description: "Couleurs de la troupe, aucune décoration",
     period: "Le reste de l'année",
-    swatch: ["#f8f1e7", "#e8782a", "#f2c48d"],
+    swatch: ["#eaf2f8", "#173f5f", "#f28c28"],
   },
   {
     id: "automne",
