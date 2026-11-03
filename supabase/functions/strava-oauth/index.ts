@@ -6,8 +6,9 @@ const clientId = Deno.env.get("STRAVA_CLIENT_ID");
 const clientSecret = Deno.env.get("STRAVA_CLIENT_SECRET");
 const redirectUri = Deno.env.get("STRAVA_REDIRECT_URI") ?? `${supabaseUrl}/functions/v1/strava-oauth`;
 const siteUrl = (Deno.env.get("SITE_URL") ?? "http://localhost:3000").replace(/\/+$/, "");
+const siteOrigin = new URL(siteUrl).origin;
 const cors = {
-  "Access-Control-Allow-Origin": siteUrl,
+  "Access-Control-Allow-Origin": siteOrigin,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS, GET",
 };
