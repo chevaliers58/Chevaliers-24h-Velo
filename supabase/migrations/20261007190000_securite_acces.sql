@@ -241,4 +241,3 @@ revoke execute on function public.set_activity_status() from public, anon, authe
 revoke execute on function public.protect_profile_admin_flag() from public, anon, authenticated;
 revoke execute on function public.sync_profile_admin_flag() from public, anon, authenticated;
 revoke execute on function public.handle_new_user() from public, anon, authenticated;
-revoke execute on function public.auto_confirm_user() from public, anon, authenticated;
