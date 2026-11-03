@@ -30,6 +30,7 @@ import { RecentActivityFeed } from "@/components/RecentActivityFeed";
 import { CollectiveRouteMap } from "@/components/CollectiveRouteMap";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { SITE_URL, TROOP_NAME } from "@/lib/troop-config";
 import { weekRange, monthRange, useAuth } from "@/lib/useAuth";
 import { isAppMode } from "@/lib/standalone";
 import {
@@ -104,17 +105,15 @@ export const Route = createFileRoute("/")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "ALEZAN 42 — Le défi vélo des patrouilles" },
+      { title: `${TROOP_NAME} — Le défi vélo des patrouilles` },
       {
         name: "description",
-        content:
-          "Classement hebdomadaire des kilomètres à vélo entre patrouilles scoutes de l'ALEZAN 42.",
+        content: `Classement hebdomadaire des kilomètres à vélo entre patrouilles scoutes de ${TROOP_NAME}.`,
       },
-      { property: "og:title", content: "ALEZAN 42 — Le défi vélo des patrouilles" },
+      { property: "og:title", content: `${TROOP_NAME} — Le défi vélo des patrouilles` },
       { property: "og:description", content: "Quelle patrouille roulera le plus cette semaine ?" },
     ],
-    // Adresse officielle (le site répond aussi sur alezan42-cycling.pages.dev)
-    links: [{ rel: "canonical", href: "https://alezan42-cycling.lesscoutsdemoustier.be/" }],
+    links: SITE_URL ? [{ rel: "canonical", href: `${SITE_URL}/` }] : [],
   }),
   component: Index,
 });
@@ -667,23 +666,6 @@ function Index() {
                   : "Chaque kilomètre compte pour ta patrouille ! Enregistre tes sorties avec Strava ou ta photo de compteur, grimpe au classement général et fais briller tes couleurs. Toujours prêts !"}
             </p>
 
-            <a
-              href="https://www.strava.com/clubs/Troupe-Alezan42"
-              target="_blank"
-              rel="noreferrer"
-              className="mobile-hero-secondary mt-5 inline-flex max-w-full items-center gap-3 lg:col-start-3 lg:row-span-2 lg:row-start-2 lg:mt-0 lg:self-center lg:justify-self-end rounded-2xl border border-white/25 bg-white/10 px-4 py-3 text-white shadow-lg backdrop-blur-sm transition hover:bg-white/20"
-            >
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#fc4c02] text-lg font-black">
-                S
-              </span>
-              <span className="text-left">
-                <span className="block text-sm font-bold">Retrouve-nous sur Strava</span>
-                <span className="block text-xs text-white/80">
-                  Rejoins le club Troupe de l’Alezan
-                </span>
-              </span>
-              <ExternalLink className="ml-1 h-4 w-4 shrink-0 text-white/80" />
-            </a>
 
             {/* Scout Identity Bandeau (Visible when logged in) */}
             {user && (
