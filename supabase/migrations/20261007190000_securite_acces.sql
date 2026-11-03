@@ -191,6 +191,8 @@ returns boolean language sql stable security definer set search_path = public as
   );
 $$;
 
+grant execute on function public.owns_proof_object(text) to authenticated;
+
 create policy "preuves lecture proprietaire ou admin" on storage.objects
   for select to authenticated
   using (bucket_id = 'proofs' and public.owns_proof_object(name));
