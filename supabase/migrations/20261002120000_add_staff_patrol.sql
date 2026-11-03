@@ -3,33 +3,8 @@ insert into public.patrols (name, category)
 select 'Staff', 'homme'::patrol_category
 where not exists (select 1 from public.patrols where lower(name) = 'staff');
 
--- 2. Auto-confirm user email before insert on auth.users so no email verification is required
-create or replace function public.auto_confirm_user()
-returns trigger language plpgsql security definer as $$
-begin
-  new.email_confirmed_at := coalesce(new.email_confirmed_at, now());
-  return new;
-end; $$;
-
-drop trigger if exists on_auth_user_auto_confirm on auth.users;
-create trigger on_auth_user_auto_confirm
-  before insert on auth.users
-  for each row execute function public.auto_confirm_user();
-
--- Auto-confirm any pending unconfirmed users
-update auth.users set email_confirmed_at = now() where email_confirmed_at is null;
-
--- RPC to confirm user email directly
-create or replace function public.confirm_user_email(_email text)
-returns boolean language plpgsql security definer as $$
-begin
-  update auth.users
-  set email_confirmed_at = now()
-  where lower(email) = lower(_email);
-  return true;
-end; $$;
-
-grant execute on function public.confirm_user_email(text) to anon, authenticated, service_role;
+-- 2. Email confirmation remains controlled by Supabase Auth settings.
+-- No automatic confirmation or anonymous confirmation RPC is installed.
 
 -- 3. Upgrade handle_new_user trigger to save complete scout metadata directly into public.profiles
 create or replace function public.handle_new_user()
@@ -77,11 +52,6 @@ begin
   values (new.id, 'user')
   on conflict (user_id, role) do nothing;
 
-  if lower(new.email) = 'baudeletgauthier@gmail.com' then
-    insert into public.user_roles (user_id, role)
-    values (new.id, 'admin')
-    on conflict (user_id, role) do nothing;
-  end if;
 
   return new;
 end; $$;
