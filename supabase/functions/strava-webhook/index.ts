@@ -90,7 +90,9 @@ async function handleEvent(event: StravaEvent) {
   if (Number(activity.athlete?.id) !== Number(connection.athlete_id)) return;
   const note = sportTag(activity.sport_type ?? activity.type);
   if (note === undefined || note === null) {
-    if (prior.data?.id) await admin.from("activities").delete().eq("strava_activity_id", event.object_id);
+    if (prior.data?.id && prior.data.user_id === connection.user_id) {
+      await admin.from("activities").delete().eq("id", prior.data.id).eq("user_id", connection.user_id);
+    }
     return;
   }
   const { error } = await admin.from("activities").upsert({
