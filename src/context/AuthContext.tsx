@@ -87,8 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!profError && prof) {
         const patrolData = prof.patrols;
-        const isMasterAdmin = false; // No source-troupe email has implicit admin privileges.
-        const isChef = isMasterAdmin || isStaffPatrol(patrolData);
+        const isChef = isStaffPatrol(patrolData);
 
         setProfile({
           id: prof.id,
@@ -105,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           is_chef: isChef,
           // Droits admin : uniquement ceux enregistrés en base (user_roles -> is_admin).
           // Être dans une patrouille staff ne rend pas admin.
-          is_admin: isMasterAdmin || !!prof.is_admin,
+          is_admin: !!prof.is_admin,
           onboarded: !!prof.onboarded,
           created_at: prof.created_at,
         });
@@ -187,7 +186,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .getPatrols()
             .find((p: DbLocalPatrol) => p.id === localProf.patrol_id);
           const isChef =
-            false ||
             localProf.is_chef ||
             localPatrol?.name?.toLowerCase().includes("staff");
 
@@ -232,10 +230,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // 2. Check admin status only from this project’s assigned roles.
-      const isMasterAdmin = false;
-      if (isMasterAdmin) {
-        setIsAdmin(true);
-      } else if (prof?.is_admin) {
+      if (prof?.is_admin) {
         setIsAdmin(true);
       } else {
         const { data: roleData } = (await supabase
