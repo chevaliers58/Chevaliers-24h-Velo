@@ -13,11 +13,6 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
       typeof Request !== "undefined" && input instanceof Request ? input.headers : undefined,
     );
 
-    if (init?.headers) {
-      new Headers(init.headers).forEach((value, key) => headers.set(key, value));
-    }
-
-    // New Supabase API keys are opaque strings, not bearer JWTs.
     if (
       isNewSupabaseApiKey(supabaseKey) &&
       headers.get("Authorization") === `Bearer ${supabaseKey}`
@@ -31,32 +26,21 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 }
 
 function createSupabaseClient() {
-  // Use user's real Supabase project credentials as primary source of truth,
-  // preventing legacy Lovable proxy URLs in container env from overriding.
-  const REAL_SUPABASE_URL = "https://civblymnwigeayfecujp.supabase.co";
-  const REAL_SUPABASE_KEY = "sb_publishable_Rs7_eLIv_g7FcK2R1Hz8cw_rc6qLJfs";
+  // The browser must use only this troupe's project credentials from its
+  // Vite environment. Never hard-code project URLs or API keys in this file.
+  const rawUrl = import.meta.env?.["VITE_SUPABASE_URL"];
+  const SUPABASE_URL =
+    typeof rawUrl === "string" ? rawUrl.replace(/\/rest\/v1\/?$/, "").replace(/\/+$/, "") : "";
 
-  const rawUrl =
-    import.meta.env?.["VITE_SUPABASE_URL"] &&
-    !import.meta.env["VITE_SUPABASE_URL"].includes("lovable.cloud")
-      ? import.meta.env["VITE_SUPABASE_URL"]
-      : process.env["SUPABASE_URL"] && !process.env["SUPABASE_URL"].includes("lovable.cloud")
-        ? process.env["SUPABASE_URL"]
-        : REAL_SUPABASE_URL;
+  const SUPABASE_PUBLISHABLE_KEY = import.meta.env?.["VITE_SUPABASE_PUBLISHABLE_KEY"] ?? "";
 
-  const SUPABASE_URL = rawUrl.replace(/\/rest\/v1\/?$/, "").replace(/\/+$/, "");
-
-  const SUPABASE_PUBLISHABLE_KEY =
-    import.meta.env?.["VITE_SUPABASE_PUBLISHABLE_KEY"] &&
-    !import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"].includes("bWCIoCwQ")
-      ? import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"]
-      : process.env["SUPABASE_PUBLISHABLE_KEY"] &&
-          !process.env["SUPABASE_PUBLISHABLE_KEY"].includes("bWCIoCwQ")
-        ? process.env["SUPABASE_PUBLISHABLE_KEY"]
-        : REAL_SUPABASE_KEY;
+  if (SUPABASE_PUBLISHABLE_KEY.startsWith("sb_secret_")) {
+    console.error("[Supabase] A secret API key must never be used in the browser.");
+    return createMockSupabaseClient();
+  }
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-    console.warn("[Supabase] Missing credentials; using in-memory mock client.");
+    console.warn("[Supabase] Missing VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY; using in-memory mock client.");
     return createMockSupabaseClient();
   }
 
