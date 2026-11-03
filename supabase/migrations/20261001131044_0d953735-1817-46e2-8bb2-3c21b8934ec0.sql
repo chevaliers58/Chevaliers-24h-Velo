@@ -1,3 +1,19 @@
+-- Default-deny for future public API objects. Each application table/view/RPC
+-- below receives explicit grants alongside its RLS or function-level checks.
+alter default privileges for role postgres in schema public
+  revoke all on tables from public, anon, authenticated;
+alter default privileges for role postgres in schema public
+  revoke execute on functions from public, anon, authenticated;
+alter default privileges for role postgres in schema public
+  revoke usage, select on sequences from public, anon, authenticated;
+
+alter default privileges for role supabase_admin in schema public
+  revoke all on tables from public, anon, authenticated;
+alter default privileges for role supabase_admin in schema public
+  revoke execute on functions from public, anon, authenticated;
+alter default privileges for role supabase_admin in schema public
+  revoke usage, select on sequences from public, anon, authenticated;
+
 create type public.app_role as enum ('admin','user');
 create type public.patrol_category as enum ('homme','femme');
 create type public.activity_status as enum ('pending','approved','rejected');
