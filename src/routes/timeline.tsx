@@ -11,6 +11,7 @@ import {
   Flag,
 } from "lucide-react";
 import { useAuth } from "@/lib/useAuth";
+import { SITE_URL, TROOP_NAME } from "@/lib/troop-config";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -122,11 +123,11 @@ export const Route = createFileRoute("/timeline")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Timeline & Rétrospectives — ALEZAN 42" },
+      { title: `Timeline & Rétrospectives — ${TROOP_NAME}` },
       {
         name: "description",
         content:
-          "Retrace l'histoire, les camps d'été et les défis vélo des années précédentes de la troupe ALEZAN 42.",
+          `Retrace l'histoire, les camps d'été et les défis vélo des années précédentes de la troupe ${TROOP_NAME}.`,
       },
       { property: "og:title", content: "Timeline & Rétrospectives — ALEZAN 42" },
       {
@@ -134,7 +135,7 @@ export const Route = createFileRoute("/timeline")({
         content: "Retrouve les archives photos, albums Drive et souvenirs des patrouilles.",
       },
     ],
-    links: [{ rel: "canonical", href: "https://alezan42-cycling.lesscoutsdemoustier.be/timeline" }],
+    links: SITE_URL ? [{ rel: "canonical", href: `${SITE_URL}/timeline` }] : [],
   }),
   component: TimelinePage,
 });
@@ -338,7 +339,7 @@ function TimelinePage() {
                 La Ligne du Temps de la Troupe
               </h1>
               <p className="mt-2 max-w-xl text-base text-bark-foreground/80">
-                Retrace l'histoire, les camps d'été et les défis vélo de l'ALEZAN 42 classés par
+                Retrace l'histoire, les camps d'été et les défis vélo de {TROOP_NAME} classés par
                 date exacte.
               </p>
             </div>
