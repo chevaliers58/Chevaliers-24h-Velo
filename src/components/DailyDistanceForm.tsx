@@ -423,7 +423,7 @@ export function DailyDistanceForm({
         await (supabase.from("profiles") as any).upsert(
           {
             id: targetUserId,
-            email: realUser.email || user?.email || "scout@alezan42.fr",
+            email: realUser.email || user?.email || "scout@example.invalid",
             full_name: profile?.full_name || realUser.email?.split("@")[0] || "Scout",
             totem: profile?.totem || null,
             quali: profile?.quali || null,
