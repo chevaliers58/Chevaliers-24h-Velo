@@ -122,7 +122,7 @@ const APP_BUILT_AT = new Date().toISOString();
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "VITE_");
-  const basePath = (env["VITE_BASE_PATH"] ?? "/").replace(/\\/+$/, "") || "/";
+  const basePath = (env["VITE_BASE_PATH"] ?? "/").replace(/\/+$/, "") || "/";
   const viteBase = basePath === "/" ? "/" : `${basePath}/`;
   return {
     base: viteBase,
