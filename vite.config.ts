@@ -1,4 +1,4 @@
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
@@ -7,7 +7,7 @@ import { nitro } from "nitro/vite";
 import fs from "fs";
 import path from "path";
 
-function scoutServerApiPlugin(): Plugin {
+function scoutServerApiPlugin(env: Record<string, string>): Plugin {
   const dataDir = path.resolve(process.cwd(), "data");
   const dbFile = path.resolve(dataDir, "db.json");
 
@@ -27,8 +27,18 @@ function scoutServerApiPlugin(): Plugin {
 
         if (req.url === "/api/diagnostics/supabase" && req.method === "GET") {
           res.setHeader("Content-Type", "application/json");
-          const targetUrl = "https://civblymnwigeayfecujp.supabase.co";
-          const targetKey = "sb_publishable_Rs7_eLIv_g7FcK2R1Hz8cw_rc6qLJfs";
+          const targetUrl = (env["VITE_SUPABASE_URL"] ?? "").replace(/\\/+$/, "");
+          const targetKey = env["VITE_SUPABASE_PUBLISHABLE_KEY"] ?? "";
+          const projectId = env["VITE_SUPABASE_PROJECT_ID"] || (targetUrl ? new URL(targetUrl).hostname.split(".")[0] : "");
+
+          if (!targetUrl || !targetKey) {
+            res.statusCode = 503;
+            res.end(JSON.stringify({
+              status: "not_configured",
+              message: "Configure VITE_SUPABASE_URL et VITE_SUPABASE_PUBLISHABLE_KEY dans .env.local.",
+            }));
+            return;
+          }
 
           fetch(`${targetUrl}/rest/v1/patrols?select=id,name,category&limit=10`, {
             headers: {
@@ -43,7 +53,7 @@ function scoutServerApiPlugin(): Plugin {
                   status: response.ok ? "connected" : "error",
                   statusCode: response.status,
                   targetUrl,
-                  projectId: "civblymnwigeayfecujp",
+                  projectId,
                   patrolsCount: Array.isArray(patrols) ? patrols.length : 0,
                   patrolsSample: Array.isArray(patrols) ? patrols.slice(0, 3) : null,
                   message: response.ok
@@ -106,13 +116,13 @@ function scoutServerApiPlugin(): Plugin {
 const APP_VERSION = (process.env["CF_PAGES_COMMIT_SHA"] || "local").slice(0, 7);
 const APP_BUILT_AT = new Date().toISOString();
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {\n  const env = loadEnv(mode, process.cwd(), "VITE_");\n  return {
   define: {
     __APP_VERSION__: JSON.stringify(APP_VERSION),
     __APP_BUILT_AT__: JSON.stringify(APP_BUILT_AT),
   },
   plugins: [
-    scoutServerApiPlugin(),
+    scoutServerApiPlugin(env),
     tanstackStart({
       server: { entry: "server" },
       // Mode SPA : le site est généré en fichiers statiques (index.html + assets).
