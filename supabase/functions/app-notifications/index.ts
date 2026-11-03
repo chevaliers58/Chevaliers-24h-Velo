@@ -5,9 +5,10 @@ const url = Deno.env.get("SUPABASE_URL")!;
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY") ?? "";
 const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
-const vapidSubject = Deno.env.get("VAPID_SUBJECT") ?? "https://alezan42-cycling.pages.dev";
+const vapidSubject = Deno.env.get("VAPID_SUBJECT") ?? "mailto:admin@example.invalid";
+const siteUrl = (Deno.env.get("SITE_URL") ?? "http://localhost:3000").replace(/\/+$/, "");
 const cors = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": siteUrl,
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-cron-secret",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -179,7 +180,7 @@ Deno.serve(async (request) => {
       : json({ ok: true });
   }
   if (body.action === "admin-status") {
-    const isMasterAdmin = authData.user.email?.toLowerCase() === "baudeletgauthier@gmail.com";
+    const isMasterAdmin = false; // Admin access comes only from the user_roles table.
     if (!isMasterAdmin) {
       const [roleResult, profileResult] = await Promise.all([
         admin
