@@ -72,7 +72,7 @@ $$;
 revoke execute on function public.notify_app_distance_milestones() from public, anon, authenticated;
 
 create or replace function public.notify_admins_new_signup()
-returns trigger language plpgsql security definer set search_path = public as $;
+returns trigger language plpgsql security definer set search_path = public as $
 begin
   insert into public.app_notifications(user_id, kind, title, body, href, dedupe_key)
   select
