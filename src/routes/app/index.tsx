@@ -11,6 +11,7 @@ import {
   Users,
 } from "lucide-react";
 import { AppPageShell } from "@/components/AppPageShell";
+import { TROOP_NAME } from "@/lib/troop-config";
 import { AppCard, AppSection } from "@/components/app/AppUi";
 import { SportIcon, SPORT_COLORS } from "@/components/SportIcon";
 import { useAuth } from "@/lib/useAuth";
@@ -86,7 +87,7 @@ function AppHome() {
       root
       heroImage={themeBackground ?? hero}
       heroPosition={themeBackground ? "center" : "75% 68%"}
-      title={user ? `${greeting()}${name ? `, ${name}` : ""} 👋` : "ALEZAN 42"}
+      title={user ? `${greeting()}${name ? `, ${name}` : ""} 👋` : TROOP_NAME}
       description={
         user
           ? profile?.patrol_name
