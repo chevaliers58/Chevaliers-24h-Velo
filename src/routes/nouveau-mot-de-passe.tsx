@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { TROOP_NAME } from "@/lib/troop-config";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { KeyRound } from "lucide-react";
