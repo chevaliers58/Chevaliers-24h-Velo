@@ -1,5 +1,5 @@
 /**
- * ALEZAN 42 — Script de Diagnostic Supabase
+ * Troupe — Script de Diagnostic Supabase
  *
  * Ce script vérifie l'initialisation du client Supabase de l'application,
  * teste la connexion réseau, effectue des lectures simples dans la base de données,
@@ -39,33 +39,25 @@ function record(
 
 async function runDiagnostics() {
   console.log("===============================================================");
-  console.log("🔍 DIAGNOSTIC SUPABASE - DÉFI VÉLO ALEZAN 42");
+  console.log("🔍 DIAGNOSTIC SUPABASE - APPLICATION DE LA TROUPE");
   console.log("===============================================================\n");
 
   // 1. VÉRIFICATION DES VARIABLES D'ENVIRONNEMENT
   console.log("--- 1. Variables d'Environnement & Configuration ---");
-  const TARGET_PROJECT = "civblymnwigeayfecujp.supabase.co";
-  const rawUrl =
-    process.env["VITE_SUPABASE_URL"] && !process.env["VITE_SUPABASE_URL"].includes("lovable.cloud")
-      ? process.env["VITE_SUPABASE_URL"]
-      : "https://civblymnwigeayfecujp.supabase.co";
+  const TARGET_PROJECT = process.env["VITE_SUPABASE_PROJECT_ID"] || "non configuré";
+  const rawUrl = process.env["VITE_SUPABASE_URL"] || "";
+  const rawKey = process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] || "";
 
-  const rawKey =
-    process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] &&
-    !process.env["VITE_SUPABASE_PUBLISHABLE_KEY"].includes("bWCIoCwQ")
-      ? process.env["VITE_SUPABASE_PUBLISHABLE_KEY"]
-      : "sb_publishable_Rs7_eLIv_g7FcK2R1Hz8cw_rc6qLJfs";
-
-  if (process.env["SUPABASE_URL"]?.includes("lovable.cloud")) {
+  if (!rawUrl || !rawKey) {
     record(
-      "Variables d'environnement",
-      "WARNING",
-      "L'environnement conteneur possédait l'ancienne URL de proxy Lovable. L'application a été reconfigurée pour cibler directement votre projet Supabase officiel : " +
-        rawUrl,
+      "Variables d’environnement",
+      "ERROR",
+      "Configure VITE_SUPABASE_URL et VITE_SUPABASE_PUBLISHABLE_KEY dans .env.local avant le diagnostic.",
     );
-  } else {
-    record("Variables d'environnement", "OK", `URL Cible : ${rawUrl} (Projet : ${TARGET_PROJECT})`);
+    return { success: false, results };
   }
+
+  record("Variables d’environnement", "OK", `URL cible : ${rawUrl} (projet : ${TARGET_PROJECT})`);
 
   // 2. VÉRIFICATION DE L'INITIALISATION DU CLIENT SUPABASE APPLICATIF
   console.log("\n--- 2. Initialisation du Client Supabase de l'Application ---");
@@ -75,7 +67,7 @@ async function runDiagnostics() {
       "ERROR",
       "L'objet client exporté par src/integrations/supabase/client est indéfini.",
     );
-    return;
+    return { success: false, results };
   }
 
   if (typeof supabase.from !== "function" || typeof supabase.auth?.signUp !== "function") {
@@ -84,7 +76,7 @@ async function runDiagnostics() {
       "ERROR",
       "Le client Supabase n'expose pas l'API standard (@supabase/supabase-js).",
     );
-    return;
+    return { success: false, results };
   }
   record(
     "Initialisation du client",
@@ -274,16 +266,8 @@ async function runDiagnostics() {
   console.log(
     "     Le client n'étant pas encore authentifié, l'insertion directe dans `profiles` est bloquée (Code 42501).",
   );
-  console.log("   - Solution recommandée :");
   console.log(
-    "     a) Désactiver 'Confirm email' dans Supabase Dashboard > Authentication > Providers > Email",
-  );
-  console.log("        OU");
-  console.log(
-    "     b) Exécuter le trigger `on_auth_user_created` fourni dans `supabase/supabase_setup.sql`",
-  );
-  console.log(
-    "        qui insère automatiquement le profil avec les privilèges SECURITY DEFINER dès l'inscription.\n",
+    "   - Ne pas désactiver la confirmation des e-mails pour contourner la RLS. Le trigger des migrations crée le profil et le rôle user côté base avec des privilèges contrôlés.\n",
   );
 
   return {
