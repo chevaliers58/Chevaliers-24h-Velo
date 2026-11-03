@@ -22,9 +22,10 @@ const PHOTO_DAYS = 30;
 const ORPHAN_DAYS = 7;
 const MAX_FILES_PER_RUN = 300;
 const siteUrl = (Deno.env.get("SITE_URL") ?? "http://localhost:3000").replace(/\/+$/, "");
+const siteOrigin = new URL(siteUrl).origin;
 
 const cors = {
-  "Access-Control-Allow-Origin": siteUrl,
+  "Access-Control-Allow-Origin": siteOrigin,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
