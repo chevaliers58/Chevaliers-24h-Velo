@@ -1,5 +1,6 @@
 -- ==============================================================================
--- ALEZAN 42 - SCRIPT DE DÉPLOIEMENT COMPLET DE LA BASE DE DONNÉES SUPABASE
+-- Script historique de compatibilité. Pour une installation neuve, utiliser les migrations supabase/migrations/.
+-- Ne pas exécuter ce script en complément de toutes les migrations.
 -- À exécuter dans : Dashboard Supabase > SQL Editor > New query > Run
 -- ==============================================================================
 
@@ -8,23 +9,8 @@ insert into public.patrols (name, category)
 select 'Staff', 'homme'::patrol_category
 where not exists (select 1 from public.patrols where lower(name) = 'staff');
 
--- 2. CONFIRMATION AUTOMATIQUE DES COMPTES (AUCUN EMAIL REQUIS)
-create or replace function public.auto_confirm_user()
-returns trigger language plpgsql security definer set search_path = public as $$
-begin
-  new.email_confirmed_at := coalesce(new.email_confirmed_at, now());
-  return new;
-end; $$;
-
-revoke execute on function public.auto_confirm_user() from public, anon, authenticated;
-
-drop trigger if exists on_auth_user_auto_confirm on auth.users;
-create trigger on_auth_user_auto_confirm
-  before insert on auth.users
-  for each row execute function public.auto_confirm_user();
-
--- Confirmer tous les comptes déjà inscrits dans auth.users
-update auth.users set email_confirmed_at = now() where email_confirmed_at is null;
+-- 2. L'authentification et la confirmation des e-mails sont gérées par Supabase Auth.
+-- Aucun compte n'est confirmé automatiquement.
 
 -- 3. CRÉATION AUTOMATIQUE DU PROFIL SCOUT LORS DE L'INSCRIPTION
 create or replace function public.handle_new_user()
@@ -71,11 +57,6 @@ begin
   values (new.id, 'user')
   on conflict (user_id, role) do nothing;
 
-  if lower(new.email) = 'baudeletgauthier@gmail.com' then
-    insert into public.user_roles (user_id, role)
-    values (new.id, 'admin')
-    on conflict (user_id, role) do nothing;
-  end if;
 
   return new;
 end; $$;
@@ -167,12 +148,6 @@ from auth.users
 on conflict (id) do update set
   email = excluded.email,
   onboarded = true;
-
-insert into public.user_roles (user_id, role)
-select id, 'admin'::app_role
-from auth.users
-where lower(email) = 'baudeletgauthier@gmail.com'
-on conflict do nothing;
 
 insert into public.user_roles (user_id, role)
 select id, 'user'::app_role
