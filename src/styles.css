@@ -1,0 +1,1471 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *, [data-theme="halloween"] *, [data-theme="noel"] *, [data-theme="course24h"] *, [data-theme="foot"] *));
+
+@theme inline {
+  --font-display: "Archivo Black", system-ui, sans-serif;
+  --font-sans: "Work Sans", system-ui, sans-serif;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-bark: var(--bark);
+  --color-bark-foreground: var(--bark-foreground);
+  --color-success: var(--success);
+}
+
+:root {
+  --radius: 0.5rem;
+  --background: oklch(0.965 0.02 75);
+  --foreground: oklch(0.27 0.05 45);
+  --card: oklch(0.985 0.012 80);
+  --card-foreground: oklch(0.27 0.05 45);
+  --popover: oklch(0.985 0.012 80);
+  --popover-foreground: oklch(0.27 0.05 45);
+  /* Orange de la troupe, un ton plus sombre pour un contraste de 4,8 : 1 avec le texte blanc (avant 0.66 0.18 48) */
+  --primary: oklch(0.56 0.17 48);
+  --primary-foreground: oklch(0.985 0.01 80);
+  --secondary: oklch(0.9 0.04 70);
+  --secondary-foreground: oklch(0.3 0.06 45);
+  --muted: oklch(0.92 0.025 72);
+  --muted-foreground: oklch(0.48 0.05 50);
+  --accent: oklch(0.88 0.08 65);
+  --accent-foreground: oklch(0.3 0.06 45);
+  --destructive: oklch(0.55 0.2 27);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.84 0.04 65);
+  --input: oklch(0.84 0.04 65);
+  --ring: oklch(0.56 0.17 48);
+  --bark: oklch(0.3 0.06 45);
+  --bark-foreground: oklch(0.95 0.03 75);
+  --success: oklch(0.55 0.13 145);
+  --header: #1e231e;
+  /* Compte à rebours et bouton secondaire de l'accueil : suivent le thème */
+  --countdown: #241a12;
+  --countdown-accent: #fb923c;
+  --countdown-accent-2: #fcd34d;
+  --cta-2: #7c2d12;
+  --cta-2-foreground: #ffffff;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+}
+
+/* =====================================================================
+   Thèmes de fête — choisis par un admin (table site_settings, clé "theme").
+   <html data-theme="halloween|noel|printemps|ete"> ; absent = standard.
+   Ils redéfinissent les mêmes variables que :root : tout le site suit.
+   ===================================================================== */
+[data-theme="halloween"] {
+  color-scheme: dark;
+  --background: oklch(0.2 0.045 300);
+  --foreground: oklch(0.93 0.03 70);
+  --card: oklch(0.25 0.055 300);
+  --card-foreground: oklch(0.93 0.03 70);
+  --popover: oklch(0.25 0.055 300);
+  --popover-foreground: oklch(0.93 0.03 70);
+  --primary: oklch(0.74 0.17 55);
+  --primary-foreground: oklch(0.2 0.045 300);
+  --secondary: oklch(0.32 0.07 300);
+  --secondary-foreground: oklch(0.92 0.03 70);
+  --muted: oklch(0.29 0.05 300);
+  --muted-foreground: oklch(0.74 0.05 300);
+  --accent: oklch(0.46 0.16 300);
+  --accent-foreground: oklch(0.97 0.01 300);
+  --destructive: oklch(0.65 0.22 25);
+  --border: oklch(0.38 0.06 300);
+  --input: oklch(0.38 0.06 300);
+  --ring: oklch(0.74 0.17 55);
+  --bark: oklch(0.15 0.04 300);
+  --bark-foreground: oklch(0.93 0.03 70);
+  --success: oklch(0.72 0.16 145);
+  --header: #140d1c;
+}
+[data-theme="noel"] {
+  color-scheme: dark;
+  --background: oklch(0.24 0.05 165);
+  --foreground: oklch(0.96 0.02 90);
+  --card: oklch(0.29 0.06 165);
+  --card-foreground: oklch(0.96 0.02 90);
+  --popover: oklch(0.29 0.06 165);
+  --popover-foreground: oklch(0.96 0.02 90);
+  --primary: oklch(0.58 0.21 25);
+  --primary-foreground: oklch(0.98 0.01 90);
+  --secondary: oklch(0.34 0.06 165);
+  --secondary-foreground: oklch(0.96 0.02 90);
+  --muted: oklch(0.32 0.05 165);
+  --muted-foreground: oklch(0.78 0.05 150);
+  --accent: oklch(0.82 0.15 90);
+  --accent-foreground: oklch(0.25 0.06 80);
+  --destructive: oklch(0.62 0.22 25);
+  --border: oklch(0.42 0.06 165);
+  --input: oklch(0.42 0.06 165);
+  --ring: oklch(0.82 0.15 90);
+  --bark: oklch(0.18 0.05 165);
+  --bark-foreground: oklch(0.96 0.02 90);
+  --success: oklch(0.72 0.17 145);
+  --header: #0d2a1f;
+}
+[data-theme="printemps"] {
+  --background: oklch(0.975 0.025 140);
+  --foreground: oklch(0.3 0.05 150);
+  --card: oklch(0.995 0.01 120);
+  --card-foreground: oklch(0.3 0.05 150);
+  --popover: oklch(0.995 0.01 120);
+  --popover-foreground: oklch(0.3 0.05 150);
+  --primary: oklch(0.65 0.2 355);
+  --primary-foreground: oklch(0.99 0.01 350);
+  --secondary: oklch(0.93 0.05 140);
+  --secondary-foreground: oklch(0.3 0.06 150);
+  --muted: oklch(0.94 0.03 140);
+  --muted-foreground: oklch(0.5 0.05 150);
+  --accent: oklch(0.86 0.12 130);
+  --accent-foreground: oklch(0.3 0.07 140);
+  --border: oklch(0.88 0.05 140);
+  --input: oklch(0.88 0.05 140);
+  --ring: oklch(0.65 0.2 355);
+  --bark: oklch(0.35 0.07 150);
+  --bark-foreground: oklch(0.97 0.02 130);
+  --success: oklch(0.6 0.15 145);
+  --header: #1f3a2a;
+}
+[data-theme="ete"] {
+  --background: oklch(0.985 0.03 95);
+  --foreground: oklch(0.28 0.05 240);
+  --card: oklch(0.995 0.015 95);
+  --card-foreground: oklch(0.28 0.05 240);
+  --popover: oklch(0.995 0.015 95);
+  --popover-foreground: oklch(0.28 0.05 240);
+  --primary: oklch(0.65 0.15 235);
+  --primary-foreground: oklch(0.99 0.01 235);
+  --secondary: oklch(0.93 0.05 220);
+  --secondary-foreground: oklch(0.28 0.06 240);
+  --muted: oklch(0.95 0.03 95);
+  --muted-foreground: oklch(0.5 0.05 240);
+  --accent: oklch(0.88 0.14 90);
+  --accent-foreground: oklch(0.3 0.07 80);
+  --border: oklch(0.88 0.05 215);
+  --input: oklch(0.88 0.05 215);
+  --ring: oklch(0.65 0.15 235);
+  --bark: oklch(0.3 0.07 240);
+  --bark-foreground: oklch(0.97 0.02 95);
+  --success: oklch(0.6 0.14 160);
+  --header: #0f3b57;
+}
+
+[data-theme="automne"] {
+  --background: oklch(0.965 0.025 70);
+  --foreground: oklch(0.28 0.06 45);
+  --card: oklch(0.985 0.015 75);
+  --card-foreground: oklch(0.28 0.06 45);
+  --popover: oklch(0.985 0.015 75);
+  --popover-foreground: oklch(0.28 0.06 45);
+  --primary: oklch(0.55 0.16 40);
+  --primary-foreground: oklch(0.98 0.01 75);
+  --secondary: oklch(0.9 0.05 70);
+  --secondary-foreground: oklch(0.3 0.07 45);
+  --muted: oklch(0.92 0.03 70);
+  --muted-foreground: oklch(0.47 0.06 50);
+  --accent: oklch(0.82 0.12 75);
+  --accent-foreground: oklch(0.3 0.07 50);
+  --border: oklch(0.84 0.05 65);
+  --input: oklch(0.84 0.05 65);
+  --ring: oklch(0.55 0.16 40);
+  --bark: oklch(0.3 0.07 40);
+  --bark-foreground: oklch(0.95 0.03 75);
+  --success: oklch(0.55 0.13 145);
+  --header: #3a2414;
+}
+[data-theme="valentin"] {
+  --background: oklch(0.975 0.02 10);
+  --foreground: oklch(0.3 0.07 10);
+  --card: oklch(0.995 0.008 10);
+  --card-foreground: oklch(0.3 0.07 10);
+  --popover: oklch(0.995 0.008 10);
+  --popover-foreground: oklch(0.3 0.07 10);
+  --primary: oklch(0.58 0.22 15);
+  --primary-foreground: oklch(0.99 0.01 10);
+  --secondary: oklch(0.93 0.04 10);
+  --secondary-foreground: oklch(0.32 0.08 10);
+  --muted: oklch(0.94 0.025 10);
+  --muted-foreground: oklch(0.5 0.07 10);
+  --accent: oklch(0.86 0.09 350);
+  --accent-foreground: oklch(0.32 0.1 10);
+  --border: oklch(0.88 0.05 10);
+  --input: oklch(0.88 0.05 10);
+  --ring: oklch(0.58 0.22 15);
+  --bark: oklch(0.32 0.1 10);
+  --bark-foreground: oklch(0.97 0.02 10);
+  --success: oklch(0.58 0.14 150);
+  --header: #4a0f22;
+}
+[data-theme="paques"] {
+  --background: oklch(0.98 0.03 100);
+  --foreground: oklch(0.3 0.06 290);
+  --card: oklch(0.995 0.012 100);
+  --card-foreground: oklch(0.3 0.06 290);
+  --popover: oklch(0.995 0.012 100);
+  --popover-foreground: oklch(0.3 0.06 290);
+  --primary: oklch(0.56 0.19 295);
+  --primary-foreground: oklch(0.99 0.01 295);
+  --secondary: oklch(0.93 0.05 300);
+  --secondary-foreground: oklch(0.32 0.07 295);
+  --muted: oklch(0.95 0.03 100);
+  --muted-foreground: oklch(0.5 0.06 295);
+  --accent: oklch(0.9 0.13 95);
+  --accent-foreground: oklch(0.32 0.07 80);
+  --border: oklch(0.89 0.05 300);
+  --input: oklch(0.89 0.05 300);
+  --ring: oklch(0.56 0.19 295);
+  --bark: oklch(0.33 0.08 295);
+  --bark-foreground: oklch(0.97 0.02 100);
+  --success: oklch(0.6 0.15 145);
+  --header: #34205a;
+}
+[data-theme="course24h"] {
+  color-scheme: dark;
+  --background: oklch(0.17 0.005 260);
+  --foreground: oklch(0.96 0.01 95);
+  --card: oklch(0.22 0.008 260);
+  --card-foreground: oklch(0.96 0.01 95);
+  --popover: oklch(0.22 0.008 260);
+  --popover-foreground: oklch(0.96 0.01 95);
+  --primary: oklch(0.86 0.18 95);
+  --primary-foreground: oklch(0.17 0.005 260);
+  --secondary: oklch(0.28 0.01 260);
+  --secondary-foreground: oklch(0.96 0.01 95);
+  --muted: oklch(0.26 0.008 260);
+  --muted-foreground: oklch(0.74 0.02 95);
+  --accent: oklch(0.6 0.22 27);
+  --accent-foreground: oklch(0.98 0.01 95);
+  --destructive: oklch(0.65 0.23 27);
+  --border: oklch(0.36 0.01 260);
+  --input: oklch(0.36 0.01 260);
+  --ring: oklch(0.86 0.18 95);
+  --bark: oklch(0.12 0.005 260);
+  --bark-foreground: oklch(0.96 0.01 95);
+  --success: oklch(0.74 0.17 145);
+  --header: #0a0a0a;
+}
+
+[data-theme="hiver"] {
+  --background: oklch(0.975 0.012 235);
+  --foreground: oklch(0.27 0.05 250);
+  --card: oklch(0.995 0.006 235);
+  --card-foreground: oklch(0.27 0.05 250);
+  --popover: oklch(0.995 0.006 235);
+  --popover-foreground: oklch(0.27 0.05 250);
+  --primary: oklch(0.52 0.13 250);
+  --primary-foreground: oklch(0.99 0.01 235);
+  --secondary: oklch(0.92 0.035 235);
+  --secondary-foreground: oklch(0.27 0.06 250);
+  --muted: oklch(0.94 0.02 235);
+  --muted-foreground: oklch(0.5 0.05 250);
+  --accent: oklch(0.88 0.06 215);
+  --accent-foreground: oklch(0.27 0.07 250);
+  --destructive: oklch(0.58 0.2 25);
+  --border: oklch(0.87 0.035 235);
+  --input: oklch(0.87 0.035 235);
+  --ring: oklch(0.52 0.13 250);
+  --bark: oklch(0.3 0.07 250);
+  --bark-foreground: oklch(0.97 0.015 235);
+  --success: oklch(0.6 0.13 165);
+  --header: #16314f;
+}
+[data-theme="carnaval"] {
+  --background: oklch(0.98 0.015 320);
+  --foreground: oklch(0.28 0.09 310);
+  --card: oklch(0.995 0.008 320);
+  --card-foreground: oklch(0.28 0.09 310);
+  --popover: oklch(0.995 0.008 320);
+  --popover-foreground: oklch(0.28 0.09 310);
+  --primary: oklch(0.55 0.25 335);
+  --primary-foreground: oklch(0.99 0.01 335);
+  --secondary: oklch(0.93 0.05 310);
+  --secondary-foreground: oklch(0.28 0.09 310);
+  --muted: oklch(0.95 0.025 320);
+  --muted-foreground: oklch(0.5 0.07 310);
+  --accent: oklch(0.88 0.17 95);
+  --accent-foreground: oklch(0.3 0.08 80);
+  --destructive: oklch(0.58 0.22 25);
+  --border: oklch(0.88 0.05 320);
+  --input: oklch(0.88 0.05 320);
+  --ring: oklch(0.55 0.25 335);
+  --bark: oklch(0.3 0.13 310);
+  --bark-foreground: oklch(0.97 0.02 320);
+  --success: oklch(0.62 0.15 160);
+  --header: #3a0f5c;
+}
+[data-theme="nationale"] {
+  --background: oklch(0.985 0.025 100);
+  --foreground: oklch(0.2 0.01 90);
+  --card: oklch(0.998 0.01 100);
+  --card-foreground: oklch(0.2 0.01 90);
+  --popover: oklch(0.998 0.01 100);
+  --popover-foreground: oklch(0.2 0.01 90);
+  --primary: oklch(0.58 0.23 27);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.94 0.05 100);
+  --secondary-foreground: oklch(0.2 0.01 90);
+  --muted: oklch(0.95 0.025 100);
+  --muted-foreground: oklch(0.45 0.03 90);
+  --accent: oklch(0.89 0.17 98);
+  --accent-foreground: oklch(0.2 0.02 90);
+  --destructive: oklch(0.5 0.22 27);
+  --border: oklch(0.88 0.05 100);
+  --input: oklch(0.88 0.05 100);
+  --ring: oklch(0.58 0.23 27);
+  --bark: oklch(0.2 0.01 90);
+  --bark-foreground: oklch(0.97 0.03 98);
+  --success: oklch(0.58 0.14 150);
+  --header: #111111;
+}
+[data-theme="foot"] {
+  color-scheme: dark;
+  --background: oklch(0.26 0.07 150);
+  --foreground: oklch(0.97 0.01 120);
+  --card: oklch(0.31 0.08 150);
+  --card-foreground: oklch(0.97 0.01 120);
+  --popover: oklch(0.31 0.08 150);
+  --popover-foreground: oklch(0.97 0.01 120);
+  --primary: oklch(0.88 0.17 100);
+  --primary-foreground: oklch(0.2 0.06 150);
+  --secondary: oklch(0.37 0.08 150);
+  --secondary-foreground: oklch(0.97 0.01 120);
+  --muted: oklch(0.33 0.07 150);
+  --muted-foreground: oklch(0.8 0.05 140);
+  --accent: oklch(0.6 0.22 27);
+  --accent-foreground: oklch(0.98 0 0);
+  --destructive: oklch(0.65 0.22 27);
+  --border: oklch(0.45 0.08 150);
+  --input: oklch(0.45 0.08 150);
+  --ring: oklch(0.88 0.17 100);
+  --bark: oklch(0.2 0.06 150);
+  --bark-foreground: oklch(0.97 0.01 120);
+  --success: oklch(0.78 0.18 145);
+  --header: #0e2a16;
+}
+[data-theme="tennis"] {
+  --background: oklch(0.985 0.012 140);
+  --foreground: oklch(0.27 0.06 150);
+  --card: oklch(0.998 0.006 140);
+  --card-foreground: oklch(0.27 0.06 150);
+  --popover: oklch(0.998 0.006 140);
+  --popover-foreground: oklch(0.27 0.06 150);
+  --primary: oklch(0.42 0.11 150);
+  --primary-foreground: oklch(0.99 0.01 140);
+  --secondary: oklch(0.93 0.04 140);
+  --secondary-foreground: oklch(0.27 0.06 150);
+  --muted: oklch(0.95 0.02 140);
+  --muted-foreground: oklch(0.5 0.05 150);
+  --accent: oklch(0.9 0.19 115);
+  --accent-foreground: oklch(0.3 0.08 130);
+  --destructive: oklch(0.58 0.2 27);
+  --border: oklch(0.88 0.04 140);
+  --input: oklch(0.88 0.04 140);
+  --ring: oklch(0.42 0.11 150);
+  --bark: oklch(0.3 0.08 150);
+  --bark-foreground: oklch(0.97 0.02 130);
+  --success: oklch(0.6 0.14 150);
+  --header: #14472a;
+}
+[data-theme="anniversaire"] {
+  --background: oklch(0.98 0.025 350);
+  --foreground: oklch(0.3 0.07 350);
+  --card: oklch(0.998 0.01 350);
+  --card-foreground: oklch(0.3 0.07 350);
+  --popover: oklch(0.998 0.01 350);
+  --popover-foreground: oklch(0.3 0.07 350);
+  --primary: oklch(0.62 0.22 350);
+  --primary-foreground: oklch(0.99 0.01 350);
+  --secondary: oklch(0.94 0.05 350);
+  --secondary-foreground: oklch(0.3 0.07 350);
+  --muted: oklch(0.95 0.025 350);
+  --muted-foreground: oklch(0.5 0.07 350);
+  --accent: oklch(0.86 0.14 85);
+  --accent-foreground: oklch(0.3 0.07 350);
+  --destructive: oklch(0.58 0.22 25);
+  --border: oklch(0.89 0.05 350);
+  --input: oklch(0.89 0.05 350);
+  --ring: oklch(0.62 0.22 350);
+  --bark: oklch(0.3 0.07 350);
+  --bark-foreground: oklch(0.98 0.02 350);
+  --success: oklch(0.58 0.14 150);
+  --header: #6f1744;
+}
+
+/* Menu du haut : icônes et page active aux couleurs du thème.
+   Définis sur :root (= <html>, qui porte aussi data-theme) : var(--primary) y
+   prend donc la valeur du thème affiché. */
+:root {
+  --nav-icon: color-mix(in oklab, var(--primary) 45%, white);
+  --nav-hover: color-mix(in oklab, var(--primary) 22%, transparent);
+  --nav-active: var(--primary);
+  --nav-active-foreground: var(--primary-foreground);
+}
+
+/* Compte à rebours : fond et accents tirés des couleurs du thème */
+[data-theme] {
+  --countdown: color-mix(in oklab, var(--bark) 90%, black);
+  --countdown-accent: color-mix(in oklab, var(--primary) 68%, white);
+  --countdown-accent-2: color-mix(in oklab, var(--accent) 55%, white);
+}
+
+/* Bouton secondaire de l'accueil (« Mon profil ») : une couleur par thème */
+[data-theme="halloween"] {
+  --cta-2: oklch(0.45 0.16 300);
+  --cta-2-foreground: #fff;
+}
+[data-theme="noel"] {
+  --cta-2: oklch(0.5 0.17 150);
+  --cta-2-foreground: #fff;
+}
+[data-theme="printemps"] {
+  --cta-2: oklch(0.55 0.15 140);
+  --cta-2-foreground: #fff;
+}
+[data-theme="ete"] {
+  --cta-2: oklch(0.8 0.16 85);
+  --cta-2-foreground: oklch(0.25 0.05 80);
+}
+[data-theme="automne"] {
+  --cta-2: oklch(0.45 0.1 40);
+  --cta-2-foreground: #fff;
+}
+[data-theme="valentin"] {
+  --cta-2: oklch(0.45 0.17 5);
+  --cta-2-foreground: #fff;
+}
+[data-theme="paques"] {
+  --cta-2: oklch(0.84 0.15 95);
+  --cta-2-foreground: oklch(0.3 0.07 80);
+}
+[data-theme="course24h"] {
+  --cta-2: oklch(0.6 0.22 27);
+  --cta-2-foreground: #fff;
+}
+[data-theme="hiver"] {
+  --cta-2: oklch(0.45 0.1 245);
+  --cta-2-foreground: #fff;
+}
+[data-theme="carnaval"] {
+  --cta-2: oklch(0.72 0.14 205);
+  --cta-2-foreground: oklch(0.22 0.06 220);
+}
+[data-theme="nationale"] {
+  --cta-2: oklch(0.89 0.17 98);
+  --cta-2-foreground: oklch(0.2 0.02 90);
+}
+[data-theme="foot"] {
+  --cta-2: oklch(0.6 0.22 27);
+  --cta-2-foreground: #fff;
+}
+[data-theme="tennis"] {
+  --cta-2: oklch(0.9 0.19 115);
+  --cta-2-foreground: oklch(0.28 0.08 140);
+}
+[data-theme="anniversaire"] {
+  --cta-2: oklch(0.54 0.2 350);
+  --cta-2-foreground: #fff;
+}
+
+body {
+  transition:
+    background-color 0.4s ease,
+    color 0.4s ease;
+}
+
+/* ---------- Décorations (composants SeasonalDecor / HeaderTrim) ---------- */
+.festive-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  overflow: hidden;
+  pointer-events: none;
+}
+.festive-particle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  line-height: 1;
+  will-change: transform;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.festive-particle.fall {
+  animation-name: festive-fall;
+}
+.festive-particle.fly {
+  animation-name: festive-fly;
+}
+@keyframes festive-fall {
+  0% {
+    transform: translate3d(0, -12vh, 0) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: var(--op, 0.85);
+  }
+  92% {
+    opacity: var(--op, 0.85);
+  }
+  100% {
+    transform: translate3d(var(--drift, 30px), 108vh, 0) rotate(var(--spin, 360deg));
+    opacity: 0;
+  }
+}
+@keyframes festive-fly {
+  0% {
+    transform: translate3d(-12vw, 0, 0);
+  }
+  50% {
+    transform: translate3d(50vw, var(--wobble, -40px), 0);
+  }
+  100% {
+    transform: translate3d(112vw, 0, 0);
+  }
+}
+@keyframes festive-sway {
+  0%,
+  100% {
+    transform: rotate(-5deg);
+  }
+  50% {
+    transform: rotate(5deg);
+  }
+}
+@keyframes festive-twinkle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+@keyframes festive-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.festive-sun {
+  position: absolute;
+  top: 4.5rem;
+  right: 0.75rem;
+  font-size: 3rem;
+  line-height: 1;
+  animation: festive-spin 90s linear infinite;
+  filter: drop-shadow(0 0 14px rgb(250 204 21 / 0.6));
+}
+.festive-corner {
+  position: absolute;
+  line-height: 1;
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.25));
+}
+.festive-waves {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 16px;
+  opacity: 0.35;
+  background: radial-gradient(circle at 14px 16px, transparent 12px, var(--primary) 13px) 0 0 / 28px
+    16px repeat-x;
+}
+
+/* Bandeau accroché sous l'en-tête */
+.festive-trim {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 30px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.festive-trim-noel::before,
+.festive-trim-noel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  animation: festive-twinkle 1.6s ease-in-out infinite;
+}
+.festive-trim-noel::before {
+  background:
+    linear-gradient(#14532d, #14532d) 0 3px / 100% 2px no-repeat,
+    radial-gradient(circle at 14px 14px, #ef4444 5px, transparent 6px) 0 0 / 56px 30px repeat-x,
+    radial-gradient(circle at 42px 14px, #3b82f6 5px, transparent 6px) 0 0 / 56px 30px repeat-x;
+}
+.festive-trim-noel::after {
+  animation-delay: 0.8s;
+  background:
+    radial-gradient(circle at 28px 14px, #fbbf24 5px, transparent 6px) 0 0 / 56px 30px repeat-x,
+    radial-gradient(circle at 0 14px, #22c55e 5px, transparent 6px) 0 0 / 56px 30px repeat-x;
+}
+.festive-trim-ete {
+  height: 14px;
+  background: radial-gradient(circle at 14px 0, var(--header) 13px, transparent 14px) 0 0 / 28px
+    14px repeat-x;
+}
+.festive-trim-printemps {
+  height: 22px;
+  font-size: 15px;
+  line-height: 22px;
+  white-space: nowrap;
+  letter-spacing: 2px;
+}
+.festive-web {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-size: 2.25rem;
+  line-height: 1;
+  opacity: 0.85;
+}
+.festive-spider {
+  position: absolute;
+  top: 0;
+  right: 14%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform-origin: top center;
+  animation: festive-sway 3.5s ease-in-out infinite;
+}
+.festive-spider i {
+  width: 1px;
+  height: 22px;
+  background: rgb(255 255 255 / 0.55);
+}
+.festive-spider b {
+  font-size: 1.25rem;
+  font-weight: normal;
+  line-height: 1;
+}
+
+/* Tapis au sol (feuilles d'automne, herbe de Pâques) */
+.festive-ground {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -4px;
+  font-size: 20px;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  letter-spacing: -4px;
+  opacity: 0.9;
+}
+/* Course : traversée rapide en bas de l'écran */
+.festive-particle.race {
+  animation-name: festive-race;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.9, 1);
+}
+@keyframes festive-race {
+  0% {
+    transform: translate3d(-15vw, 0, 0) scaleX(-1);
+  }
+  100% {
+    transform: translate3d(115vw, 0, 0) scaleX(-1);
+  }
+}
+/* Petits bonds (lapin de Pâques), à l'intérieur d'une traversée « race » */
+.festive-bounce {
+  display: inline-block;
+  animation: festive-bounce 0.7s cubic-bezier(0.3, 0, 0.7, 1) infinite alternate;
+}
+@keyframes festive-bounce {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-22px);
+  }
+}
+/* Traits de vitesse */
+.festive-streak {
+  position: absolute;
+  left: 0;
+  height: 2px;
+  width: 22vw;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, rgb(250 204 21 / 0.55), transparent);
+  animation: festive-streak linear infinite;
+}
+@keyframes festive-streak {
+  0% {
+    transform: translate3d(-30vw, 0, 0);
+  }
+  100% {
+    transform: translate3d(130vw, 0, 0);
+  }
+}
+/* Bandeaux sous l'en-tête */
+.festive-trim-course24h {
+  height: 12px;
+  background: repeating-conic-gradient(#fafafa 0 25%, #0a0a0a 0 50%) 0 0 / 12px 12px;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.35);
+}
+.festive-trim-valentin,
+.festive-trim-paques,
+.festive-trim-automne,
+.festive-trim-anniversaire {
+  height: 22px;
+  font-size: 14px;
+  line-height: 22px;
+  white-space: nowrap;
+  letter-spacing: 3px;
+}
+
+/* Bandeaux des thèmes Hiver, Carnaval, Fête nationale, Foot et Tennis */
+.festive-trim-hiver {
+  height: 13px;
+  background:
+    linear-gradient(135deg, #dbeafe 25%, transparent 25%) 0 0 / 24px 24px,
+    linear-gradient(225deg, #dbeafe 25%, transparent 25%) 0 0 / 24px 24px;
+  filter: drop-shadow(0 2px 2px rgb(15 40 80 / 0.25));
+}
+.festive-trim-carnaval {
+  height: 18px;
+  background:
+    linear-gradient(#1f1330, #1f1330) 0 0 / 100% 2px no-repeat,
+    conic-gradient(from -30deg at 10px 100%, #ec4899 60deg, transparent 0) 0 0 / 80px 18px repeat-x,
+    conic-gradient(from -30deg at 30px 100%, #facc15 60deg, transparent 0) 0 0 / 80px 18px repeat-x,
+    conic-gradient(from -30deg at 50px 100%, #22d3ee 60deg, transparent 0) 0 0 / 80px 18px repeat-x,
+    conic-gradient(from -30deg at 70px 100%, #a855f7 60deg, transparent 0) 0 0 / 80px 18px repeat-x;
+}
+.festive-trim-nationale {
+  height: 18px;
+  background:
+    linear-gradient(#111, #111) 0 0 / 100% 2px no-repeat,
+    conic-gradient(from -30deg at 10px 100%, #111111 60deg, transparent 0) 0 0 / 60px 18px repeat-x,
+    conic-gradient(from -30deg at 30px 100%, #fdda24 60deg, transparent 0) 0 0 / 60px 18px repeat-x,
+    conic-gradient(from -30deg at 50px 100%, #ef3340 60deg, transparent 0) 0 0 / 60px 18px repeat-x;
+}
+.festive-trim-foot {
+  height: 12px;
+  background:
+    linear-gradient(#f8fafc, #f8fafc) 0 100% / 100% 2px no-repeat,
+    repeating-linear-gradient(90deg, #14532d 0 48px, #166534 48px 96px);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.35);
+}
+.festive-trim-tennis {
+  height: 16px;
+  border-top: 3px solid #f8fafc;
+  background:
+    repeating-linear-gradient(0deg, rgb(255 255 255 / 0.55) 0 1px, transparent 1px 5px),
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.55) 0 1px, transparent 1px 5px),
+    rgb(20 71 42 / 0.9);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.25);
+}
+/* Mode discret ou animations coupées : tout reste immobile */
+.festive-still .festive-sun,
+.festive-still .festive-spider,
+.festive-trim.festive-still::before,
+.festive-trim.festive-still::after,
+.festive-still .festive-spider {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .festive-particle,
+  .festive-streak {
+    display: none;
+  }
+  .festive-bounce {
+    animation: none;
+  }
+  .festive-sun,
+  .festive-spider,
+  .festive-trim-noel::before,
+  .festive-trim-noel::after {
+    animation: none;
+  }
+}
+
+/* Navigation et confort de lecture sur téléphone / PWA. */
+.mobile-tabbar,
+.mobile-menu-sheet,
+.mobile-menu-backdrop {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  html {
+    scroll-padding-top: 4.5rem;
+    scroll-padding-bottom: 5.5rem;
+  }
+
+  body {
+    min-height: 100dvh;
+    overflow-x: hidden;
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  }
+
+  .app-shell-header-hidden {
+    display: none;
+  }
+
+  .mobile-home-page {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mobile-home-page > .mobile-home-hero {
+    order: 0;
+  }
+
+  .mobile-home-page > main {
+    order: 1;
+    width: 100%;
+  }
+
+  .mobile-home-page > :nth-child(2) {
+    order: 2;
+  }
+
+  .mobile-tabbar {
+    position: fixed;
+    z-index: 70;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    align-items: stretch;
+    justify-content: space-around;
+    gap: 0.15rem;
+    padding: 0.4rem 0.35rem max(0.45rem, env(safe-area-inset-bottom));
+    border-top: 1px solid rgb(255 255 255 / 0.12);
+    background: color-mix(in srgb, var(--header) 94%, transparent);
+    color: white;
+    box-shadow: 0 -8px 24px rgb(0 0 0 / 0.16);
+    backdrop-filter: blur(18px);
+  }
+
+  .mobile-tab {
+    display: flex;
+    min-width: 0;
+    min-height: 3.1rem;
+    flex: 1 1 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    border-radius: 0.8rem;
+    color: rgb(255 255 255 / 0.68);
+    font-size: 0.65rem;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobile-tab-active {
+    background: rgb(255 255 255 / 0.12);
+    color: #ffd089;
+  }
+
+  .mobile-tab:focus-visible {
+    outline: 2px solid #ffd089;
+    outline-offset: 1px;
+  }
+
+  .mobile-menu-backdrop {
+    position: fixed;
+    z-index: 50;
+    inset: 0;
+    display: block;
+    border: 0;
+    background: rgb(13 16 13 / 0.42);
+  }
+
+  .mobile-menu-sheet {
+    position: fixed;
+    z-index: 60;
+    right: 0.65rem;
+    bottom: calc(4.35rem + env(safe-area-inset-bottom));
+    left: 0.65rem;
+    display: block;
+    overflow: hidden;
+    max-height: min(72dvh, 38rem);
+    border: 1px solid rgb(255 255 255 / 0.14);
+    border-radius: 1.2rem;
+    background: #171a17;
+    box-shadow: 0 18px 54px rgb(0 0 0 / 0.35);
+    animation: mobile-sheet-in 160ms ease-out;
+  }
+
+  .mobile-menu-sheet > div:first-child {
+    padding-top: 0.85rem;
+    padding-bottom: 0.85rem;
+  }
+
+  .mobile-menu-sheet a,
+  .mobile-menu-sheet button {
+    min-height: 2.9rem;
+  }
+
+  .mobile-menu-sheet > div:last-child {
+    overscroll-behavior: contain;
+  }
+
+  .app-mobile-tabbar {
+    justify-content: space-between;
+    gap: 0.25rem;
+    padding: 0.45rem 0.55rem max(0.5rem, env(safe-area-inset-bottom));
+  }
+
+  .app-mobile-tabbar .mobile-tab {
+    min-height: 3.45rem;
+    gap: 0.22rem;
+    font-size: 0.68rem;
+  }
+
+  .app-mobile-tabbar .mobile-tab-chevron {
+    width: 0.68rem;
+    height: 0.68rem;
+    margin-top: -0.12rem;
+    opacity: 0.55;
+    transition: transform 160ms ease;
+  }
+
+  .app-mobile-menu-sheet {
+    right: 0.75rem;
+    bottom: calc(4.8rem + env(safe-area-inset-bottom));
+    left: 0.75rem;
+    max-height: min(70dvh, 34rem);
+    border-radius: 1.35rem;
+  }
+
+  .app-mobile-menu-backdrop {
+    display: block;
+  }
+
+  .app-mobile-menu-sheet .mobile-menu-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.1rem 0.85rem;
+    border-bottom: 1px solid rgb(255 255 255 / 0.08);
+  }
+
+  .app-mobile-menu-sheet .mobile-menu-eyebrow {
+    margin: 0 0 0.2rem;
+    color: rgb(255 255 255 / 0.52);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .app-mobile-menu-sheet .mobile-menu-heading h2 {
+    margin: 0;
+    color: white;
+    font-size: 1rem;
+    font-weight: 800;
+  }
+
+  .app-mobile-menu-sheet .mobile-menu-close {
+    display: grid;
+    width: 2.5rem;
+    height: 2.5rem;
+    place-items: center;
+    border: 1px solid rgb(255 255 255 / 0.12);
+    border-radius: 0.85rem;
+    background: rgb(255 255 255 / 0.06);
+    color: white;
+  }
+
+  .app-mobile-menu-sheet .mobile-menu-links {
+    display: grid;
+    max-height: calc(min(70dvh, 34rem) - 4.5rem);
+    gap: 0.35rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0.7rem;
+  }
+
+  .app-mobile-menu-sheet .mobile-menu-link {
+    display: flex;
+    min-height: 3.55rem;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid rgb(255 255 255 / 0.06);
+    border-radius: 1rem;
+    background: rgb(255 255 255 / 0.045);
+    color: rgb(255 255 255 / 0.94);
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .app-mobile-menu-sheet .mobile-menu-link:active {
+    background: rgb(255 255 255 / 0.12);
+  }
+
+  .app-mobile-menu-sheet .mobile-menu-link-icon {
+    display: grid;
+    width: 2.35rem;
+    height: 2.35rem;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 0.75rem;
+    background: rgb(255 255 255 / 0.08);
+    color: #ffd089;
+  }
+
+  .app-mobile-menu-sheet .mobile-menu-signout {
+    width: 100%;
+    border-color: rgb(251 113 133 / 0.18);
+    background: rgb(244 63 94 / 0.08);
+    color: #fecdd3;
+  }
+
+  .mobile-mascot {
+    right: 0.25rem;
+    bottom: calc(4.1rem + env(safe-area-inset-bottom));
+    gap: 0;
+  }
+
+  /* Alezouille en pastille : on touche pour ouvrir sa bulle */
+  .mobile-mascot {
+    gap: 0.5rem;
+  }
+
+  .mobile-mascot-bubble:not([data-open="true"]) {
+    display: none;
+  }
+
+  .mobile-mascot-bubble {
+    pointer-events: auto;
+    margin-bottom: 0.75rem;
+    max-width: min(15rem, calc(100vw - 6rem)) !important;
+  }
+
+  .mobile-mascot-toggle {
+    pointer-events: auto;
+    cursor: pointer;
+    border: 2px solid var(--primary) !important;
+    background: var(--card) !important;
+    padding: 2px !important;
+    box-shadow: 0 6px 18px rgb(0 0 0 / 0.18);
+  }
+
+  .mobile-mascot img {
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 9999px;
+    filter: none;
+  }
+
+  .mobile-mascot-dot {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 9999px;
+    background: var(--primary);
+    box-shadow: 0 0 0 2px var(--card);
+  }
+
+  .min-h-screen > main {
+    padding: 1rem 0.8rem;
+  }
+
+  .app-standalone .min-h-screen > main {
+    padding: 1.3rem 1rem;
+  }
+
+  main.space-y-8 > :not(:first-child) {
+    margin-block-start: 1.25rem;
+  }
+
+  main.space-y-6 > :not(:first-child) {
+    margin-block-start: 1rem;
+  }
+
+  main .grid.gap-8 {
+    gap: 1rem;
+  }
+
+  .mobile-home-hero > div.relative {
+    padding: 1.5rem 0.8rem;
+  }
+
+  .mobile-home-hero h1 {
+    max-width: 24rem;
+    margin-top: 0.75rem;
+    font-size: clamp(1.6rem, 7vw, 2.15rem);
+    line-height: 1.12;
+  }
+
+  .mobile-home-hero .mobile-hero-description {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    margin-top: 0.6rem;
+    font-size: 0.82rem;
+    line-height: 1.35;
+  }
+
+  .mobile-home-hero .mobile-hero-secondary {
+    margin-top: 0.65rem;
+    gap: 0.55rem;
+    border-radius: 0.85rem;
+    padding: 0.45rem 0.65rem;
+  }
+
+  .mobile-home-hero .mobile-hero-secondary > span:first-child {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.55rem;
+    font-size: 0.9rem;
+  }
+
+  .mobile-home-hero .mobile-hero-secondary > span:nth-child(2) > span:last-child {
+    display: none;
+  }
+
+  .mobile-home-hero .mt-8.flex {
+    margin-top: 1rem;
+    gap: 0.5rem;
+  }
+
+  .mobile-home-hero .mt-8.flex > a {
+    min-height: 2.9rem;
+    flex: 1 1 100%;
+    justify-content: center;
+    font-size: 0.85rem;
+  }
+
+  .mobile-home-hero .mt-8.flex > a:last-child {
+    display: none;
+  }
+
+  .mobile-home-hero .mt-6.rounded-2xl {
+    margin-top: 1rem;
+    padding: 0.75rem;
+  }
+
+  .mobile-home-hero .mt-6.rounded-2xl > div > div:last-child {
+    width: 100%;
+  }
+
+  .mobile-home-hero .mt-6.rounded-2xl > div > div:last-child a {
+    min-height: 2.6rem;
+    flex: 1;
+    justify-content: center;
+    font-size: 0.75rem;
+  }
+
+  .mobile-home-hero .mt-6.rounded-2xl > div > div:last-child a:first-child,
+  .mobile-home-hero .mt-6.rounded-2xl p.text-xs {
+    display: none;
+  }
+
+  .min-h-screen > section:first-of-type:not(.mobile-home-hero) {
+    padding-block: 1.5rem;
+  }
+
+  main h1 {
+    font-size: clamp(1.45rem, 6vw, 1.9rem);
+    line-height: 1.15;
+  }
+
+  main h2 {
+    font-size: clamp(1.05rem, 4.8vw, 1.35rem);
+    line-height: 1.25;
+  }
+
+  main button,
+  main a[role="button"] {
+    touch-action: manipulation;
+  }
+
+  main input:not([type="checkbox"]):not([type="radio"]),
+  main select,
+  main textarea {
+    font-size: 16px;
+  }
+}
+
+@keyframes mobile-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-menu-sheet {
+    animation: none;
+  }
+}
+
+/* =====================================================================
+   APPLICATION INSTALLÉE UNIQUEMENT (classe .app-standalone sur <html>/<body>)
+   Le site web n'est pas concerné par ces règles.
+   ===================================================================== */
+.app-tabbar {
+  display: none;
+}
+
+.app-standalone {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app-standalone body {
+  padding-bottom: 0;
+  background: var(--background);
+}
+
+/* La mascotte flottante cache le contenu sur un petit écran */
+.app-standalone .mobile-mascot {
+  display: none;
+}
+
+.app-standalone main.app-screen {
+  padding: 0;
+}
+
+.app-standalone .app-tabbar {
+  position: fixed;
+  z-index: 70;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: end;
+  padding: 0.35rem 0.5rem max(0.55rem, env(safe-area-inset-bottom));
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  backdrop-filter: saturate(1.6) blur(20px);
+  -webkit-backdrop-filter: saturate(1.6) blur(20px);
+}
+
+.app-standalone .app-tab {
+  display: flex;
+  min-height: 3.1rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.2rem;
+  color: var(--muted-foreground);
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  transition: color 120ms ease;
+}
+
+.app-standalone .app-tab-active {
+  color: var(--primary);
+}
+
+.app-standalone .app-tab:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 0.75rem;
+}
+
+.app-standalone .app-tab-record {
+  justify-content: center;
+}
+
+.app-standalone .app-record-button {
+  display: grid;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin-top: -1.4rem;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow:
+    0 6px 16px color-mix(in srgb, var(--primary) 38%, transparent),
+    0 0 0 4px var(--card);
+  transition: transform 120ms ease;
+}
+
+.app-standalone .app-tab-record:active .app-record-button {
+  transform: scale(0.94);
+}
+
+.app-standalone .app-record-button-active {
+  transform: rotate(45deg);
+}
+
+/* Pages du site encore ouvertes dans l'app : place pour la barre d'onglets */
+.app-standalone .min-h-screen:not(.app-screen) {
+  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-standalone .app-record-button {
+    transition: none;
+  }
+}
+
+.app-standalone .site-footer {
+  display: none;
+}
+
+/* Textes de l'app : prioritaires sur les réglages mobiles génériques du site */
+.app-standalone main.app-screen h1 {
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+.app-standalone main.app-screen .app-section-title {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.app-standalone main.app-screen input.app-distance-input {
+  font-size: 56px;
+  line-height: 1;
+}
+
+/* Un panneau ou une fenêtre est ouvert : la barre d'onglets s'efface */
+body:has([role="dialog"][data-state="open"]) .app-tabbar {
+  display: none;
+}
+
+/* ------------------------------------------------------------------
+   Retour au toucher (app installée uniquement — skill apple-design §1)
+   Le bouton réagit dès que le doigt se pose, pas au relâchement.
+   ------------------------------------------------------------------ */
+.app-standalone :is(button, a, [role="button"], label[for]) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app-standalone :is(button, a, [role="button"]):not(:disabled):not([aria-disabled="true"]):not([data-press="highlight"]):not([class*="transition"]) {
+  transition: scale 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.app-standalone :is(button, a, [role="button"])[class*="transition-colors"] {
+  transition-property: color, background-color, border-color, opacity, scale;
+}
+
+.app-standalone :is(button, a, [role="button"]):not(:disabled):not([aria-disabled="true"]):not([data-press="highlight"]):active {
+  scale: 0.97;
+  transition-duration: 80ms;
+}
+
+/* Lignes de liste : surbrillance (comme les réglages d'un téléphone) plutôt que rétrécissement */
+.app-standalone [data-press="highlight"]:active {
+  background-color: color-mix(in srgb, var(--muted) 85%, transparent);
+}
+
+/* Fenêtres qui montent du bas : la barre d'onglets s'efface aussi */
+body:has(.app-sheet[data-state="open"]) .app-tabbar {
+  display: none;
+}
+
+/* Mouvement réduit : pas de rétrécissement, un léger fondu à la place (§14) */
+@media (prefers-reduced-motion: reduce) {
+  .app-standalone :is(button, a, [role="button"]):active {
+    scale: none;
+    opacity: 0.7;
+  }
+  .app-standalone .app-sheet {
+    transition-duration: 0ms !important;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Zones à toucher ≥ 44 px dans l'app (skill apple-design §10)
+   La zone sensible dépasse le dessin, sans changer l'apparence.
+   ------------------------------------------------------------------ */
+.app-standalone .app-hit,
+.app-standalone .app-section-action :is(a, button) {
+  position: relative;
+}
+.app-standalone .app-hit::after {
+  content: "";
+  position: absolute;
+  inset: -6px -4px;
+}
+.app-standalone .app-section-action :is(a, button)::after {
+  content: "";
+  position: absolute;
+  inset: -14px -10px;
+}
+.app-standalone .app-hit.absolute {
+  position: absolute;
+}
+.app-standalone .app-hit.absolute::after {
+  inset: -8px;
+}
+.app-standalone .app-cta {
+  min-height: 44px;
+}
+
+/* Mouvement réduit : pas de pulsation ni de clignotement dans l'app (§14) */
+@media (prefers-reduced-motion: reduce) {
+  .app-standalone .animate-pulse,
+  .app-standalone .animate-ping,
+  .app-standalone .animate-bounce {
+    animation: none;
+  }
+}
+
+/* =====================================================================
+   SITE : lisibilité (lot 2 de l'audit design). L'app installée n'est pas concernée.
+   ===================================================================== */
+/* Plancher de 12 px pour les étiquettes et badges (avant : 9, 10 et 11 px) */
+html:not(.app-standalone) :is(.text-\[9px\], .text-\[10px\], .text-\[11px\]) {
+  font-size: 12px;
+}
+
+/* Mouvement réduit : rien ne tourne en boucle sur le site */
+@media (prefers-reduced-motion: reduce) {
+  html:not(.app-standalone) :is(.animate-pulse, .animate-ping, .animate-bounce) {
+    animation: none;
+  }
+}
