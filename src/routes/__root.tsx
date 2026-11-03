@@ -25,6 +25,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { TROOP_NAME } from "@/lib/troop-config";
 import appCss from "../styles.css?url";
 
+const BASE_URL = import.meta.env.BASE_URL;
+const assetUrl = (path: string) => `${BASE_URL}${path.replace(/^\\/+/, "")}`;
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -127,10 +130,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Archivo+Black&family=Work+Sans:wght@400;500;600&display=swap",
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
-      { rel: "icon", href: "/icon-192.png", type: "image/png", sizes: "192x192" },
-      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
-      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "icon", href: assetUrl("favicon.ico"), type: "image/x-icon" },
+      { rel: "icon", href: assetUrl("icon-192.png"), type: "image/png", sizes: "192x192" },
+      { rel: "apple-touch-icon", href: assetUrl("apple-touch-icon.png") },
+      { rel: "manifest", href: assetUrl("manifest.webmanifest") },
     ],
   }),
   // Applique le dernier thème connu avant l'affichage (évite un flash aux couleurs standard)
@@ -161,7 +164,7 @@ function RootComponent() {
   const router = useRouter();
   useEffect(() => {
     if (!import.meta.env.DEV && "serviceWorker" in navigator && window.isSecureContext) {
-      void navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {
+      void navigator.serviceWorker.register(assetUrl("sw.js"), { scope: BASE_URL }).catch(() => {
         // L’application reste utilisable même si le service worker est indisponible.
       });
     }
