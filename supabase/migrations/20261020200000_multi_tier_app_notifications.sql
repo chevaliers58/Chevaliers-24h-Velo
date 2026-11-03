@@ -95,30 +95,32 @@ begin
 end;
 $$;
 
-create or replace function public.notify_aquila_activity_pending()
-returns trigger language plpgsql security definer set search_path = public as $$
+create or replace function public.notify_admins_activity_pending()
+returns trigger language plpgsql security definer set search_path = public as $
 declare
-  aquila_id uuid;
   scout_name text;
 begin
   if new.status <> 'pending' then return new; end if;
   if tg_op = 'UPDATE' and old.status = 'pending' then return new; end if;
-  select id into aquila_id from public.profiles
-   where lower(trim(coalesce(totem, ''))) in ('aquila', 'aquilla') limit 1;
-  if aquila_id is null or aquila_id = new.user_id then return new; end if;
   select coalesce(nullif(trim(totem), ''), nullif(trim(full_name), ''), 'Un scout')
     into scout_name from public.profiles where id = new.user_id;
   insert into public.app_notifications(user_id, kind, title, body, href, dedupe_key)
-  values (aquila_id, 'activity_pending', 'Une sortie attend ta validation',
-          scout_name || ' a enregistré une sortie de ' || new.km::text || ' km.',
-          '/admin', 'activity-pending:' || new.id::text)
+  select
+    ur.user_id,
+    'activity_pending',
+    'Une sortie attend ta validation',
+    coalesce(scout_name, 'Un scout') || ' a enregistré une sortie de ' || new.km::text || ' km.',
+    '/admin',
+    'activity-pending:' || new.id::text || ':' || ur.user_id::text
+  from public.user_roles ur
+  where ur.role = 'admin' and ur.user_id <> new.user_id
   on conflict (dedupe_key) do nothing;
   return new;
 end;
-$$;
+$;
 drop trigger if exists trg_notify_aquila_activity_pending on public.activities;
-create trigger trg_notify_aquila_activity_pending
+drop trigger if exists trg_notify_admins_activity_pending on public.activities;
+create trigger trg_notify_admins_activity_pending
   after insert or update of status on public.activities
-  for each row execute function public.notify_aquila_activity_pending();
-revoke execute on function public.notify_app_distance_milestones() from public, anon, authenticated;
-revoke execute on function public.notify_aquila_activity_pending() from public, anon, authenticated;
+  for each row execute function public.notify_admins_activity_pending();
+revoke execute on function public.notify_admins_activity_pending() from public, anon, authenticated;
