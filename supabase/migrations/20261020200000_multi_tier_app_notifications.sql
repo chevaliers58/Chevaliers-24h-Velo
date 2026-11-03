@@ -19,7 +19,7 @@ alter table public.app_notifications add constraint app_notifications_kind_check
   check (kind in (
     'weekly_reminder', 'distance_milestone', 'manual', 'new_signup',
     'individual_distance_milestone', 'troop_distance_milestone',
-    'aquila_distance_milestone', 'activity_pending'
+    'activity_pending'
   ));
 
 create table if not exists public.app_installations (
@@ -47,7 +47,6 @@ declare
   milestone integer;
   max_milestone integer;
   target_km integer;
-  aquila_id uuid;
 begin
   if new.status <> 'approved' then return new; end if;
   if tg_op = 'UPDATE' and old.status = 'approved' then return new; end if;
@@ -92,22 +91,6 @@ begin
     end loop;
   end if;
 
-  select id into aquila_id from public.profiles
-   where lower(trim(coalesce(totem, ''))) in ('aquila', 'aquilla') limit 1;
-  if aquila_id is not null and aquila_id = new.user_id then
-    milestone := floor(user_previous / 500)::integer + 1;
-    max_milestone := floor(user_total / 500)::integer;
-    while milestone <= max_milestone loop
-      target_km := milestone * 500;
-      insert into public.app_notifications(user_id, kind, title, body, href, dedupe_key)
-      values (
-        aquila_id, 'aquila_distance_milestone', 'Tu franchis un palier !',
-        'Tu viens de parcourir ' || target_km::text || ' km au total. Bravo !', '/app/trophees',
-        'aquila-distance:' || new.user_id || ':' || target_km::text
-      ) on conflict (dedupe_key) do nothing;
-      milestone := milestone + 1;
-    end loop;
-  end if;
   return new;
 end;
 $$;
