@@ -1,6 +1,6 @@
 # Notifications push de l’application
 
-La fonction envoie les notifications inscrites dans `app_notifications` et reçoit les abonnements PWA. Le rappel du dimanche (activable, horaire et contenu modifiables dans Administration → Notifications) et les paliers de kilomètres (1000 km par défaut, fréquence et message modifiables au même endroit) sont configurables par le staff. Aquila reçoit une notification à chaque nouvelle inscription. Aucun e-mail n’est envoyé et aucun fournisseur push tiers payant n’est nécessaire.
+La fonction envoie les notifications inscrites dans `app_notifications` et reçoit les abonnements PWA. Le rappel du dimanche (activable, horaire et contenu modifiables dans Administration → Notifications) et les paliers de kilomètres (1000 km par défaut, fréquence et message modifiables au même endroit) sont configurables par le staff. Les administrateurs reçoivent une notification à chaque nouvelle inscription. Aucun e-mail n’est envoyé et aucun fournisseur push tiers payant n’est nécessaire.
 
 ## Mise en service après fusion
 
