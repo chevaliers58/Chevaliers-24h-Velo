@@ -30,4 +30,5 @@ jobs:
           VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
           VITE_TROOP_NAME: Chevaliers 58
           VITE_SITE_URL: https://19-58.net/velo
+          VITE_BASE_PATH: /velo/
           VITE_TROOP_STRAVA_CLUB_URL: https://www.strava.com/clubs/Chevaliers58
