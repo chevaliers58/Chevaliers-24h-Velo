@@ -253,7 +253,11 @@ export function AppNotifications() {
       item.href.startsWith("/") && !item.href.startsWith("//") && !item.href.includes("\\")
         ? item.href
         : "/";
-    window.location.assign(safePath);
+    const baseUrl = import.meta.env.BASE_URL;
+    const destination = safePath.startsWith(baseUrl)
+      ? safePath
+      : `${baseUrl}${safePath.startsWith("/") ? safePath.slice(1) : safePath}`;
+    window.location.assign(destination);
   };
 
   const markAllRead = async () => {
