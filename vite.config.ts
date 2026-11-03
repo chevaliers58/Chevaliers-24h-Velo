@@ -122,7 +122,10 @@ const APP_BUILT_AT = new Date().toISOString();
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "VITE_");
+  const basePath = (env["VITE_BASE_PATH"] ?? "/").replace(/\\/+$/, "") || "/";
+  const viteBase = basePath === "/" ? "/" : `${basePath}/`;
   return {
+    base: viteBase,
     define: {
       __APP_VERSION__: JSON.stringify(APP_VERSION),
       __APP_BUILT_AT__: JSON.stringify(APP_BUILT_AT),
@@ -130,6 +133,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       scoutServerApiPlugin(env),
       tanstackStart({
+        router: { basepath: basePath },
         server: { entry: "server" },
         spa: {
           enabled: true,
