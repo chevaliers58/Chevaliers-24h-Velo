@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/useAuth";
+import { TROOP_NAME } from "@/lib/troop-config";
 import { db, getPatrolEmblem } from "@/lib/database";
 import { isStaffPatrol, isTroopStaffPatrol, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
 
@@ -22,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/profil")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Mon profil — ALEZAN 42" },
+      { title: `Mon profil — ${TROOP_NAME}` },
       {
         name: "description",
         content: "Complète ton profil scout : totem, quali, année, patrouille.",
