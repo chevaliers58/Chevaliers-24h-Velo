@@ -69,7 +69,7 @@ self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const targetUrl = new URL(event.notification.data?.url || "/app", self.location.origin);
   const target =
-    targetUrl.origin === self.location.origin ? targetUrl.href : new URL("/app", self.location.origin).href;
+    targetUrl.origin === self.location.origin ? targetUrl.href : new URL(pathFor("/app"), self.location.origin).href;
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (windows) => {
       const appWindow = windows.find((client) => new URL(client.url).origin === self.location.origin);
