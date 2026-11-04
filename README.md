@@ -150,7 +150,7 @@ public en lecture pour conserver l'affichage des photos et des traces GPX.
    `strava-oauth`, `strava-webhook`, `app-notifications`).
 4. Appliquer les migrations SQL dans l'ordre du dossier `supabase/migrations/`.
    Certaines migrations activent les tâches cron ; les fonctions doivent donc déjà être déployées.
-5. Créer le premier compte administrateur dans l'application, puis exécuter
+5. Créer le premier compte dans l'application, confirmer son adresse e-mail, puis exécuter
    `supabase/bootstrap_admin.sql` avec son adresse exacte.
 6. Configurer les URL d'authentification Supabase et tester les inscriptions,
    les notifications, le nettoyage en mode aperçu et les retours OAuth.
