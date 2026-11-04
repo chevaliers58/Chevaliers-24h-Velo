@@ -1,7 +1,7 @@
 # Widget « Défi kilomètres » pour le site de l'unité
 
 Fichier : `public/widget/troupe-km.js`, publié avec le site à
-`https://<votre-domaine>/widget/troupe-km.js`.
+`https://19-58.net/velo/widget/troupe-km.js`.
 
 ## Code à coller sur le site de l'unité
 
@@ -10,10 +10,11 @@ Remplace les valeurs entre chevrons par le domaine de l'application et la clé p
 ```html
 <div data-troupe-km data-sections="total,patrouilles,scouts" data-period="semaine"></div>
 <script
-  src="https://<votre-domaine>/widget/troupe-km.js"
+  src="https://19-58.net/velo/widget/troupe-km.js"
   data-supabase-url="https://qxlsdauqoivqhoojlrwk.supabase.co"
   data-supabase-key="sb_publishable_..."
-  data-site-url="https://<votre-domaine>"
+  data-site-url="https://19-58.net/velo"
+  data-troupe-name="Chevaliers 58"
   defer
 ></script>
 ```
@@ -29,6 +30,7 @@ Le script refuse de charger des données si l'URL Supabase, la clé publishable 
 | `data-limit` | nombre de lignes par classement (1 à 20) | `5` |
 | `data-theme` | `clair`, `sombre` | `clair` |
 | `data-titre` | texte libre | `Défi kilomètres de la troupe` |
+| `data-troupe-name` | nom affiché sous le total | `la troupe` |
 
 ## Taille automatique
 
