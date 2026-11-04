@@ -110,6 +110,7 @@ export interface Profile {
   strava_url: string | null;
   patrol_id: string | null;
   is_chef?: boolean | undefined;
+  is_admin?: boolean | undefined;
   onboarded: boolean;
   created_at: string;
 }
