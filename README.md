@@ -107,32 +107,38 @@ La sortie Node actuelle ne doit pas être envoyée telle quelle à Cloudflare Pa
 Références : [TanStack Start sur Cloudflare Workers](https://developers.cloudflare.com/workers/framework-guides/web-apps/tanstack-start/)
 et [déploiement Nitro Cloudflare](https://nitro.build/deploy/providers/cloudflare).
 
-## Secrets des fonctions Supabase
+## Configuration Supabase avant mise en service
 
-Les Edge Functions reçoivent automatiquement `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` depuis Supabase. Ne jamais copier la clé `service_role` dans le frontend ni dans Git.
+Les Edge Functions reçoivent automatiquement `SUPABASE_URL` et
+`SUPABASE_SERVICE_ROLE_KEY`. Ne jamais copier la clé `service_role` dans le frontend
+ni dans Git.
 
-À configurer dans **Supabase → Edge Functions → Secrets** avant le déploiement :
+Configurer dans **Supabase → Edge Functions → Secrets** :
 
 | Secret | Utilisation |
 |---|---|
-| `SITE_URL` = `https://19-58.net/velo` | CORS, liens d'e-mail et redirections |
-| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Notifications PWA (générer avec `npx web-push generate-vapid-keys`) |
-| `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`, `STRAVA_REDIRECT_URI` | Connexion OAuth Strava |
-| `STRAVA_WEBHOOK_VERIFY_TOKEN`, `STRAVA_WEBHOOK_SUBSCRIPTION_ID` | Vérification du webhook Strava |
-| `RESEND_API_KEY`, `PENDING_ACTIVITY_ALERT_FROM`, `PENDING_ACTIVITY_ALERT_TO` | E-mail d'alerte des sorties en attente (destinataires séparés par des virgules) |
+| `SITE_URL=https://19-58.net/velo` | CORS, liens et redirections |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Notifications push PWA |
+| `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET` | OAuth Strava |
+| `STRAVA_REDIRECT_URI` | Facultatif ; URL de la fonction `strava-oauth` par défaut |
+| `STRAVA_WEBHOOK_VERIFY_TOKEN`, `STRAVA_WEBHOOK_SUBSCRIPTION_ID` | Vérification et abonnement webhook Strava |
+| `RESEND_API_KEY`, `PENDING_ACTIVITY_ALERT_FROM`, `PENDING_ACTIVITY_ALERT_TO` | E-mail d'alerte des sorties en attente |
 
-`STRAVA_REDIRECT_URI` doit être `https://qxlsdauqoivqhoojlrwk.supabase.co/functions/v1/strava-oauth`. Créer une nouvelle application API Strava pour Chevaliers 58 et enregistrer le webhook sur `https://qxlsdauqoivqhoojlrwk.supabase.co/functions/v1/strava-webhook`.
+`VAPID_SUBJECT` doit être un contact `mailto:` valide. L'adresse
+`PENDING_ACTIVITY_ALERT_FROM` doit être autorisée dans Resend.
 
-Le secret `SITE_URL` des fonctions est distinct de `VITE_SITE_URL`, qui est injecté au build du frontend. La clé VAPID privée, le secret Strava et la clé Resend restent exclusivement dans Supabase.
+Créer une nouvelle application API Strava pour Chevaliers 58. Son callback doit être
+`https://qxlsdauqoivqhoojlrwk.supabase.co/functions/v1/strava-oauth`. Enregistrer le webhook
+sur `https://qxlsdauqoivqhoojlrwk.supabase.co/functions/v1/strava-webhook`.
 
-
-Le préfixe `/velo` devra également être routé vers l'application par le proxy ou la configuration
-de routage de l'hébergeur. Ne pas modifier la zone DNS ni la production avant d'avoir identifié
-l'hébergement actuel et validé le routage.
+Le secret Edge `SITE_URL` est distinct de `VITE_SITE_URL`, injecté au build du frontend.
+Les clés VAPID privées, le secret Strava et la clé Resend restent exclusivement dans Supabase.
 
 Le site est préparé pour le sous-chemin `/velo` avec `VITE_BASE_PATH=/velo/` et
-`VITE_SITE_URL=https://19-58.net/velo`. Le domaine doit router ce préfixe vers l'application ;
-relier seulement le domaine à un projet Pages ne suffit pas nécessairement.
+`VITE_SITE_URL=https://19-58.net/velo`. Le préfixe doit être routé vers l'application par
+le proxy ou l'hébergeur ; relier seulement le domaine à un projet Pages ne suffit pas
+nécessairement. Ne pas modifier la zone DNS ni la production avant d'avoir identifié
+l'hébergement actuel et validé ce routage.
 
 Variables de build : `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`,
 `VITE_SUPABASE_PROJECT_ID`, `VITE_TROOP_NAME`, `VITE_SITE_URL`,
@@ -142,26 +148,13 @@ Après mise en ligne, configurer Supabase → Authentication → URL Configurati
 - *Site URL* : `https://19-58.net/velo`
 - *Redirect URLs* : `https://19-58.net/velo/**` (notamment `/nouveau-mot-de-passe`).
 
-Le code ne confirme plus automatiquement les comptes par un trigger SQL. Pour retrouver le parcours d'inscription sans e-mail de vérification de l'ancien site, désactiver **Confirm email** dans Supabase → Authentication → Providers → Email ; sinon, laisser l'option activée et configurer l'envoi SMTP.
+Le code ne confirme plus automatiquement les comptes par trigger SQL. Pour conserver le
+parcours sans e-mail de vérification, désactiver **Confirm email** dans Supabase → Authentication
+→ Providers → Email ; sinon, garder l'option activée et configurer l'envoi SMTP.
 
-### Secrets des fonctions Edge
-
-À configurer dans Supabase → Project Settings → Edge Functions → Secrets.
-Ne jamais les ajouter aux variables `VITE_*` ni au dépôt.
-
-- `SITE_URL=https://19-58.net/velo` — indispensable pour les redirections et le contrôle CORS.
-- `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` — notifications push PWA.
-- `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET` — nouvelle application Strava Chevaliers 58.
-- `STRAVA_REDIRECT_URI` — facultatif ; par défaut, l'URL de la fonction `strava-oauth` du nouveau projet Supabase.
-- `STRAVA_WEBHOOK_VERIFY_TOKEN` — jeton de vérification du webhook Strava.
-- `STRAVA_WEBHOOK_SUBSCRIPTION_ID` — identifiant renvoyé lors de la création du webhook ; requis avant de recevoir les événements Strava.
-- `RESEND_API_KEY`, `PENDING_ACTIVITY_ALERT_FROM`, `PENDING_ACTIVITY_ALERT_TO` — alerte e-mail des sorties à approuver. Les destinataires sont séparés par des virgules.
-
-`VAPID_SUBJECT` doit être un contact `mailto:` valide. L'adresse `PENDING_ACTIVITY_ALERT_FROM` doit être autorisée dans Resend.
-
-Supabase fournit les variables système `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY`
-aux fonctions Edge. Ne pas les recopier dans le frontend. Le bucket `proofs` doit rester
-public en lecture pour conserver l'affichage des photos et des traces GPX.
+Les buckets Storage `proofs` et `backgrounds` sont créés par migration et restent publics
+en lecture pour conserver les URL d'images et de GPX. Les envois/suppressions sont limités
+aux propriétaires ou aux administrateurs selon le bucket.
 
 ### Ordre de mise en service Supabase
 
@@ -171,7 +164,7 @@ public en lecture pour conserver l'affichage des photos et des traces GPX.
    `strava-oauth`, `strava-webhook`, `app-notifications`).
 4. Appliquer les migrations SQL dans l'ordre du dossier `supabase/migrations/`.
    Certaines migrations activent les tâches cron ; les fonctions doivent donc déjà être déployées.
-5. Créer le premier compte dans l'application, confirmer son adresse e-mail, puis exécuter
+5. Créer le premier compte dans l'application (confirmer l'adresse si la confirmation est activée), puis exécuter
    `supabase/bootstrap_admin.sql` avec son adresse exacte.
 6. Configurer les URL d'authentification Supabase et tester les inscriptions,
    les notifications, le nettoyage en mode aperçu et les retours OAuth.
