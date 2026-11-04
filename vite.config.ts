@@ -142,6 +142,7 @@ export default defineConfig(({ mode }) => {
       }),
       nitro({
         preset: "node-server",
+        baseURL: viteBase,
       }),
       react(),
       tailwindcss(),
