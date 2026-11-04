@@ -22,6 +22,30 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Validate SQL dollar-quote delimiters
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          failed = False
+          for path in sorted(Path("supabase").rglob("*.sql")):
+              source = path.read_text(encoding="utf-8")
+              if re.search(r"(?m)^\\s*\\$;\\s*$", source):
+                  print(f"Invalid lone-dollar terminator: {path}")
+                  failed = True
+              tags = re.findall(r"\\$[A-Za-z_]*\\$", source)
+              counts = {}
+              for tag in tags:
+                  counts[tag] = counts.get(tag, 0) + 1
+              if any(count % 2 for count in counts.values()):
+                  print(f"Unbalanced dollar-quote tags in {path}: {counts}")
+                  failed = True
+          if failed:
+              sys.exit(1)
+          print("All SQL dollar-quote delimiters are balanced.")
+          PY
       - name: Build
         run: npm run build
         env:
