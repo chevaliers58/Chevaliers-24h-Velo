@@ -12,7 +12,7 @@ Ce projet est conçu pour être facilement réutilisable par n'importe quelle tr
 | Hébergement Node ou Cloudflare Workers | Héberger le site (adaptateur à valider selon l'hébergeur) | [Cloudflare Workers](https://developers.cloudflare.com/workers/) |
 
 > 📚 Documents complémentaires :
- > - [`database-schema.md`](./database-schema.md) : exemples historiques uniquement, ne pas exécuter.
+> - [`database-schema.md`](./database-schema.md) : exemples historiques uniquement, ne pas exécuter.
 > - [`code.md`](./code.md) : architecture technique et organisation du code.
 
 ---
