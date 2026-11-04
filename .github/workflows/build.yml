@@ -84,3 +84,4 @@ jobs:
           name: chevaliers58-build-output
           path: .output
           retention-days: 7
+          include-hidden-files: true
