@@ -12,7 +12,7 @@ alter table public.activities
 -- Weekly badges are associated with auth.users (not profiles), as the admin UI expects.
 create table if not exists public.weekly_badges (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references auth.users(id) on delete cascade,
+  user_id uuid not null references auth.users(id),
   badge_title text not null,
   awarded_date date not null default current_date,
   created_at timestamptz default now(),
@@ -65,7 +65,7 @@ create index if not exists expedition_waypoints_target_km_idx
 -- GPX route proposals retained for compatibility with the original schema.
 create table if not exists public.proposed_routes (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid references auth.users(id) on delete cascade,
+  user_id uuid references auth.users(id),
   title text not null,
   description text,
   gpx_url text not null,
