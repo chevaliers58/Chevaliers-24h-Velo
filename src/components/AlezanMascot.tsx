@@ -6,12 +6,6 @@ import { useSeasonalTheme } from "@/context/SeasonalThemeContext";
 import { useAuth } from "@/lib/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
-import alezanClassique from "@/assets/Perso/Alezan_Classique.png";
-import alezanHalloween from "@/assets/Perso/Alezan_Halloween.png";
-import alezanNoel from "@/assets/Perso/Alezan_Noel.png";
-import alezanStValentin from "@/assets/Perso/Alezan_St_Valentin.png";
-import alezanAnniversaire from "@/assets/Perso/Alezan_Anniversaire.png";
-import alezanEte from "@/assets/Perso/Alezan_Ete.png";
 
 interface Birthday {
   user_id: string;
@@ -84,17 +78,12 @@ export function AlezanMascot({ context }: AlezanMascotProps) {
         ? "Joyeux anniversaire au staff de la troupe ! 🎉"
         : quote;
 
-  const currentImage = birthdayMode
-    ? alezanAnniversaire
-    : currentTheme === "ete"
-      ? alezanEte
-      : currentTheme === "halloween"
-        ? alezanHalloween
-        : currentTheme === "noel"
-          ? alezanNoel
-          : currentTheme === "valentin"
-            ? alezanStValentin
-            : alezanClassique;
+  const mascotSymbol =
+    birthdayMode ? "🎉" :
+    currentTheme === "ete" ? "☀️" :
+    currentTheme === "halloween" ? "🎃" :
+    currentTheme === "noel" ? "🎄" :
+    currentTheme === "valentin" ? "❤️" : "⚜️";
 
   return (
     <aside
@@ -103,7 +92,7 @@ export function AlezanMascot({ context }: AlezanMascotProps) {
       className="mobile-mascot pointer-events-none fixed bottom-4 right-3 z-40 flex max-w-[calc(100vw-1.5rem)] items-end gap-2 sm:bottom-6 sm:right-6 sm:gap-3"
     >
       <div
-        id="alezouille-message"
+        id="troop-mascot-message"
         data-open={open ? "true" : undefined}
         className={`mobile-mascot-bubble relative mb-6 ${birthdayMode ? "max-w-[min(8rem,calc(100vw-12rem))] sm:max-w-[min(13rem,calc(100vw-13rem))]" : "max-w-[min(13rem,calc(100vw-9rem))]"} rounded-2xl border border-border/80 bg-card/95 px-3 py-2.5 shadow-lg shadow-black/10 backdrop-blur-sm after:absolute after:-right-1.5 after:bottom-4 after:h-3 after:w-3 after:rotate-45 after:border-r after:border-t after:border-border/80 after:bg-card`}
       >
@@ -120,26 +109,22 @@ export function AlezanMascot({ context }: AlezanMascotProps) {
       <button
         type="button"
         className="mobile-mascot-toggle relative shrink-0 cursor-default rounded-full border-0 bg-transparent p-0"
-        aria-label={open ? "Fermer le message d'Alezouille" : "Lire le message d'Alezouille"}
+        aria-label={open ? "Fermer le message de la mascotte" : "Lire le message de la mascotte"}
         aria-expanded={open}
-        aria-controls="alezouille-message"
+        aria-controls="troop-mascot-message"
         onClick={() => {
           setOpen((value) => !value);
           setSeen(true);
         }}
       >
         {!seen && <span className="mobile-mascot-dot" aria-hidden="true" />}
-        <img
-          src={currentImage}
-          alt="La mascotte, le compagnon de route de la troupe"
-          className={
-            birthdayMode
-              ? "h-20 w-36 shrink-0 object-contain drop-shadow-md sm:h-28 sm:w-52"
-              : currentTheme === "ete"
-                ? "h-28 w-28 shrink-0 object-cover object-center drop-shadow-md sm:h-36 sm:w-36"
-                : "h-28 w-28 shrink-0 object-contain drop-shadow-md sm:h-36 sm:w-36"
-          }
-        />
+        <span
+          role="img"
+          aria-label="Emblème de la troupe"
+          className="mobile-mascot-mark grid shrink-0 place-items-center rounded-full text-6xl leading-none sm:text-7xl"
+        >
+          {mascotSymbol}
+        </span>
       </button>
     </aside>
   );
