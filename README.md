@@ -133,7 +133,7 @@ Ne jamais les ajouter aux variables `VITE_*` ni au dépôt.
 - `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET` — nouvelle application Strava Chevaliers 58.
 - `STRAVA_REDIRECT_URI` — facultatif ; par défaut, l'URL de la fonction `strava-oauth` du nouveau projet Supabase.
 - `STRAVA_WEBHOOK_VERIFY_TOKEN` — jeton de vérification du webhook Strava.
-- `STRAVA_WEBHOOK_SUBSCRIPTION_ID` — facultatif, pour vérifier l'identifiant de l'abonnement webhook.
+- `STRAVA_WEBHOOK_SUBSCRIPTION_ID` — identifiant renvoyé lors de la création du webhook ; requis avant de recevoir les événements Strava.
 - `RESEND_API_KEY`, `PENDING_ACTIVITY_ALERT_FROM`, `PENDING_ACTIVITY_ALERT_TO` — alerte e-mail des sorties à approuver. Les destinataires sont séparés par des virgules.
 
 `VAPID_SUBJECT` doit être un contact `mailto:` valide. L'adresse `PENDING_ACTIVITY_ALERT_FROM` doit être autorisée dans Resend.
