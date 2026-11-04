@@ -114,3 +114,35 @@ Variables de build : `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`,
 
 Après mise en ligne, ajouter l'adresse publique dans Supabase →
 Authentication → URL Configuration (*Site URL* et *Redirect URLs*).
+
+### Secrets des fonctions Edge
+
+À configurer dans Supabase → Project Settings → Edge Functions → Secrets.
+Ne jamais les ajouter aux variables `VITE_*` ni au dépôt.
+
+- `SITE_URL=https://19-58.net/velo` — indispensable pour les redirections et le contrôle CORS.
+- `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` — notifications push PWA.
+- `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET` — nouvelle application Strava Chevaliers 58.
+- `STRAVA_REDIRECT_URI` — facultatif ; par défaut, l'URL de la fonction `strava-oauth` du nouveau projet Supabase.
+- `STRAVA_WEBHOOK_VERIFY_TOKEN` — jeton de vérification du webhook Strava.
+- `STRAVA_WEBHOOK_SUBSCRIPTION_ID` — facultatif, pour vérifier l'identifiant de l'abonnement webhook.
+- `RESEND_API_KEY`, `PENDING_ACTIVITY_ALERT_FROM`, `PENDING_ACTIVITY_ALERT_TO` — alerte e-mail des sorties à approuver. Les destinataires sont séparés par des virgules.
+
+Supabase fournit les variables système `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY`
+aux fonctions Edge. Ne pas les recopier dans le frontend. Le bucket `proofs` doit rester
+public en lecture pour conserver l'affichage des photos et des traces GPX.
+
+### Ordre de mise en service Supabase
+
+1. Créer une nouvelle application Strava pour Chevaliers 58 et configurer son callback.
+2. Configurer les secrets Edge ci-dessus.
+3. Déployer les cinq fonctions Edge (`menage`, `pending-activity-alert`,
+   `strava-oauth`, `strava-webhook`, `app-notifications`).
+4. Appliquer les migrations SQL dans l'ordre du dossier `supabase/migrations/`.
+   Certaines migrations activent les tâches cron ; les fonctions doivent donc déjà être déployées.
+5. Créer le premier compte administrateur dans l'application, puis exécuter
+   `supabase/bootstrap_admin.sql` avec son adresse exacte.
+6. Configurer les URL d'authentification Supabase et tester les inscriptions,
+   les notifications, le nettoyage en mode aperçu et les retours OAuth.
+
+Aucune de ces opérations n'est exécutée automatiquement par le dépôt.
