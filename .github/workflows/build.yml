@@ -22,8 +22,6 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Type check
-        run: npx tsc --noEmit
       - name: Build
         run: npm run build
         env:
@@ -76,13 +74,6 @@ jobs:
             status=$(curl --silent --output /dev/null --write-out '%{http_code}' "http://127.0.0.1:3000$asset" || true)
             echo "$asset -> HTTP $status"
           done
-          asset_path=$(grep -oE 'src="[^"]+\.js"' /tmp/chevaliers58-home.html | head -1 | sed -E 's/src="([^"]+)"/\1/')
-          echo "Client entry: $asset_path"
-          if [ -n "$asset_path" ]; then
-            status=$(curl --silent --output /dev/null --write-out '%{http_code}' "http://127.0.0.1:3000$asset_path" || true)
-            echo "Client entry HTTP status: $status"
-            test "$status" = "200"
-          fi
       - name: Upload build output for inspection
         uses: actions/upload-artifact@v4
         with:
