@@ -36,8 +36,8 @@ export function AppInstallGuide() {
       const enabled = (event as CustomEvent<{ enabled?: unknown }>).detail?.enabled;
       if (typeof enabled === "boolean") setNotificationsActive(enabled);
     };
-    window.addEventListener("alezan:push-status", updatePushStatus);
-    return () => window.removeEventListener("alezan:push-status", updatePushStatus);
+    window.addEventListener("troupe:push-status", updatePushStatus);
+    return () => window.removeEventListener("troupe:push-status", updatePushStatus);
   }, []);
 
   useEffect(() => {
@@ -125,7 +125,7 @@ export function AppInstallGuide() {
             className="app-cta mt-3 w-full"
             onClick={() => {
               if (standalone) {
-                window.dispatchEvent(new Event("alezan:open-app-notifications"));
+                window.dispatchEvent(new Event("troupe:open-app-notifications"));
               } else {
                 setOpen(true);
               }
