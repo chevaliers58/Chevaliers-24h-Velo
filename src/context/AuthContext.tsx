@@ -161,12 +161,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               onboarded: true,
               created_at: createdProf.created_at,
             });
-            if (isChef) {
-              await supabase
-                .from("user_roles")
-                .upsert({ user_id: currentUser.id, role: "admin" }, { onConflict: "user_id,role" })
-                .catch(() => {});
-            }
             return;
           }
         } catch (e) {
