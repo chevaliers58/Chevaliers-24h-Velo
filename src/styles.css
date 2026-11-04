@@ -1064,7 +1064,7 @@ body {
     gap: 0;
   }
 
-  /* Alezouille en pastille : on touche pour ouvrir sa bulle */
+  /* Mascotte de troupe en pastille : on touche pour ouvrir sa bulle */
   .mobile-mascot {
     gap: 0.5rem;
   }
@@ -1088,10 +1088,14 @@ body {
     box-shadow: 0 6px 18px rgb(0 0 0 / 0.18);
   }
 
-  .mobile-mascot img {
+  .mobile-mascot-mark {
     width: 3.25rem;
     height: 3.25rem;
     border-radius: 9999px;
+    display: grid;
+    place-items: center;
+    font-size: 2rem;
+    line-height: 1;
     filter: none;
   }
 
