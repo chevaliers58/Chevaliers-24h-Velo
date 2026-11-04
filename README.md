@@ -136,6 +136,8 @@ Ne jamais les ajouter aux variables `VITE_*` ni au dépôt.
 - `STRAVA_WEBHOOK_SUBSCRIPTION_ID` — facultatif, pour vérifier l'identifiant de l'abonnement webhook.
 - `RESEND_API_KEY`, `PENDING_ACTIVITY_ALERT_FROM`, `PENDING_ACTIVITY_ALERT_TO` — alerte e-mail des sorties à approuver. Les destinataires sont séparés par des virgules.
 
+`VAPID_SUBJECT` doit être un contact `mailto:` valide. L'adresse `PENDING_ACTIVITY_ALERT_FROM` doit être autorisée dans Resend.
+
 Supabase fournit les variables système `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY`
 aux fonctions Edge. Ne pas les recopier dans le frontend. Le bucket `proofs` doit rester
 public en lecture pour conserver l'affichage des photos et des traces GPX.
