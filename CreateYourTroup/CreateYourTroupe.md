@@ -7,9 +7,9 @@ Ce projet est conçu pour être facilement réutilisable par n'importe quelle tr
 | Outil | Pourquoi | Lien |
 |---|---|---|
 | Compte GitHub | Forker / cloner le code | [github.com](https://github.com) |
-| Node.js (v18 ou plus) | Lancer l'application en local | [nodejs.org](https://nodejs.org) |
+| Node.js 22 | Lancer l'application en local et le serveur de production | [nodejs.org](https://nodejs.org) |
 | Compte Supabase (gratuit) | Base de données, authentification, stockage | [supabase.com](https://supabase.com) |
-| Compte Vercel ou Netlify (gratuit) | Héberger le site | [vercel.com](https://vercel.com) · [netlify.com](https://www.netlify.com) |
+| Hébergement Node ou Cloudflare Workers | Héberger le site (adaptateur à valider selon l'hébergeur) | [Cloudflare Workers](https://developers.cloudflare.com/workers/) |
 
 > 📚 Documents complémentaires :
 > - [`database-schema.md`](./database-schema.md) : tous les scripts SQL pour recréer la base de données.
@@ -38,7 +38,7 @@ L'application fonctionne avec un backend cloud gratuit fourni par [Supabase](htt
 2. Crée un **nouveau projet** (choisis une région proche de chez toi, par exemple *West EU*).
 3. Lie le projet avec `supabase link --project-ref <project-ref>`, puis applique les migrations versionnées après revue et tests locaux (`supabase db push`). Les migrations créent les tables, règles RLS et le bucket `proofs`.
 4. Vérifie dans Supabase que les tables métier, les politiques RLS et le bucket `proofs` ont bien été créés.
-5. Récupère tes clés d'API : **URL du projet** et **clé `anon` publique**, dans *Project Settings > API* ([documentation](https://supabase.com/docs/guides/api/api-keys)).
+5. Récupère l'**URL du projet** et la **clé publishable** dans *Project Settings > API* ([documentation](https://supabase.com/docs/guides/api/api-keys)).
 
 > ⚠️ N'utilise **jamais** la clé `service_role` dans le code du site : elle donne tous les droits et ne doit rester que côté serveur.
 
@@ -121,8 +121,8 @@ Une fois le site en ligne, ajoute son adresse dans Supabase (*Authentication > U
 
 | Problème | Piste |
 |---|---|
-| Page blanche ou erreur de connexion à la base | Vérifie `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY`, puis relance `npm run dev` |
+| Page blanche ou erreur de connexion à la base | Vérifie `VITE_SUPABASE_URL` et `VITE_SUPABASE_PUBLISHABLE_KEY`, puis relance `npm run dev` |
 | Les images de preuves ou les GPX ne s'affichent pas | Vérifie que le bucket `proofs` existe et est en **Public bucket** |
-| Impossible de créer une activité ou un profil | Vérifie que les politiques RLS de [`database-schema.md`](./database-schema.md) ont bien été exécutées |
+| Impossible de créer une activité ou un profil | Vérifie que toutes les migrations de `supabase/migrations/` ont été appliquées |
 | Pas d'accès à `/admin` | Vérifie que ton compte a bien le rôle `admin` |
 | Le site déployé ne se connecte pas | Vérifie les variables d'environnement sur Vercel/Netlify et l'URL du site dans Supabase |
