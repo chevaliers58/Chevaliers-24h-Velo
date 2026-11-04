@@ -211,7 +211,13 @@ create policy "preuves suppression proprietaire ou admin" on storage.objects
 -- ---------------------------------------------------------------------
 -- 6. Fonctions : search_path fixé, fonctions internes non appelables via l'API
 -- ---------------------------------------------------------------------
-alter function public.delete_rejected_activity() set search_path = public;
+do $
+begin
+  if to_regprocedure('public.delete_rejected_activity()') is not null then
+    execute 'alter function public.delete_rejected_activity() set search_path = public';
+    execute 'revoke execute on function public.delete_rejected_activity() from public, anon, authenticated';
+  end if;
+end $;
 
 -- Ancienne fonction vide, attachée à aucun trigger.
 drop function if exists public.handle_activity_action();
@@ -236,7 +242,6 @@ revoke execute on function public.set_admin_by_email(text, boolean) from public,
 grant execute on function public.set_admin_by_email(text, boolean) to authenticated;
 
 -- Fonctions de trigger : jamais appelées directement par le site.
-revoke execute on function public.delete_rejected_activity() from public, anon, authenticated;
 revoke execute on function public.set_activity_status() from public, anon, authenticated;
 revoke execute on function public.protect_profile_admin_flag() from public, anon, authenticated;
 revoke execute on function public.sync_profile_admin_flag() from public, anon, authenticated;
