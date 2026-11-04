@@ -61,6 +61,9 @@ jobs:
           done
           test -s /tmp/chevaliers58-home.html
           grep -q "Chevaliers 58" /tmp/chevaliers58-home.html
+          for route in /velo/auth /velo/timeline /velo/solidarite /velo/nouveau-mot-de-passe; do
+            curl --fail --silent "http://127.0.0.1:3000$route" > /dev/null
+          done
           client_asset=$(find .output/public/assets -type f \( -name '*.js' -o -name '*.css' \) -printf '%P\n' | head -1)
           test -n "$client_asset"
           asset_path="/velo/assets/$client_asset"
