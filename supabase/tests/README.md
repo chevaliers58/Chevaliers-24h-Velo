@@ -2,6 +2,8 @@
 
 Ces fichiers servent à tester les migrations sur un PostgreSQL **local**, jamais sur Supabase.
 
+Ces scénarios utilisent `fixture_etat_actuel.sql`, qui simule une base déjà initialisée. Ils vérifient les migrations de sécurité et les évolutions fonctionnelles, mais ne remplacent pas un test de création à blanc. Pour un projet Supabase neuf, appliquer **toutes** les migrations de `supabase/migrations/` dans l'ordre lexicographique, en commençant par `20261001131044...` ; la migration `20261003120000_complete_base_schema.sql` crée les tables de base absentes de l'ancien historique.
+
 - `fixture_etat_actuel.sql` : reproduction minimale de la base en ligne (tables, règles d'accès, données de test).
 - `test_*.sql` : scénarios (visiteur anonyme, scout, admin). Chaque test échoue avec une erreur si le comportement attendu n'est pas respecté.
 
