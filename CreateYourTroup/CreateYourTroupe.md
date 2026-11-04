@@ -46,11 +46,16 @@ L'application fonctionne avec un backend cloud gratuit fourni par [Supabase](htt
 
 ## Étape 3 : Configurer les variables d'environnement
 
-À la racine du projet, duplique le fichier d'exemple (s'il existe, par exemple `.env.example`) en `.env`, ou crée directement un fichier `.env`, puis renseigne tes propres identifiants Supabase :
+À la racine du projet, duplique `.env.example` en `.env` et renseigne les valeurs du projet cible :
 
 ```env
 VITE_SUPABASE_URL=https://ton-projet-supabase.supabase.co
 VITE_SUPABASE_PUBLISHABLE_KEY=ta-cle-publishable
+VITE_SUPABASE_PROJECT_ID=ton-project-ref
+VITE_TROOP_NAME=Chevaliers 58
+VITE_SITE_URL=https://19-58.net/velo
+VITE_BASE_PATH=/velo/
+VITE_TROOP_STRAVA_CLUB_URL=https://www.strava.com/clubs/Chevaliers58
 ```
 
 - Le préfixe `VITE_` est obligatoire pour que [Vite](https://vite.dev/guide/env-and-mode) expose ces variables au site.
@@ -82,8 +87,8 @@ Pense aussi à adapter les textes visibles (nom de la troupe, titre du défi, lo
    ```
 
 2. Crée un compte utilisateur directement depuis l'application, sur la page de connexion (`/auth`).
-3. Après avoir créé ton compte dans l’application, remplace l’adresse dans `supabase/bootstrap_admin.sql` puis exécute ce script une seule fois dans le SQL Editor du nouveau projet. Il attribue le rôle `admin` au premier compte sans privilège codé en dur.
-4. Connecte-toi : tu as maintenant accès au panneau d'administration (`/admin`) pour :
+3. Après avoir créé ton compte sur `/velo/auth`, remplace l'adresse dans `supabase/bootstrap_admin.sql` puis exécute ce script une seule fois dans le SQL Editor du nouveau projet. Il attribue le rôle `admin` au premier compte sans privilège codé en dur.
+4. Connecte-toi : tu as maintenant accès au panneau d'administration (`/velo/admin`) pour :
    - créer tes propres patrouilles (ex : Renards, Faucons, Libellules) ;
    - valider ou refuser les sorties déclarées ;
    - gérer les comptes à rebours de ta troupe.
@@ -92,28 +97,33 @@ Pense aussi à adapter les textes visibles (nom de la troupe, titre du défi, lo
 
 ## Étape 6 : Déployer le site
 
-Tu peux déployer ton application gratuitement et en quelques clics sur :
+Le build actuel utilise Nitro avec le preset `node-server`. Pour un hébergement Node :
 
-- [Vercel](https://vercel.com) ([guide Vite sur Vercel](https://vercel.com/docs/frameworks/vite))
-- [Netlify](https://www.netlify.com) ([guide Vite sur Netlify](https://docs.netlify.com/build/frameworks/framework-setup-guides/vite/))
+```bash
+npm ci
+npm run build
+npm run start
+```
 
-N'oublie pas d'ajouter tes variables d'environnement (`VITE_SUPABASE_URL` et `VITE_SUPABASE_PUBLISHABLE_KEY`) dans les paramètres de déploiement de ta plateforme d'hébergement.
+Le serveur écoute sur le port fourni par l'hébergeur et sert l'application sous le préfixe `/velo/`. La configuration Cloudflare Workers n'est pas encore intégrée ; ne pas publier `.output/public` comme un site Pages statique sans avoir validé le routage SSR et les ressources.
 
-Une fois le site en ligne, ajoute son adresse dans Supabase (*Authentication > URL Configuration*) pour que la connexion et les liens de confirmation par email fonctionnent depuis ton domaine.
+Consulte la section « Mise en ligne » du [README principal](../README.md) avant de choisir l'hébergeur. Renseigne toutes les variables de build de `.env.example` dans sa configuration.
+
+Dans Supabase → Authentication → URL Configuration, définir *Site URL* sur `https://19-58.net/velo` et autoriser `https://19-58.net/velo/**`.
 
 ---
 
 ## ✅ Checklist finale
 
 - [ ] Dépôt forké et dépendances installées
-- [ ] Projet Supabase créé et scripts SQL exécutés
+- [ ] Projet Supabase créé et toutes les migrations versionnées appliquées
 - [ ] Bucket `proofs` créé par les migrations
 - [ ] Fichier `.env` renseigné (et absent de GitHub)
-- [ ] Couleurs et textes adaptés à la troupe
+- [ ] Identité Chevaliers 58 et couleurs bleu/orange vérifiées
 - [ ] Compte admin créé et rôle attribué via `supabase/bootstrap_admin.sql`
 - [ ] Patrouilles et compte à rebours créés depuis `/admin`
 - [ ] Site déployé avec les variables d'environnement
-- [ ] URL du site ajoutée dans la configuration d'authentification Supabase
+- [ ] URL `https://19-58.net/velo/**` ajoutée dans la configuration d'authentification Supabase
 
 ---
 
