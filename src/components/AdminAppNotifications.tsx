@@ -58,7 +58,6 @@ const notificationType: Record<string, string> = {
   distance_milestone: "Palier de kilomètres",
   individual_distance_milestone: "Palier individuel",
   troop_distance_milestone: "Palier de la troupe",
-  aquila_distance_milestone: "Palier scout",
   activity_pending: "Sortie à valider",
   weekly_reminder: "Rappel du dimanche",
   new_signup: "Nouvelle inscription",
