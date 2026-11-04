@@ -61,6 +61,13 @@ jobs:
           done
           test -s /tmp/chevaliers58-home.html
           grep -q "Chevaliers 58" /tmp/chevaliers58-home.html
+          grep -oE '(src|href)="[^"]+"' /tmp/chevaliers58-home.html | grep -E '/assets/|/_build/' | head -10 || true
+          asset_path=$(grep -oE '(src|href)="[^"]+\.(js|css)(\?[^"]*)?"' /tmp/chevaliers58-home.html | head -1 | sed -E 's/^(src|href)="([^"]+)"/\2/')
+          if [ -n "$asset_path" ]; then
+            asset_status=$(curl --silent --output /dev/null --write-out '%{http_code}' "http://127.0.0.1:3000$asset_path" || true)
+            echo "Built client asset $asset_path -> HTTP $asset_status"
+            test "$asset_status" = "200"
+          fi
           for asset in /velo/sw.js /sw.js /velo/widget/troupe-km.js /widget/troupe-km.js; do
             status=$(curl --silent --output /dev/null --write-out '%{http_code}' "http://127.0.0.1:3000$asset" || true)
             echo "$asset -> HTTP $status"
