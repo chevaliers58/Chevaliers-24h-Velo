@@ -28,13 +28,13 @@ interface AlezanMascotProps {
   context?: AlezanContext;
 }
 
-/** Alezouille accueille les scouts avec un message lié à la page. */
+/** La mascotte accueille les scouts avec un message lié à la page. */
 export function AlezanMascot({ context }: AlezanMascotProps) {
   const { pathname } = useLocation();
   const { user } = useAuth();
   const { theme: currentTheme } = useSeasonalTheme();
   const pageContext = context ?? PAGE_CONTEXT[pathname] ?? "general";
-  // Téléphone : Alezouille est une pastille ; on touche pour lire son message
+  // Téléphone : la mascotte est une pastille ; on touche pour lire son message
   const [open, setOpen] = useState(false);
   const [seen, setSeen] = useState(false);
   const rootRef = useRef<HTMLElement>(null);
