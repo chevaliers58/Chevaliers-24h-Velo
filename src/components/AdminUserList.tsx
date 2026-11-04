@@ -61,7 +61,7 @@ export function AdminUserList({
     if (initialMembersTracked.current || profiles.length === 0) return;
     initialMembersTracked.current = true;
 
-    const storageKey = "alezan-admin-members-last-seen-at";
+    const storageKey = "chevaliers58-admin-members-last-seen-at";
     const now = Date.now();
     try {
       const storedLastSeenAt = Number(window.localStorage.getItem(storageKey));
