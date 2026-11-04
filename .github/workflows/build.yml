@@ -32,10 +32,10 @@ jobs:
           failed = False
           for path in sorted(Path("supabase").rglob("*.sql")):
               source = path.read_text(encoding="utf-8")
-              if re.search(r"(?m)^\\s*\\$;\\s*$", source):
+              if re.search(r"(?m)^\s*\$;\s*$", source):
                   print(f"Invalid lone-dollar terminator: {path}")
                   failed = True
-              tags = re.findall(r"\\$[A-Za-z_]*\\$", source)
+              tags = re.findall(r"\$[A-Za-z_]*\$", source)
               counts = {}
               for tag in tags:
                   counts[tag] = counts.get(tag, 0) + 1
