@@ -1,4 +1,4 @@
-// Standalone Autonomous Database for ALEZAN 42
+// Local demo database, independent from the Supabase production project.
 // 100% independent of Lovable and external cloud dependencies.
 // Persists in localStorage with high-fidelity seed data and real-time subscriber events.
 
@@ -15,7 +15,7 @@ export interface Patrol {
   created_at: string;
 }
 
-const PATROL_EMOJI_STORAGE_KEY = "alezan_patrol_emojis";
+const PATROL_EMOJI_STORAGE_KEY = "chevaliers58_patrol_emojis";
 
 export function getCustomPatrolEmojis(): Record<string, string> {
   try {
