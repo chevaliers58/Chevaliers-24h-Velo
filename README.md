@@ -161,4 +161,9 @@ dans l'administration avant l'ouverture des inscriptions. Le mode démo local ne
 la patrouille Staff. Son compte à rebours de démonstration utilise le 15 novembre 2026 ; cette
 date n'est pas une échéance Supabase et peut être adaptée dans l'interface.
 
+Ne pas exécuter `supabase/supabase_setup.sql` en complément : c'est un ancien script de
+configuration manuelle et il ne remplace pas l'historique des migrations. Le schéma cible doit
+être créé par les migrations, puis le seul script SQL manuel prévu ici est
+`supabase/bootstrap_admin.sql`.
+
 Aucune de ces opérations n'est exécutée automatiquement par le dépôt.
