@@ -124,7 +124,7 @@ function MoreScreen() {
               iconClassName="bg-primary/12 text-primary"
               title="Notifications"
               subtitle="Messages de la troupe, activer les alertes"
-              onClick={() => window.dispatchEvent(new Event("alezan:open-app-notifications"))}
+              onClick={() => window.dispatchEvent(new Event("troupe:open-app-notifications"))}
             />
             <AppListRow
               to="/app/trophees"
