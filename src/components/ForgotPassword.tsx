@@ -40,7 +40,7 @@ export function ForgotPassword({ initialEmail = "" }: { initialEmail?: string })
     // On ne révèle jamais si l'adresse existe : même message dans tous les cas.
     await supabase.auth
       .resetPasswordForEmail(value, {
-        redirectTo: `${window.location.origin}/nouveau-mot-de-passe`,
+        redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}nouveau-mot-de-passe`,
       })
       .catch(() => undefined);
     setBusy(false);
