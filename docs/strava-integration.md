@@ -8,18 +8,18 @@
 - Les activités prises en charge sont importées une seule fois grâce à l’identifiant Strava unique. Les activités supprimées ou rendues privées sont retirées de la copie du site.
 - Le bouton public de l’accueil doit être configuré avec le lien du club de votre troupe.
 
-## À configurer après validation de l’application Strava
+## Configuration Chevaliers 58
 
-Définir dans les secrets Supabase :
+Créer une nouvelle application API Strava pour Chevaliers 58 ; ne pas réutiliser les identifiants ni les jetons de l'ancienne troupe. Définir dans les secrets Supabase :
 
 - `STRAVA_CLIENT_ID`
 - `STRAVA_CLIENT_SECRET`
-- `STRAVA_REDIRECT_URI` = `https://<project-ref>.supabase.co/functions/v1/strava-oauth`
+- `STRAVA_REDIRECT_URI` = `https://qxlsdauqoivqhoojlrwk.supabase.co/functions/v1/strava-oauth`
 - `STRAVA_WEBHOOK_VERIFY_TOKEN` = une valeur aléatoire longue
 - `STRAVA_WEBHOOK_SUBSCRIPTION_ID` = l’identifiant obtenu à la création de la souscription
-- `SITE_URL` = `https://<votre-domaine>`
+- `SITE_URL` = `https://19-58.net/velo`
 
-Puis appliquer la migration, déployer `strava-oauth` et `strava-webhook`, et enregistrer auprès de Strava l’URL `https://<project-ref>.supabase.co/functions/v1/strava-webhook` avec le même jeton de vérification.
+Dans le tableau de bord Strava, déclarer comme callback OAuth l'URL `https://qxlsdauqoivqhoojlrwk.supabase.co/functions/v1/strava-oauth`. Enregistrer ensuite le webhook sur `https://qxlsdauqoivqhoojlrwk.supabase.co/functions/v1/strava-webhook` avec le même jeton de vérification, puis renseigner l'identifiant de souscription obtenu dans `STRAVA_WEBHOOK_SUBSCRIPTION_ID`. Déployer les fonctions `strava-oauth` et `strava-webhook` après configuration des secrets.
 
 ## Limites liées à Strava
 
