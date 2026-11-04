@@ -65,16 +65,16 @@ VITE_TROOP_STRAVA_CLUB_URL=https://www.strava.com/clubs/Chevaliers58
 
 ## Étape 4 : Personnaliser la charte graphique (les couleurs)
 
-La direction artistique (bruns, orange, tons bois et scouts) est centralisée dans les variables de style [Tailwind CSS](https://tailwindcss.com).
+La charte actuelle des Chevaliers 58 est **bleu et orange**. Les couleurs principales sont définies dans `src/styles.css` et les thèmes saisonniers dans `src/lib/seasonalTheme.ts`.
 
-1. Ouvre le fichier de style principal (par exemple `src/index.css` ou `src/App.css`).
-2. Modifie les variables de couleurs (`--primary`, `--background`, etc.) pour correspondre aux foulards et à la charte graphique de ta troupe.
+1. Ouvre `src/styles.css` et `src/lib/seasonalTheme.ts`.
+2. Ne change les variables de couleurs (`--primary`, `--background`, etc.) que si la troupe souhaite une autre charte ; la version Chevaliers 58 est déjà en bleu et orange.
 
 Pour t'aider à choisir et nommer tes couleurs :
 - [Tailwind CSS : personnaliser les couleurs](https://tailwindcss.com/docs/colors)
 - [Tailwind CSS : thème et variables](https://tailwindcss.com/docs/theme)
 
-Pense aussi à adapter les textes visibles (nom de la troupe, titre du défi, logo, favicon) dans les fichiers de `src/routes/` (notamment `index.tsx`) et dans `index.html`.
+Le nom, le domaine et le lien Strava sont centralisés dans `src/lib/troop-config.ts` et les variables `VITE_TROOP_NAME`, `VITE_SITE_URL` et `VITE_TROOP_STRAVA_CLUB_URL`. Les visuels de la troupe se gèrent dans `src/components/` et `public/`.
 
 ---
 
