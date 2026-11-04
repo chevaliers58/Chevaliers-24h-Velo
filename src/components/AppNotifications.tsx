@@ -23,7 +23,7 @@ type AppNotification = {
 };
 
 function announcePushStatus(enabled: boolean) {
-  window.dispatchEvent(new CustomEvent("alezan:push-status", { detail: { enabled } }));
+  window.dispatchEvent(new CustomEvent("troupe:push-status", { detail: { enabled } }));
 }
 
 function base64UrlToBytes(value: string) {
@@ -83,8 +83,8 @@ export function AppNotifications() {
       setOpen(true);
       setMessage("");
     };
-    window.addEventListener("alezan:open-app-notifications", openNotifications);
-    return () => window.removeEventListener("alezan:open-app-notifications", openNotifications);
+    window.addEventListener("troupe:open-app-notifications", openNotifications);
+    return () => window.removeEventListener("troupe:open-app-notifications", openNotifications);
   }, []);
 
   useEffect(() => {
