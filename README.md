@@ -158,8 +158,10 @@ public en lecture pour conserver l'affichage des photos et des traces GPX.
 Les migrations ne préchargent volontairement pas les patrouilles de l'ancien site. Après
 création du premier administrateur, celui-ci devra créer les patrouilles réelles des Chevaliers 58
 dans l'administration avant l'ouverture des inscriptions. Le mode démo local ne contient que
-la patrouille Staff. Son compte à rebours de démonstration utilise le 15 novembre 2026 ; cette
-date n'est pas une échéance Supabase et peut être adaptée dans l'interface.
+la patrouille Staff. Deux dates de défi restent héritées du site source : début fixé au
+27 septembre 2026 (`CHALLENGE_START`) et fin par défaut au 15 novembre 2026
+(compte à rebours local et valeur initiale du formulaire admin). Aucune échéance n'est
+préchargée dans Supabase ; confirmer ces dates avant l'ouverture des inscriptions.
 
 Ne pas exécuter `supabase/supabase_setup.sql` en complément : c'est un ancien script de
 configuration manuelle et il ne remplace pas l'historique des migrations. Le schéma cible doit
