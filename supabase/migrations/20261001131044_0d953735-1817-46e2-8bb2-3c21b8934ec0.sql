@@ -58,9 +58,6 @@ create policy "admin manage patrols ins" on public.patrols for insert to authent
 create policy "admin manage patrols upd" on public.patrols for update to authenticated using (public.has_role(auth.uid(),'admin'));
 create policy "admin manage patrols del" on public.patrols for delete to authenticated using (public.has_role(auth.uid(),'admin'));
 
-insert into public.patrols (name, category) values
- ('Lynx','femme'),('Gazelles','femme'),('Girafes','femme'),('Marmottes','femme'),
- ('Cougars','homme'),('Condors','homme'),('Jaguars','homme'),('Bisons','homme'),('Faucons','homme');
 
 create table public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
