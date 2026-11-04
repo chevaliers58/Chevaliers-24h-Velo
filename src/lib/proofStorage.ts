@@ -64,7 +64,7 @@ async function loadActivityFiles(id: string): Promise<ActivityFiles | null> {
   return (data as ActivityFiles | null) ?? null;
 }
 
-/** Valide une sortie et supprime sa photo de preuve. */
+/** Valide une sortie et conserve sa photo de preuve pendant 30 jours. */
 export async function approveActivity(id: string): Promise<{ error: string | null }> {
   // validated_at is stamped by the database trigger. The nightly cleanup
   // removes the proof photo after 30 days; the GPX remains available.
@@ -77,6 +77,7 @@ export async function approveActivity(id: string): Promise<{ error: string | nul
   if (!data?.length) return { error: "Sortie introuvable ou modification non autorisée." };
 
   return { error: null };
+}
 
 /** Refuse une sortie (la base la supprime) et supprime photo + GPX. */
 export async function rejectActivity(id: string): Promise<{ error: string | null }> {
