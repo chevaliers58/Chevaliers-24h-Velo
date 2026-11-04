@@ -207,25 +207,6 @@ const SEED_PATROLS: Patrol[] = [
     category: "staff",
     created_at: "2026-09-01T00:00:00Z",
   },
-  { id: "patrol-lynx", name: "Lynx", category: "femme", created_at: "2026-09-01T00:00:00Z" },
-  {
-    id: "patrol-gazelles",
-    name: "Gazelles",
-    category: "femme",
-    created_at: "2026-09-01T00:00:00Z",
-  },
-  { id: "patrol-girafes", name: "Girafes", category: "femme", created_at: "2026-09-01T00:00:00Z" },
-  {
-    id: "patrol-marmottes",
-    name: "Marmottes",
-    category: "femme",
-    created_at: "2026-09-01T00:00:00Z",
-  },
-  { id: "patrol-cougars", name: "Cougars", category: "homme", created_at: "2026-09-01T00:00:00Z" },
-  { id: "patrol-condors", name: "Condors", category: "homme", created_at: "2026-09-01T00:00:00Z" },
-  { id: "patrol-jaguars", name: "Jaguars", category: "homme", created_at: "2026-09-01T00:00:00Z" },
-  { id: "patrol-bisons", name: "Bisons", category: "homme", created_at: "2026-09-01T00:00:00Z" },
-  { id: "patrol-faucons", name: "Faucons", category: "homme", created_at: "2026-09-01T00:00:00Z" },
 ];
 
 const SEED_PROFILES: Profile[] = [];
