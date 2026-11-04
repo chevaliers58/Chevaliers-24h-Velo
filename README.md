@@ -119,8 +119,9 @@ Variables de build : `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`,
 `VITE_SUPABASE_PROJECT_ID`, `VITE_TROOP_NAME`, `VITE_SITE_URL`,
 `VITE_BASE_PATH`, `VITE_TROOP_STRAVA_CLUB_URL`.
 
-Après mise en ligne, ajouter l'adresse publique dans Supabase →
-Authentication → URL Configuration (*Site URL* et *Redirect URLs*).
+Après mise en ligne, configurer Supabase → Authentication → URL Configuration :
+- *Site URL* : `https://19-58.net/velo`
+- *Redirect URLs* : `https://19-58.net/velo/**` (notamment `/nouveau-mot-de-passe`).
 
 ### Secrets des fonctions Edge
 
