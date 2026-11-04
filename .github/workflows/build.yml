@@ -32,6 +32,12 @@ jobs:
           VITE_SITE_URL: https://19-58.net/velo
           VITE_BASE_PATH: /velo/
           VITE_TROOP_STRAVA_CLUB_URL: https://www.strava.com/clubs/Chevaliers58
+      - name: Check that source-project credentials and admin identity are absent
+        run: |
+          if grep -R -nE 'civblymnwigeayfecujp|baudeletgauthier@gmail.com|sb_publishable_Rs7_eLIv_g7FcK2R1Hz8cw_rc6qLJfs' src public supabase .env.example; then
+            echo "Legacy source-project configuration found."
+            exit 1
+          fi
       - name: Validate standalone browser scripts
         run: |
           node --check public/sw.js
