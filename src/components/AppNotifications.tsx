@@ -91,10 +91,10 @@ export function AppNotifications() {
     if (!standalone || !user?.id) return;
     let installationId = "";
     try {
-      installationId = localStorage.getItem("alezan-app-installation-id") ?? "";
+      installationId = localStorage.getItem("chevaliers58-app-installation-id") ?? "";
       if (!installationId) {
         installationId = crypto.randomUUID();
-        localStorage.setItem("alezan-app-installation-id", installationId);
+        localStorage.setItem("chevaliers58-app-installation-id", installationId);
       }
     } catch {
       installationId = crypto.randomUUID();
