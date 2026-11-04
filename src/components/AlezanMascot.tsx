@@ -99,7 +99,7 @@ export function AlezanMascot({ context }: AlezanMascotProps) {
   return (
     <aside
       ref={rootRef}
-      aria-label="Le message d'Alezouille"
+      aria-label="Le message de la mascotte"
       className="mobile-mascot pointer-events-none fixed bottom-4 right-3 z-40 flex max-w-[calc(100vw-1.5rem)] items-end gap-2 sm:bottom-6 sm:right-6 sm:gap-3"
     >
       <div
@@ -108,7 +108,7 @@ export function AlezanMascot({ context }: AlezanMascotProps) {
         className={`mobile-mascot-bubble relative mb-6 ${birthdayMode ? "max-w-[min(8rem,calc(100vw-12rem))] sm:max-w-[min(13rem,calc(100vw-13rem))]" : "max-w-[min(13rem,calc(100vw-9rem))]"} rounded-2xl border border-border/80 bg-card/95 px-3 py-2.5 shadow-lg shadow-black/10 backdrop-blur-sm after:absolute after:-right-1.5 after:bottom-4 after:h-3 after:w-3 after:rotate-45 after:border-r after:border-t after:border-border/80 after:bg-card`}
       >
         <p className="mb-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-primary">
-          {birthdayMode ? "Mode anniversaire" : "Alezouille te glisse un message"}
+          {birthdayMode ? "Mode anniversaire" : "La mascotte te glisse un message"}
         </p>
         <p
           role="status"
@@ -131,7 +131,7 @@ export function AlezanMascot({ context }: AlezanMascotProps) {
         {!seen && <span className="mobile-mascot-dot" aria-hidden="true" />}
         <img
           src={currentImage}
-          alt="Alezouille, le compagnon de route de la troupe"
+          alt="La mascotte, le compagnon de route de la troupe"
           className={
             birthdayMode
               ? "h-20 w-36 shrink-0 object-contain drop-shadow-md sm:h-28 sm:w-52"
