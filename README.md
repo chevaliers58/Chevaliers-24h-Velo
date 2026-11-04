@@ -163,6 +163,8 @@ la patrouille Staff. Deux dates de défi restent héritées du site source : dé
 (compte à rebours local et valeur initiale du formulaire admin). Aucune échéance n'est
 préchargée dans Supabase ; confirmer ces dates avant l'ouverture des inscriptions.
 
+Aucune donnée personnelle, activité ou photo de l'ancienne troupe n'est importée. Les migrations créent les structures nécessaires et préchargent les étapes d'expédition ainsi que les objectifs de solidarité, mais aucun compte à rebours actif ni événement historique `timeline`. Après le bootstrap, l'administrateur devra créer l'échéance réelle et ajouter les rétrospectives souhaitées.
+
 Ne pas exécuter `supabase/supabase_setup.sql` en complément : c'est un ancien script de
 configuration manuelle et il ne remplace pas l'historique des migrations. Le schéma cible doit
 être créé par les migrations, puis le seul script SQL manuel prévu ici est
