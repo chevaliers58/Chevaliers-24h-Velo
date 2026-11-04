@@ -31,8 +31,8 @@ create table if not exists public.countdowns (
   title text not null,
   subtitle text,
   target_date timestamptz not null,
-  is_active boolean not null default false,
-  created_at timestamptz not null default now()
+  is_active boolean default false,
+  created_at timestamptz default now()
 );
 alter table public.countdowns enable row level security;
 grant select on public.countdowns to anon, authenticated;
@@ -52,7 +52,8 @@ create table if not exists public.expedition_waypoints (
   badge_name text not null default '',
   badge_emoji text not null default '',
   x integer not null default 0,
-  y integer not null default 0
+  y integer not null default 0,
+  created_at timestamptz default now()
 );
 alter table public.expedition_waypoints enable row level security;
 grant select on public.expedition_waypoints to anon, authenticated;
@@ -68,7 +69,7 @@ create table if not exists public.proposed_routes (
   title text not null,
   description text,
   gpx_url text not null,
-  created_at timestamptz not null default now()
+  created_at timestamptz default now()
 );
 alter table public.proposed_routes enable row level security;
 grant select, insert, delete on public.proposed_routes to authenticated;
@@ -86,7 +87,7 @@ create table if not exists public.timeline (
   description text,
   image_url text,
   drive_url text,
-  tag text not null default 'Événement',
+  tag text default 'Événement',
   created_at timestamptz not null default now()
 );
 alter table public.timeline enable row level security;
