@@ -100,9 +100,16 @@ confirmé les deux sorties.
 Pour un hébergement Node, lancer `npm run build`, puis
 `node .output/server/index.mjs`.
 
-Pour Cloudflare, il reste à choisir et valider l'adaptateur approprié (Cloudflare Workers ou
-publication statique Pages si le build et le routage SPA le permettent). Ne pas configurer la
-production à partir d'anciens réglages Pages sans vérifier l'artefact du build.
+Pour Cloudflare, la documentation actuelle de TanStack Start recommande Cloudflare Workers
+avec `@cloudflare/vite-plugin` et Wrangler. Cela demande de remplacer l'adaptateur Nitro
+dans `vite.config.ts` et d'ajouter une configuration Wrangler ; ce n'est pas encore fait ici.
+La sortie Node actuelle ne doit pas être envoyée telle quelle à Cloudflare Pages statique.
+Références : [TanStack Start sur Cloudflare Workers](https://developers.cloudflare.com/workers/framework-guides/web-apps/tanstack-start/)
+et [déploiement Nitro Cloudflare](https://nitro.build/deploy/providers/cloudflare).
+
+Le préfixe `/velo` devra également être routé vers l'application par le proxy ou la configuration
+de routage de l'hébergeur. Ne pas modifier la zone DNS ni la production avant d'avoir identifié
+l'hébergement actuel et validé le routage.
 
 Le site est préparé pour le sous-chemin `/velo` avec `VITE_BASE_PATH=/velo/` et
 `VITE_SITE_URL=https://19-58.net/velo`. Le domaine doit router ce préfixe vers l'application ;
