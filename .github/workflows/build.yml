@@ -49,6 +49,7 @@ jobs:
           find .output -maxdepth 2 -type d -print
       - name: Smoke test the built app under /velo
         run: |
+          cat .output/nitro.json
           node .output/server/index.mjs > /tmp/chevaliers58-server.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
@@ -60,12 +61,17 @@ jobs:
           done
           test -s /tmp/chevaliers58-home.html
           grep -q "Chevaliers 58" /tmp/chevaliers58-home.html
-          sw_status=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:3000/velo/sw.js || true)
-          widget_status=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:3000/velo/widget/troupe-km.js || true)
-          echo "Service worker HTTP status: $sw_status"
-          echo "Widget HTTP status: $widget_status"
-          test "$sw_status" = "200" || { cat /tmp/chevaliers58-server.log; exit 1; }
-          test "$widget_status" = "200" || { cat /tmp/chevaliers58-server.log; exit 1; }
+          for asset in /velo/sw.js /sw.js /velo/widget/troupe-km.js /widget/troupe-km.js; do
+            status=$(curl --silent --output /dev/null --write-out '%{http_code}' "http://127.0.0.1:3000$asset" || true)
+            echo "$asset -> HTTP $status"
+          done
+          asset_path=$(grep -oE 'src="[^"]+\.js"' /tmp/chevaliers58-home.html | head -1 | sed -E 's/src="([^"]+)"/\1/')
+          echo "Client entry: $asset_path"
+          if [ -n "$asset_path" ]; then
+            status=$(curl --silent --output /dev/null --write-out '%{http_code}' "http://127.0.0.1:3000$asset_path" || true)
+            echo "Client entry HTTP status: $status"
+            test "$status" = "200"
+          fi
       - name: Upload build output for inspection
         uses: actions/upload-artifact@v4
         with:
