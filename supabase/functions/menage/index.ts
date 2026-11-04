@@ -47,6 +47,27 @@ function fileName(url: string | null | undefined, bucket: string): string | null
 
 const daysAgo = (n: number) => new Date(Date.now() - n * 24 * 3600 * 1000).toISOString();
 
+type PageResult<T> = {
+  data: T[] | null;
+  error: { message: string } | null;
+};
+
+/** Read every row, not just PostgREST's default first 1,000. */
+async function loadAllRows<T>(
+  fetchPage: (from: number, to: number) => PromiseLike<PageResult<T>>,
+): Promise<PageResult<T>> {
+  const rows: T[] = [];
+  const pageSize = 1000;
+  const maxRows = 100_000;
+  for (let offset = 0; offset < maxRows; offset += pageSize) {
+    const { data, error } = await fetchPage(offset, offset + pageSize - 1);
+    if (error) return { data: null, error };
+    rows.push(...(data ?? []));
+    if (!data || data.length < pageSize) return { data: rows, error: null };
+  }
+  return { data: null, error: { message: `Plus de ${maxRows} lignes : nettoyage interrompu par sécurité` } };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "POST attendu" }, 405);
@@ -116,11 +137,21 @@ Deno.serve(async (req) => {
   if (!errors.length) {
     // Tout ce qui est encore référencé quelque part
     const [acts, challenges, routes, timeline, settings] = await Promise.all([
-      admin.from("activities").select("proof_path, gpx_path"),
-      admin.from("scout_challenges").select("gpx_template_path"),
-      admin.from("proposed_routes").select("gpx_url"),
-      admin.from("timeline").select("image_url"),
-      admin.from("site_settings").select("value"),
+      loadAllRows((from, to) =>
+        admin.from("activities").select("proof_path, gpx_path").order("id").range(from, to),
+      ),
+      loadAllRows((from, to) =>
+        admin.from("scout_challenges").select("gpx_template_path").order("id").range(from, to),
+      ),
+      loadAllRows((from, to) =>
+        admin.from("proposed_routes").select("gpx_url").order("id").range(from, to),
+      ),
+      loadAllRows((from, to) =>
+        admin.from("timeline").select("image_url").order("id").range(from, to),
+      ),
+      loadAllRows((from, to) =>
+        admin.from("site_settings").select("value").order("key").range(from, to),
+      ),
     ]);
     const queryErrors = [acts, challenges, routes, timeline, settings].filter((r) => r.error);
     if (queryErrors.length) {
