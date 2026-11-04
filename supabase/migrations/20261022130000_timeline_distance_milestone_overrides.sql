@@ -27,11 +27,7 @@ create policy "paliers timeline gestion admin"
   on public.timeline_distance_milestone_overrides for all to authenticated
   using (
     public.has_role(auth.uid(), 'admin')
-    or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin)
-    or lower(coalesce(auth.jwt() ->> 'email', '')) = 'baudeletgauthier@gmail.com'
   )
   with check (
     public.has_role(auth.uid(), 'admin')
-    or exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin)
-    or lower(coalesce(auth.jwt() ->> 'email', '')) = 'baudeletgauthier@gmail.com'
   );
