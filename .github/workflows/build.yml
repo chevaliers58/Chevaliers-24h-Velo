@@ -70,9 +70,15 @@ jobs:
           asset_status=$(curl --silent --output /dev/null --write-out '%{http_code}' "http://127.0.0.1:3000$asset_path" || true)
           echo "Built client asset $asset_path -> HTTP $asset_status"
           test "$asset_status" = "200"
-          for asset in /velo/sw.js /sw.js /velo/widget/troupe-km.js /widget/troupe-km.js; do
+          for asset in /velo/sw.js /velo/widget/troupe-km.js; do
             status=$(curl --silent --output /dev/null --write-out '%{http_code}' "http://127.0.0.1:3000$asset" || true)
             echo "$asset -> HTTP $status"
+            test "$status" = "200"
+          done
+          for asset in /sw.js /widget/troupe-km.js; do
+            status=$(curl --silent --output /dev/null --write-out '%{http_code}' "http://127.0.0.1:3000$asset" || true)
+            echo "$asset -> HTTP $status"
+            test "$status" = "307"
           done
       - name: Upload build output for inspection
         uses: actions/upload-artifact@v4
