@@ -40,6 +40,10 @@ jobs:
             echo "Legacy source-project configuration found."
             exit 1
           fi
+          if grep -R -nE 'ALEZAN 42|Alezan 42|Alezouille|AC42|Aquila' src public; then
+            echo "Source troupe branding found in runtime files."
+            exit 1
+          fi
       - name: Validate standalone browser scripts
         run: |
           node --check public/sw.js
