@@ -123,6 +123,8 @@ Après mise en ligne, configurer Supabase → Authentication → URL Configurati
 - *Site URL* : `https://19-58.net/velo`
 - *Redirect URLs* : `https://19-58.net/velo/**` (notamment `/nouveau-mot-de-passe`).
 
+Le code ne confirme plus automatiquement les comptes par un trigger SQL. Pour retrouver le parcours d'inscription sans e-mail de vérification de l'ancien site, désactiver **Confirm email** dans Supabase → Authentication → Providers → Email ; sinon, laisser l'option activée et configurer l'envoi SMTP.
+
 ### Secrets des fonctions Edge
 
 À configurer dans Supabase → Project Settings → Edge Functions → Secrets.
