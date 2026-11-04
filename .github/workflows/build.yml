@@ -47,6 +47,21 @@ jobs:
           test -f .output/public/index.html
           test -f .output/server/index.mjs
           find .output -maxdepth 2 -type d -print
+      - name: Smoke test the built app under /velo
+        run: |
+          node .output/server/index.mjs > /tmp/chevaliers58-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3000/velo/ > /tmp/chevaliers58-home.html; then
+              break
+            fi
+            sleep 1
+          done
+          test -s /tmp/chevaliers58-home.html
+          grep -q "Chevaliers 58" /tmp/chevaliers58-home.html
+          curl --fail --silent http://127.0.0.1:3000/velo/sw.js > /dev/null
+          curl --fail --silent http://127.0.0.1:3000/velo/widget/troupe-km.js > /dev/null
       - name: Upload build output for inspection
         uses: actions/upload-artifact@v4
         with:
