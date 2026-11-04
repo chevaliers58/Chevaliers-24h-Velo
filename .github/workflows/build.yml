@@ -32,6 +32,10 @@ jobs:
           VITE_SITE_URL: https://19-58.net/velo
           VITE_BASE_PATH: /velo/
           VITE_TROOP_STRAVA_CLUB_URL: https://www.strava.com/clubs/Chevaliers58
+      - name: Validate standalone browser scripts
+        run: |
+          node --check public/sw.js
+          node --check public/widget/troupe-km.js
       - name: Verify deployment output
         run: |
           test -f .output/public/index.html
