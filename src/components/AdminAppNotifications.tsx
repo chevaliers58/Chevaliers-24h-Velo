@@ -173,7 +173,7 @@ export function AdminAppNotifications() {
         kind: "manual",
         title: title.trim(),
         body: body.trim(),
-        href: "/",
+        href: import.meta.env.BASE_URL,
       })),
     );
     setLoading(false);
