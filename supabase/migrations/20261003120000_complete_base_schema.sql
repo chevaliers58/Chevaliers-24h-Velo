@@ -104,3 +104,24 @@ create policy "timeline manage admin"
 
 create index if not exists timeline_year_date_idx
   on public.timeline (year desc, date_str desc);
+
+-- Rejection workflow: the admin UI removes the rejected row after it has
+-- captured the proof/GPX paths so it can delete the associated Storage files.
+create or replace function public.delete_rejected_activity()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $function$
+begin
+  delete from public.activities where id = new.id;
+  return new;
+end;
+$function$;
+
+drop trigger if exists trg_delete_rejected_activity on public.activities;
+create trigger trg_delete_rejected_activity
+  after update of status on public.activities
+  for each row
+  when (new.status = 'rejected')
+  execute function public.delete_rejected_activity();
