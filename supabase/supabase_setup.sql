@@ -1,7 +1,11 @@
 -- ==============================================================================
 -- Script historique de compatibilité. Pour une installation neuve, utiliser les migrations supabase/migrations/.
--- Ne pas exécuter ce script en complément de toutes les migrations.
--- À exécuter dans : Dashboard Supabase > SQL Editor > New query > Run
+-- NE PAS EXÉCUTER : les politiques ci-dessous sont obsolètes et trop permissives.
+-- Utiliser exclusivement les migrations versionnées de supabase/migrations/.
+
+do $ begin
+  raise exception 'Script historique désactivé. Appliquer uniquement les migrations revues de supabase/migrations/.';
+end $;
 -- ==============================================================================
 
 -- 1. AJOUT DE LA PATROUILLE STAFF SI MANQUANTE
