@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Download, Share, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TROOP_NAME } from "@/lib/troop-config";
 import {
   Dialog,
   DialogContent,
@@ -58,8 +59,8 @@ export function PwaInstallButton() {
         size="sm"
         variant="ghost"
         onClick={() => void install()}
-        title="Installer ALEZAN 42 sur ce téléphone"
-        aria-label="Installer ALEZAN 42 sur ce téléphone"
+        title={`Installer ${TROOP_NAME} sur ce téléphone`}
+        aria-label={`Installer ${TROOP_NAME} sur ce téléphone`}
         className="h-9 gap-1.5 rounded-lg px-2.5 text-white/90 hover:bg-white/15 hover:text-white"
       >
         <Download className="h-4 w-4" />
@@ -70,7 +71,7 @@ export function PwaInstallButton() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Smartphone className="h-5 w-5 text-primary" /> Ajouter ALEZAN 42 au téléphone
+              <Smartphone className="h-5 w-5 text-primary" /> Ajouter {TROOP_NAME} au téléphone
             </DialogTitle>
             <DialogDescription>
               L’application utilise le même compte et les mêmes données que le site.

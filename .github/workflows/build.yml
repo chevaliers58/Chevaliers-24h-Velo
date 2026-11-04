@@ -1,0 +1,123 @@
+name: Build application
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [chore/migrate-to-new-supabase]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Validate SQL dollar-quote delimiters
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          failed = False
+          for path in sorted(Path("supabase").rglob("*.sql")):
+              source = path.read_text(encoding="utf-8")
+              if re.search(r"(?m)^\s*\$;\s*$", source):
+                  print(f"Invalid lone-dollar terminator: {path}")
+                  failed = True
+              tags = re.findall(r"\$[A-Za-z_]*\$", source)
+              counts = {}
+              for tag in tags:
+                  counts[tag] = counts.get(tag, 0) + 1
+              if any(count % 2 for count in counts.values()):
+                  print(f"Unbalanced dollar-quote tags in {path}: {counts}")
+                  failed = True
+          if failed:
+              sys.exit(1)
+          print("All SQL dollar-quote delimiters are balanced.")
+          PY
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check cleanup Edge Function
+        run: deno check supabase/functions/menage/index.ts
+      - name: Build
+        run: npm run build
+        env:
+          VITE_SUPABASE_PROJECT_ID: qxlsdauqoivqhoojlrwk
+          VITE_SUPABASE_URL: https://qxlsdauqoivqhoojlrwk.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
+          VITE_TROOP_NAME: Chevaliers 58
+          VITE_SITE_URL: https://19-58.net/velo
+          VITE_BASE_PATH: /velo/
+          VITE_TROOP_STRAVA_CLUB_URL: https://www.strava.com/clubs/Chevaliers58
+      - name: Check that source-project credentials and admin identity are absent
+        run: |
+          if grep -R -nE 'civblymnwigeayfecujp|baudeletgauthier@gmail.com|sb_publishable_Rs7_eLIv_g7FcK2R1Hz8cw_rc6qLJfs|alezan42-cycling.lesscoutsdemoustier.be' src public supabase .env.example; then
+            echo "Legacy source-project configuration found."
+            exit 1
+          fi
+          if grep -R -nE 'ALEZAN 42|Alezan 42|Alezouille|AC42|Aquila' src public; then
+            echo "Source troupe branding found in runtime files."
+            exit 1
+          fi
+      - name: Validate standalone browser scripts
+        run: |
+          node --check public/sw.js
+          node --check public/widget/troupe-km.js
+      - name: Verify deployment output
+        run: |
+          test -f .output/public/index.html
+          test -f .output/server/index.mjs
+          find .output -maxdepth 2 -type d -print
+      - name: Smoke test the built app under /velo
+        run: |
+          cat .output/nitro.json
+          node .output/server/index.mjs > /tmp/chevaliers58-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3000/velo/ > /tmp/chevaliers58-home.html; then
+              break
+            fi
+            sleep 1
+          done
+          test -s /tmp/chevaliers58-home.html
+          grep -q "Chevaliers 58" /tmp/chevaliers58-home.html
+          for route in /velo/auth /velo/timeline /velo/solidarite /velo/nouveau-mot-de-passe; do
+            curl --fail --silent "http://127.0.0.1:3000$route" > /dev/null
+          done
+          client_asset=$(find .output/public/assets -type f \( -name '*.js' -o -name '*.css' \) -printf '%P\n' | head -1)
+          test -n "$client_asset"
+          asset_path="/velo/assets/$client_asset"
+          asset_status=$(curl --silent --output /dev/null --write-out '%{http_code}' "http://127.0.0.1:3000$asset_path" || true)
+          echo "Built client asset $asset_path -> HTTP $asset_status"
+          test "$asset_status" = "200"
+          for asset in /velo/sw.js /velo/widget/troupe-km.js; do
+            status=$(curl --silent --output /dev/null --write-out '%{http_code}' "http://127.0.0.1:3000$asset" || true)
+            echo "$asset -> HTTP $status"
+            test "$status" = "200"
+          done
+          for asset in /sw.js /widget/troupe-km.js; do
+            status=$(curl --silent --output /dev/null --write-out '%{http_code}' "http://127.0.0.1:3000$asset" || true)
+            echo "$asset -> HTTP $status"
+            test "$status" = "307"
+          done
+      - name: Upload build output for inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: chevaliers58-build-output
+          path: .output
+          retention-days: 7
+          include-hidden-files: true

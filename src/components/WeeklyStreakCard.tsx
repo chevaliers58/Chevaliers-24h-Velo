@@ -1,4 +1,5 @@
 import { Flame } from "lucide-react";
+import { TROOP_NAME } from "@/lib/troop-config";
 import { getActivityStreak } from "@/lib/weeklyStreak";
 import { cn } from "@/lib/utils";
 
@@ -23,8 +24,8 @@ export function WeeklyStreakCard({
       <div className="min-w-0">
         <p className="font-display text-[15px] font-bold">
           {streak.activities > 0
-            ? `${streak.activities} activité${streak.activities > 1 ? "s" : ""} dans ta série AC42`
-            : "Lance ta série AC42 !"}
+            ? `${streak.activities} activité${streak.activities > 1 ? "s" : ""} dans ta série ${TROOP_NAME}`
+            : `Lance ta série ${TROOP_NAME} !`}
         </p>
         <p className="text-[12px] text-orange-900/75 dark:text-orange-100/70">
           {streak.activities > 0

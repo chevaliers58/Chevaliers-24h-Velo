@@ -1,5 +1,6 @@
 import type { Activity, Patrol } from "@/lib/database";
 import { getActivitySport, SPORT_INFO } from "@/lib/database";
+import { TROOP_NAME } from "@/lib/troop-config";
 
 /* -------------------------------------------------------------------------- */
 /*  Types d'export                                                            */
@@ -181,7 +182,7 @@ export async function generatePdf(report: Report): Promise<string> {
   doc.text(title, marginX, 13);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text("ALEZAN 42 · Défi vélo scout", marginX, 21);
+  doc.text(`${TROOP_NAME} · Défi vélo scout`, marginX, 21);
 
   // --- Résumé + filtres ---
   let summary: string;
@@ -332,7 +333,7 @@ export async function generatePdf(report: Report): Promise<string> {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(130, 130, 130);
-    doc.text(`ALEZAN 42 · ${stamp}`, marginX, pageH - 8);
+    doc.text(`${TROOP_NAME} · ${stamp}`, marginX, pageH - 8);
     doc.text(`Page ${i} / ${total}`, pageW - marginX, pageH - 8, { align: "right" });
   }
 

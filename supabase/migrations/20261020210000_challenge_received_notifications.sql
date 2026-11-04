@@ -4,7 +4,7 @@ alter table public.app_notifications add constraint app_notifications_kind_check
   check (kind in (
     'weekly_reminder', 'distance_milestone', 'manual', 'new_signup',
     'individual_distance_milestone', 'troop_distance_milestone',
-    'aquila_distance_milestone', 'activity_pending', 'challenge_received'
+    'activity_pending', 'challenge_received'
   ));
 
 create or replace function public.notify_scout_challenge_participant()

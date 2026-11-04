@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
-import logoAlezan from "@/assets/logo-alezan.png";
 
 // Client non typé : la table des étapes n'est pas dans les types générés
 const supabase = supabaseClient as unknown as SupabaseClient;
@@ -49,7 +48,6 @@ const ART_BY_ID: Record<string, StageArt> = {
   base: { src: "/expedition/fleur.webp", bg: "from-emerald-200 to-emerald-500" },
   broceliande: { src: "/expedition/walk.webp", bg: "from-sky-200 to-sky-500" },
   kandersteg: { src: "/expedition/mountain.webp", bg: "from-sky-100 to-indigo-400" },
-  "Badge Alezan": { src: logoAlezan, bg: "from-white to-orange-100" },
   "jamboree-2027": { src: "/expedition/camping.webp", bg: "from-lime-200 to-green-600" },
   rome: { src: "/expedition/rome.webp", bg: "from-amber-100 to-orange-400" },
   compostelle: { src: "/expedition/shell.webp", bg: "from-cyan-100 to-blue-500" },

@@ -19,6 +19,7 @@ import {
 import { AppPageShell } from "@/components/AppPageShell";
 import { AppCard, AppList, AppListRow, AppSection } from "@/components/app/AppUi";
 import { AnimationToggle } from "@/components/AnimationToggle";
+import { TROOP_NAME } from "@/lib/troop-config";
 import { useAuth } from "@/lib/useAuth";
 import { getPatrolEmblem } from "@/lib/database";
 
@@ -123,7 +124,7 @@ function MoreScreen() {
               iconClassName="bg-primary/12 text-primary"
               title="Notifications"
               subtitle="Messages de la troupe, activer les alertes"
-              onClick={() => window.dispatchEvent(new Event("alezan:open-app-notifications"))}
+              onClick={() => window.dispatchEvent(new Event("troupe:open-app-notifications"))}
             />
             <AppListRow
               to="/app/trophees"
@@ -165,7 +166,7 @@ function MoreScreen() {
       )}
 
       <div className="space-y-1 pb-2 text-center text-[12px] text-muted-foreground/80">
-        <p>ALEZAN 42 · version {__APP_VERSION__}</p>
+        <p>{TROOP_NAME} · version {__APP_VERSION__}</p>
         <AnimationToggle />
       </div>
     </AppPageShell>

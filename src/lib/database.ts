@@ -1,8 +1,9 @@
-// Standalone Autonomous Database for ALEZAN 42
+// Local demo database, independent from the Supabase production project.
 // 100% independent of Lovable and external cloud dependencies.
 // Persists in localStorage with high-fidelity seed data and real-time subscriber events.
 
 import { TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
+import { TROOP_NAME } from "@/lib/troop-config";
 
 export type PatrolCategory = "homme" | "femme" | "staff";
 
@@ -14,7 +15,7 @@ export interface Patrol {
   created_at: string;
 }
 
-const PATROL_EMOJI_STORAGE_KEY = "alezan_patrol_emojis";
+const PATROL_EMOJI_STORAGE_KEY = "chevaliers58_patrol_emojis";
 
 export function getCustomPatrolEmojis(): Record<string, string> {
   try {
@@ -109,6 +110,7 @@ export interface Profile {
   strava_url: string | null;
   patrol_id: string | null;
   is_chef?: boolean | undefined;
+  is_admin?: boolean | undefined;
   onboarded: boolean;
   created_at: string;
 }
@@ -197,7 +199,7 @@ export interface UserRole {
   role: "admin" | "user";
 }
 
-const STORAGE_KEY = "alezan_standalone_db_v2";
+const STORAGE_KEY = "chevaliers58_standalone_db_v1";
 
 const SEED_PATROLS: Patrol[] = [
   {
@@ -206,25 +208,6 @@ const SEED_PATROLS: Patrol[] = [
     category: "staff",
     created_at: "2026-09-01T00:00:00Z",
   },
-  { id: "patrol-lynx", name: "Lynx", category: "femme", created_at: "2026-09-01T00:00:00Z" },
-  {
-    id: "patrol-gazelles",
-    name: "Gazelles",
-    category: "femme",
-    created_at: "2026-09-01T00:00:00Z",
-  },
-  { id: "patrol-girafes", name: "Girafes", category: "femme", created_at: "2026-09-01T00:00:00Z" },
-  {
-    id: "patrol-marmottes",
-    name: "Marmottes",
-    category: "femme",
-    created_at: "2026-09-01T00:00:00Z",
-  },
-  { id: "patrol-cougars", name: "Cougars", category: "homme", created_at: "2026-09-01T00:00:00Z" },
-  { id: "patrol-condors", name: "Condors", category: "homme", created_at: "2026-09-01T00:00:00Z" },
-  { id: "patrol-jaguars", name: "Jaguars", category: "homme", created_at: "2026-09-01T00:00:00Z" },
-  { id: "patrol-bisons", name: "Bisons", category: "homme", created_at: "2026-09-01T00:00:00Z" },
-  { id: "patrol-faucons", name: "Faucons", category: "homme", created_at: "2026-09-01T00:00:00Z" },
 ];
 
 const SEED_PROFILES: Profile[] = [];
@@ -236,14 +219,12 @@ const SEED_TIMELINE: TimelineEvent[] = [];
 const SEED_COUNTDOWN: CountdownConfig = {
   id: "countdown-main",
   title: "Fin du Défi Vélo des Patrouilles 2026",
-  subtitle: "Rassemblement de troupe et remise du Grand Trophée ALEZAN 42",
+  subtitle: `Rassemblement de troupe et remise du Grand Trophée ${TROOP_NAME}`,
   target_date: "2026-11-15T18:00:00",
   is_active: true,
 };
 
-const SEED_USER_ROLES: UserRole[] = [
-  { id: "role-gauthier", user_id: "usr-gauthier", role: "admin" },
-];
+const SEED_USER_ROLES: UserRole[] = [];
 
 export interface DatabaseState {
   patrols: Patrol[];
@@ -305,15 +286,11 @@ class StandaloneDatabase {
   }
 
   private loadState(): DatabaseState {
-    const GAUTHIER_UUID = "0a275bbb-6075-466a-88a0-4eb57e55e990";
     const isUUID = (val: string | null | undefined): boolean =>
       !!val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
 
-    const sanitizeId = (id: string, email?: string | null): string => {
+    const sanitizeId = (id: string): string => {
       if (isUUID(id)) return id;
-      if (id === "usr-gauthier" || email?.toLowerCase() === "baudeletgauthier@gmail.com") {
-        return GAUTHIER_UUID;
-      }
       return (
         "00000000-0000-4000-8000-" +
         Math.abs(id.split("").reduce((a, c) => (a << 5) - a + c.charCodeAt(0), 0))
@@ -349,17 +326,17 @@ class StandaloneDatabase {
             return true;
           });
 
-          // Migrate any legacy usr-gauthier IDs
+          // Normalize legacy local-only IDs.
           const migratedProfiles = cleanProfiles.map((p: Profile) => ({
             ...p,
-            id: sanitizeId(p.id, p.email),
+            id: sanitizeId(p.id),
           }));
 
           let migratedCurrentUser = parsed.currentUser || null;
           if (migratedCurrentUser) {
             migratedCurrentUser = {
               ...migratedCurrentUser,
-              id: sanitizeId(migratedCurrentUser.id, migratedCurrentUser.email),
+              id: sanitizeId(migratedCurrentUser.id),
             };
           }
 
@@ -455,10 +432,9 @@ class StandaloneDatabase {
       !!val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
     let uid = this.state.currentUser.id;
     if (!isUUID(uid)) {
-      uid =
-        uid === "usr-gauthier" || this.state.currentUser.email === "baudeletgauthier@gmail.com"
-          ? "0a275bbb-6075-466a-88a0-4eb57e55e990"
-          : "00000000-0000-4000-8000-000000000001";
+      uid = typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : "00000000-0000-4000-8000-" + Date.now().toString(16).padStart(12, "0");
       this.state.currentUser.id = uid;
       this.saveState();
     }
@@ -476,37 +452,24 @@ class StandaloneDatabase {
     let profile = this.state.profiles.find((p) => p.email?.toLowerCase() === cleanEmail);
 
     if (!profile) {
-      const isGauthier = cleanEmail === "baudeletgauthier@gmail.com";
-      const id = isGauthier
-        ? "0a275bbb-6075-466a-88a0-4eb57e55e990"
-        : typeof crypto !== "undefined" && crypto.randomUUID
-          ? crypto.randomUUID()
-          : "00000000-0000-4000-8000-" + Date.now().toString(16).padStart(12, "0");
+      const id = typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : "00000000-0000-4000-8000-" + Date.now().toString(16).padStart(12, "0");
       profile = {
         id,
         email: cleanEmail,
         full_name: cleanEmail.split("@")[0] || "Scout",
         totem: null,
         quali: null,
-        scout_year: isGauthier ? null : 1,
+        scout_year: 1,
         phone: null,
         strava_url: null,
-        patrol_id: isGauthier ? "patrol-staff" : null,
-        is_chef: isGauthier,
-        onboarded: isGauthier,
+        patrol_id: null,
+        is_chef: false,
+        onboarded: false,
         created_at: new Date().toISOString(),
       };
       this.state.profiles.push(profile);
-    }
-
-    if (cleanEmail === "baudeletgauthier@gmail.com" || cleanEmail.includes("admin")) {
-      if (!this.state.user_roles.some((r) => r.user_id === profile!.id && r.role === "admin")) {
-        this.state.user_roles.push({
-          id: `role-${Date.now()}`,
-          user_id: profile!.id,
-          role: "admin",
-        });
-      }
     }
 
     this.state.currentUser = { id: profile.id, email: cleanEmail };
@@ -531,14 +494,9 @@ class StandaloneDatabase {
   ) {
     const cleanEmail = email.trim().toLowerCase();
     let profile = this.state.profiles.find((p) => p.email?.toLowerCase() === cleanEmail);
-    const isGauthier = cleanEmail === "baudeletgauthier@gmail.com";
-    const id =
-      profile?.id ||
-      (isGauthier
-        ? "0a275bbb-6075-466a-88a0-4eb57e55e990"
-        : typeof crypto !== "undefined" && crypto.randomUUID
-          ? crypto.randomUUID()
-          : "usr-" + Date.now());
+    const id = profile?.id || (typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : "00000000-0000-4000-8000-" + Date.now().toString(16).padStart(12, "0"));
 
     if (!profile) {
       profile = {
@@ -552,8 +510,8 @@ class StandaloneDatabase {
         birth_day: metadata.birth_day ?? null,
         birth_month: metadata.birth_month ?? null,
         strava_url: null,
-        patrol_id: metadata.patrol_id || (isGauthier ? "patrol-staff" : null),
-        is_chef: metadata.is_chef ?? isGauthier,
+        patrol_id: metadata.patrol_id || null,
+        is_chef: metadata.is_chef ?? false,
         onboarded: true,
         created_at: new Date().toISOString(),
       };
@@ -566,16 +524,6 @@ class StandaloneDatabase {
       profile.patrol_id = metadata.patrol_id || profile.patrol_id;
       profile.phone = metadata.phone || profile.phone;
       profile.onboarded = true;
-    }
-
-    if (isGauthier || cleanEmail.includes("admin")) {
-      if (!this.state.user_roles.some((r) => r.user_id === id && r.role === "admin")) {
-        this.state.user_roles.push({
-          id: `role-${Date.now()}`,
-          user_id: id,
-          role: "admin",
-        });
-      }
     }
 
     this.state.currentUser = { id, email: cleanEmail };

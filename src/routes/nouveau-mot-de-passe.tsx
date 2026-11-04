@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { TROOP_NAME } from "@/lib/troop-config";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { KeyRound } from "lucide-react";
@@ -9,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/nouveau-mot-de-passe")({
   ssr: false,
-  head: () => ({ meta: [{ title: "Nouveau mot de passe — ALEZAN 42" }] }),
+  head: () => ({ meta: [{ title: `Nouveau mot de passe — ${TROOP_NAME}` }] }),
   component: NewPasswordPage,
 });
 
@@ -64,7 +65,7 @@ function NewPasswordPage() {
       return;
     }
     toast.success("Mot de passe changé ! Tu es connecté.");
-    window.location.href = "/";
+    window.location.href = import.meta.env.BASE_URL;
   };
 
   return (

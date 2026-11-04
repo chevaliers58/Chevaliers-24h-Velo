@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { TROOP_NAME } from "@/lib/troop-config";
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/useAuth";
@@ -36,7 +37,7 @@ export const Route = createFileRoute("/_authenticated/carte")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Carte interactive — ALEZAN 42" },
+      { title: `Carte interactive — ${TROOP_NAME}` },
       {
         name: "description",
         content:

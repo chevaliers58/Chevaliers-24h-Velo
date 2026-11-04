@@ -63,9 +63,9 @@ export const SEASONAL_THEMES: SeasonalThemeMeta[] = [
     id: "default",
     label: "Standard",
     emoji: "🚲",
-    description: "Couleurs Alezan, aucune décoration",
+    description: "Couleurs de la troupe, aucune décoration",
     period: "Le reste de l'année",
-    swatch: ["#f8f1e7", "#e8782a", "#f2c48d"],
+    swatch: ["#eaf2f8", "#173f5f", "#f28c28"],
   },
   {
     id: "automne",
@@ -181,11 +181,11 @@ export const SEASONAL_THEMES: SeasonalThemeMeta[] = [
   },
 ];
 
-export const SEASONAL_THEME_STORAGE_KEY = "alezan_theme";
+export const SEASONAL_THEME_STORAGE_KEY = "chevaliers58_theme";
 /** Préférence personnelle : couper les animations sur cet appareil */
-export const ANIMATIONS_OFF_STORAGE_KEY = "alezan_animations_off";
+export const ANIMATIONS_OFF_STORAGE_KEY = "chevaliers58_animations_off";
 /** Aperçu admin (cet onglet seulement) */
-export const THEME_PREVIEW_STORAGE_KEY = "alezan_theme_preview";
+export const THEME_PREVIEW_STORAGE_KEY = "chevaliers58_theme_preview";
 
 export function isSeasonalThemeId(value: unknown): value is SeasonalThemeId {
   return SEASONAL_THEMES.some((t) => t.id === value);

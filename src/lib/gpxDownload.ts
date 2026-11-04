@@ -1,3 +1,5 @@
+import { TROOP_NAME } from "@/lib/troop-config";
+
 /**
  * Lien de téléchargement d'un fichier GPX stocké dans Supabase Storage.
  *
@@ -14,7 +16,8 @@ export function gpxFileName(title: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 60);
-  return `alezan42-${slug || "parcours"}.gpx`;
+  const troopSlug = TROOP_NAME.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "troupe";
+  return `${troopSlug}-${slug || "parcours"}.gpx`;
 }
 
 export function gpxDownloadUrl(url: string, title: string): string {

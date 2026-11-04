@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { TROOP_NAME } from "@/lib/troop-config";
 import { useMemo, useState } from "react";
 import {
   CalendarClock,
@@ -63,7 +64,7 @@ export const Route = createFileRoute("/_authenticated/sorties-prevues")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Sorties prévues — ALEZAN 42" },
+      { title: `Sorties prévues — ${TROOP_NAME}` },
       {
         name: "description",
         content: "Propose une sortie de groupe et dis si tu viens : date, heure, rendez-vous.",

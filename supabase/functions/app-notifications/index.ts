@@ -5,9 +5,11 @@ const url = Deno.env.get("SUPABASE_URL")!;
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY") ?? "";
 const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
-const vapidSubject = Deno.env.get("VAPID_SUBJECT") ?? "https://alezan42-cycling.pages.dev";
+const vapidSubject = Deno.env.get("VAPID_SUBJECT") ?? "mailto:admin@example.invalid";
+const siteUrl = (Deno.env.get("SITE_URL") ?? "http://localhost:3000").replace(/\/+$/, "");
+const siteOrigin = new URL(siteUrl).origin;
 const cors = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": siteOrigin,
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-cron-secret",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -179,25 +181,23 @@ Deno.serve(async (request) => {
       : json({ ok: true });
   }
   if (body.action === "admin-status") {
-    const isMasterAdmin = authData.user.email?.toLowerCase() === "baudeletgauthier@gmail.com";
-    if (!isMasterAdmin) {
-      const [roleResult, profileResult] = await Promise.all([
-        admin
-          .from("user_roles")
-          .select("user_id")
-          .eq("user_id", authData.user.id)
-          .eq("role", "admin")
-          .maybeSingle(),
-        admin.from("profiles").select("is_admin").eq("id", authData.user.id).maybeSingle(),
-      ]);
-      const roleError = roleResult.error ?? profileResult.error;
-      if (roleError) {
-        console.error("Vérification du rôle admin impossible", roleError);
-        return json({ error: `Vérification du rôle admin impossible : ${roleError.message}` }, 500);
-      }
-      if (!roleResult.data && !profileResult.data?.is_admin)
-        return json({ error: "Accès réservé au staff" }, 403);
+    const [roleResult, profileResult] = await Promise.all([
+      admin
+        .from("user_roles")
+        .select("user_id")
+        .eq("user_id", authData.user.id)
+        .eq("role", "admin")
+        .maybeSingle(),
+      admin.from("profiles").select("is_admin").eq("id", authData.user.id).maybeSingle(),
+    ]);
+    const roleError = roleResult.error ?? profileResult.error;
+    if (roleError) {
+      console.error("Vérification du rôle admin impossible", roleError);
+      return json({ error: "Vérification du rôle admin impossible." }, 500);
     }
+    if (!roleResult.data && !profileResult.data?.is_admin)
+      return json({ error: "Accès réservé au staff" }, 403);
+
     const [profilesResult, installationsResult, subscriptionsResult] = await Promise.all([
       admin.from("profiles").select("id,full_name,totem").order("full_name"),
       admin.from("app_installations").select("user_id,platform,last_seen_at"),

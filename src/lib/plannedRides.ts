@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import type { ActivitySport } from "@/lib/database";
+import { TROOP_NAME } from "@/lib/troop-config";
 
 // Client non typé : les nouvelles tables ne sont pas dans les types générés
 const supabase = supabaseClient as unknown as SupabaseClient;
@@ -268,13 +269,13 @@ export function downloadIcs(ride: PlannedRide) {
   const ics = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//ALEZAN 42//Sorties prevues//FR",
+    `PRODID:-//${TROOP_NAME}//Sorties prevues//FR`,
     "BEGIN:VEVENT",
-    `UID:${ride.id}@alezan42`,
+    `UID:${ride.id}@chevaliers58`,
     `DTSTAMP:${fmt(new Date())}`,
     `DTSTART:${fmt(start)}`,
     `DTEND:${fmt(end)}`,
-    `SUMMARY:${esc(`ALEZAN 42 · ${ride.title}`)}`,
+    `SUMMARY:${esc(`${TROOP_NAME} · ${ride.title}`)}`,
     `LOCATION:${esc(ride.meeting_point)}`,
     `DESCRIPTION:${esc(desc)}`,
     "END:VEVENT",

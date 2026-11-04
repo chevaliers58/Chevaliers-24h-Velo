@@ -11,7 +11,9 @@ import {
   Flag,
 } from "lucide-react";
 import { useAuth } from "@/lib/useAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { SITE_URL, TROOP_NAME } from "@/lib/troop-config";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,6 +27,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+
+const supabase = supabaseClient as unknown as SupabaseClient;
 
 export type TimelineEvent = {
   id: string;
@@ -122,19 +126,19 @@ export const Route = createFileRoute("/timeline")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Timeline & Rétrospectives — ALEZAN 42" },
+      { title: `Timeline & Rétrospectives — ${TROOP_NAME}` },
       {
         name: "description",
         content:
-          "Retrace l'histoire, les camps d'été et les défis vélo des années précédentes de la troupe ALEZAN 42.",
+          `Retrace l'histoire, les camps d'été et les défis vélo des années précédentes de la troupe ${TROOP_NAME}.`,
       },
-      { property: "og:title", content: "Timeline & Rétrospectives — ALEZAN 42" },
+      { property: "og:title", content: `Timeline & Rétrospectives — ${TROOP_NAME}` },
       {
         property: "og:description",
         content: "Retrouve les archives photos, albums Drive et souvenirs des patrouilles.",
       },
     ],
-    links: [{ rel: "canonical", href: "https://alezan42-cycling.lesscoutsdemoustier.be/timeline" }],
+    links: SITE_URL ? [{ rel: "canonical", href: `${SITE_URL}/timeline` }] : [],
   }),
   component: TimelinePage,
 });
@@ -210,7 +214,7 @@ function TimelinePage() {
   const openCreateModal = () => {
     setEditingId(null);
     setEditingMilestoneKm(null);
-    setFormDateStr(new Date().toISOString().split("T")[0]); // Date du jour par défaut
+    setFormDateStr(new Date().toISOString().slice(0, 10)); // Date du jour par défaut
     setFormTitle("");
     setFormDescription("");
     setFormImageUrl("");
@@ -338,7 +342,7 @@ function TimelinePage() {
                 La Ligne du Temps de la Troupe
               </h1>
               <p className="mt-2 max-w-xl text-base text-bark-foreground/80">
-                Retrace l'histoire, les camps d'été et les défis vélo de l'ALEZAN 42 classés par
+                Retrace l'histoire, les camps d'été et les défis vélo de {TROOP_NAME} classés par
                 date exacte.
               </p>
             </div>

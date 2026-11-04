@@ -7,12 +7,12 @@ Ce projet est conçu pour être facilement réutilisable par n'importe quelle tr
 | Outil | Pourquoi | Lien |
 |---|---|---|
 | Compte GitHub | Forker / cloner le code | [github.com](https://github.com) |
-| Node.js (v18 ou plus) | Lancer l'application en local | [nodejs.org](https://nodejs.org) |
+| Node.js 22 | Lancer l'application en local et le serveur de production | [nodejs.org](https://nodejs.org) |
 | Compte Supabase (gratuit) | Base de données, authentification, stockage | [supabase.com](https://supabase.com) |
-| Compte Vercel ou Netlify (gratuit) | Héberger le site | [vercel.com](https://vercel.com) · [netlify.com](https://www.netlify.com) |
+| Hébergement Node ou Cloudflare Workers | Héberger le site (adaptateur à valider selon l'hébergeur) | [Cloudflare Workers](https://developers.cloudflare.com/workers/) |
 
 > 📚 Documents complémentaires :
-> - [`database-schema.md`](./database-schema.md) : tous les scripts SQL pour recréer la base de données.
+> - [`database-schema.md`](./database-schema.md) : exemples historiques uniquement, ne pas exécuter.
 > - [`code.md`](./code.md) : architecture technique et organisation du code.
 
 ---
@@ -36,9 +36,9 @@ L'application fonctionne avec un backend cloud gratuit fourni par [Supabase](htt
 
 1. Crée un compte gratuit sur le [Supabase Dashboard](https://supabase.com/dashboard).
 2. Crée un **nouveau projet** (choisis une région proche de chez toi, par exemple *West EU*).
-3. Va dans l'onglet **SQL Editor** de ton projet et exécute les scripts de [`database-schema.md`](./database-schema.md), table par table, pour créer : `patrols`, `profiles`, `activities`, `countdowns` et `proposed_routes`, ainsi que leurs politiques de sécurité ([RLS](https://supabase.com/docs/guides/database/postgres/row-level-security)).
-4. Crée un **bucket de stockage** nommé `proofs` dans l'onglet [Storage](https://supabase.com/docs/guides/storage) et rends-le **public** (il contient les captures d'écran de preuves et les fichiers GPX).
-5. Récupère tes clés d'API : **URL du projet** et **clé `anon` publique**, dans *Project Settings > API* ([documentation](https://supabase.com/docs/guides/api/api-keys)).
+3. Lie le projet avec `supabase link --project-ref <project-ref>`, puis applique les migrations versionnées après revue et tests locaux (`supabase db push`). Les migrations créent les tables, règles RLS et le bucket `proofs`.
+4. Vérifie dans Supabase que les tables métier, les politiques RLS et le bucket `proofs` ont bien été créés.
+5. Récupère l'**URL du projet** et la **clé publishable** dans *Project Settings > API* ([documentation](https://supabase.com/docs/guides/api/api-keys)).
 
 > ⚠️ N'utilise **jamais** la clé `service_role` dans le code du site : elle donne tous les droits et ne doit rester que côté serveur.
 
@@ -46,11 +46,16 @@ L'application fonctionne avec un backend cloud gratuit fourni par [Supabase](htt
 
 ## Étape 3 : Configurer les variables d'environnement
 
-À la racine du projet, duplique le fichier d'exemple (s'il existe, par exemple `.env.example`) en `.env`, ou crée directement un fichier `.env`, puis renseigne tes propres identifiants Supabase :
+À la racine du projet, duplique `.env.example` en `.env` et renseigne les valeurs du projet cible :
 
 ```env
 VITE_SUPABASE_URL=https://ton-projet-supabase.supabase.co
-VITE_SUPABASE_ANON_KEY=ta-cle-anon-publique
+VITE_SUPABASE_PUBLISHABLE_KEY=ta-cle-publishable
+VITE_SUPABASE_PROJECT_ID=ton-project-ref
+VITE_TROOP_NAME=Chevaliers 58
+VITE_SITE_URL=https://19-58.net/velo
+VITE_BASE_PATH=/velo/
+VITE_TROOP_STRAVA_CLUB_URL=https://www.strava.com/clubs/Chevaliers58
 ```
 
 - Le préfixe `VITE_` est obligatoire pour que [Vite](https://vite.dev/guide/env-and-mode) expose ces variables au site.
@@ -60,16 +65,16 @@ VITE_SUPABASE_ANON_KEY=ta-cle-anon-publique
 
 ## Étape 4 : Personnaliser la charte graphique (les couleurs)
 
-La direction artistique (bruns, orange, tons bois et scouts) est centralisée dans les variables de style [Tailwind CSS](https://tailwindcss.com).
+La charte actuelle des Chevaliers 58 est **bleu et orange**. Les couleurs principales sont définies dans `src/styles.css` et les thèmes saisonniers dans `src/lib/seasonalTheme.ts`.
 
-1. Ouvre le fichier de style principal (par exemple `src/index.css` ou `src/App.css`).
-2. Modifie les variables de couleurs (`--primary`, `--background`, etc.) pour correspondre aux foulards et à la charte graphique de ta troupe.
+1. Ouvre `src/styles.css` et `src/lib/seasonalTheme.ts`.
+2. Ne change les variables de couleurs (`--primary`, `--background`, etc.) que si la troupe souhaite une autre charte ; la version Chevaliers 58 est déjà en bleu et orange.
 
 Pour t'aider à choisir et nommer tes couleurs :
 - [Tailwind CSS : personnaliser les couleurs](https://tailwindcss.com/docs/colors)
 - [Tailwind CSS : thème et variables](https://tailwindcss.com/docs/theme)
 
-Pense aussi à adapter les textes visibles (nom de la troupe, titre du défi, logo, favicon) dans les fichiers de `src/routes/` (notamment `index.tsx`) et dans `index.html`.
+Le nom, le domaine et le lien Strava sont centralisés dans `src/lib/troop-config.ts` et les variables `VITE_TROOP_NAME`, `VITE_SITE_URL` et `VITE_TROOP_STRAVA_CLUB_URL`. Les visuels de la troupe se gèrent dans `src/components/` et `public/`.
 
 ---
 
@@ -82,8 +87,8 @@ Pense aussi à adapter les textes visibles (nom de la troupe, titre du défi, lo
    ```
 
 2. Crée un compte utilisateur directement depuis l'application, sur la page de connexion (`/auth`).
-3. Va dans ton tableau de bord Supabase, dans la table `user_roles` (ou attribue les droits d'administration selon le système de rôles de ta version du code), pour lier ton adresse email au rôle `admin`.
-4. Connecte-toi : tu as maintenant accès au panneau d'administration (`/admin`) pour :
+3. Après avoir créé ton compte sur `/velo/auth`, remplace l'adresse dans `supabase/bootstrap_admin.sql` puis exécute ce script une seule fois dans le SQL Editor du nouveau projet. Il attribue le rôle `admin` au premier compte sans privilège codé en dur.
+4. Connecte-toi : tu as maintenant accès au panneau d'administration (`/velo/admin`) pour :
    - créer tes propres patrouilles (ex : Renards, Faucons, Libellules) ;
    - valider ou refuser les sorties déclarées ;
    - gérer les comptes à rebours de ta troupe.
@@ -92,28 +97,33 @@ Pense aussi à adapter les textes visibles (nom de la troupe, titre du défi, lo
 
 ## Étape 6 : Déployer le site
 
-Tu peux déployer ton application gratuitement et en quelques clics sur :
+Le build actuel utilise Nitro avec le preset `node-server`. Pour un hébergement Node :
 
-- [Vercel](https://vercel.com) ([guide Vite sur Vercel](https://vercel.com/docs/frameworks/vite))
-- [Netlify](https://www.netlify.com) ([guide Vite sur Netlify](https://docs.netlify.com/build/frameworks/framework-setup-guides/vite/))
+```bash
+npm ci
+npm run build
+npm run start
+```
 
-N'oublie pas d'ajouter tes variables d'environnement (`VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY`) dans les paramètres de déploiement de ta plateforme d'hébergement.
+Le serveur écoute sur le port fourni par l'hébergeur et sert l'application sous le préfixe `/velo/`. La configuration Cloudflare Workers n'est pas encore intégrée ; ne pas publier `.output/public` comme un site Pages statique sans avoir validé le routage SSR et les ressources.
 
-Une fois le site en ligne, ajoute son adresse dans Supabase (*Authentication > URL Configuration*) pour que la connexion et les liens de confirmation par email fonctionnent depuis ton domaine.
+Consulte la section « Mise en ligne » du [README principal](../README.md) avant de choisir l'hébergeur. Renseigne toutes les variables de build de `.env.example` dans sa configuration.
+
+Dans Supabase → Authentication → URL Configuration, définir *Site URL* sur `https://19-58.net/velo` et autoriser `https://19-58.net/velo/**`.
 
 ---
 
 ## ✅ Checklist finale
 
 - [ ] Dépôt forké et dépendances installées
-- [ ] Projet Supabase créé et scripts SQL exécutés
-- [ ] Bucket `proofs` créé et public
+- [ ] Projet Supabase créé et toutes les migrations versionnées appliquées
+- [ ] Bucket `proofs` créé par les migrations
 - [ ] Fichier `.env` renseigné (et absent de GitHub)
-- [ ] Couleurs et textes adaptés à la troupe
-- [ ] Compte admin créé et rôle attribué
+- [ ] Identité Chevaliers 58 et couleurs bleu/orange vérifiées
+- [ ] Compte admin créé et rôle attribué via `supabase/bootstrap_admin.sql`
 - [ ] Patrouilles et compte à rebours créés depuis `/admin`
 - [ ] Site déployé avec les variables d'environnement
-- [ ] URL du site ajoutée dans la configuration d'authentification Supabase
+- [ ] URL `https://19-58.net/velo/**` ajoutée dans la configuration d'authentification Supabase
 
 ---
 
@@ -121,8 +131,8 @@ Une fois le site en ligne, ajoute son adresse dans Supabase (*Authentication > U
 
 | Problème | Piste |
 |---|---|
-| Page blanche ou erreur de connexion à la base | Vérifie `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY`, puis relance `npm run dev` |
+| Page blanche ou erreur de connexion à la base | Vérifie `VITE_SUPABASE_URL` et `VITE_SUPABASE_PUBLISHABLE_KEY`, puis relance `npm run dev` |
 | Les images de preuves ou les GPX ne s'affichent pas | Vérifie que le bucket `proofs` existe et est en **Public bucket** |
-| Impossible de créer une activité ou un profil | Vérifie que les politiques RLS de [`database-schema.md`](./database-schema.md) ont bien été exécutées |
+| Impossible de créer une activité ou un profil | Vérifie que toutes les migrations de `supabase/migrations/` ont été appliquées |
 | Pas d'accès à `/admin` | Vérifie que ton compte a bien le rôle `admin` |
 | Le site déployé ne se connecte pas | Vérifie les variables d'environnement sur Vercel/Netlify et l'URL du site dans Supabase |

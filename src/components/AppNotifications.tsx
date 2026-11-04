@@ -23,7 +23,7 @@ type AppNotification = {
 };
 
 function announcePushStatus(enabled: boolean) {
-  window.dispatchEvent(new CustomEvent("alezan:push-status", { detail: { enabled } }));
+  window.dispatchEvent(new CustomEvent("troupe:push-status", { detail: { enabled } }));
 }
 
 function base64UrlToBytes(value: string) {
@@ -83,18 +83,18 @@ export function AppNotifications() {
       setOpen(true);
       setMessage("");
     };
-    window.addEventListener("alezan:open-app-notifications", openNotifications);
-    return () => window.removeEventListener("alezan:open-app-notifications", openNotifications);
+    window.addEventListener("troupe:open-app-notifications", openNotifications);
+    return () => window.removeEventListener("troupe:open-app-notifications", openNotifications);
   }, []);
 
   useEffect(() => {
     if (!standalone || !user?.id) return;
     let installationId = "";
     try {
-      installationId = localStorage.getItem("alezan-app-installation-id") ?? "";
+      installationId = localStorage.getItem("chevaliers58-app-installation-id") ?? "";
       if (!installationId) {
         installationId = crypto.randomUUID();
-        localStorage.setItem("alezan-app-installation-id", installationId);
+        localStorage.setItem("chevaliers58-app-installation-id", installationId);
       }
     } catch {
       installationId = crypto.randomUUID();
@@ -253,7 +253,11 @@ export function AppNotifications() {
       item.href.startsWith("/") && !item.href.startsWith("//") && !item.href.includes("\\")
         ? item.href
         : "/";
-    window.location.assign(safePath);
+    const baseUrl = import.meta.env.BASE_URL;
+    const destination = safePath.startsWith(baseUrl)
+      ? safePath
+      : `${baseUrl}${safePath.startsWith("/") ? safePath.slice(1) : safePath}`;
+    window.location.assign(destination);
   };
 
   const markAllRead = async () => {

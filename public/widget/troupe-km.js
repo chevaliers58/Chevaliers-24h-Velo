@@ -1,24 +1,26 @@
 /*!
- * Widget « Défi kilomètres ALEZAN 42 » — à intégrer sur un autre site.
+ * Widget « Défi kilomètres de la troupe » — à intégrer sur un autre site.
  *
- *   <div data-alezan42-km data-sections="total,patrouilles,scouts" data-period="semaine"></div>
- *   <script src="https://alezan42-cycling.lesscoutsdemoustier.be/widget/alezan42-km.js" defer></script>
+ *   <div data-troupe-km data-sections="total,patrouilles,scouts" data-period="semaine"></div>
+ *   <script src="https://<votre-domaine>/widget/troupe-km.js" defer></script>
  *
  * Options (attributs facultatifs) :
  *   data-sections : total, patrouilles, scouts (séparés par des virgules) — défaut « total,patrouilles »
  *   data-period   : semaine | mois | tout — défaut « semaine »
  *   data-limit    : nombre de lignes par classement — défaut 5
  *   data-theme    : clair | sombre — défaut « clair »
- *   data-titre    : titre affiché — défaut « Défi kilomètres ALEZAN 42 »
+ *   data-titre    : titre affiché — défaut « Défi kilomètres de la troupe »
+ *   data-troupe-name : nom de la troupe affiché sous le total — défaut « la troupe »
  *
  * Données : uniquement les vues publiques (mêmes informations que le site pour un visiteur
  * sans compte : km validés, patrouilles, totem ou prénom abrégé). Aucun cookie.
  */
 (function () {
   "use strict";
-  var SUPABASE_URL = "https://civblymnwigeayfecujp.supabase.co";
-  var KEY = "sb_publishable_Rs7_eLIv_g7FcK2R1Hz8cw_rc6qLJfs";
-  var SITE = "https://alezan42-cycling.lesscoutsdemoustier.be";
+  var script = document.currentScript;
+  var SUPABASE_URL = ((script && script.getAttribute("data-supabase-url")) || "").replace(/\/+$/, "");
+  var KEY = (script && script.getAttribute("data-supabase-key")) || "";
+  var SITE = (script && script.getAttribute("data-site-url")) || "";
   var CACHE_MS = 5 * 60 * 1000;
 
   var nf = new Intl.NumberFormat("fr-BE", { maximumFractionDigits: 1 });
@@ -36,7 +38,7 @@
   function loadData() {
     if (dataPromise) return dataPromise;
     try {
-      var cached = JSON.parse(sessionStorage.getItem("alezan42-km") || "null");
+      var cached = JSON.parse(sessionStorage.getItem("troupe-km") || "null");
       if (cached && Date.now() - cached.t < CACHE_MS) {
         dataPromise = Promise.resolve(cached.d);
         return dataPromise;
@@ -51,7 +53,7 @@
     ]).then(function (res) {
       var d = { profiles: res[0], activities: res[1], patrols: res[2] };
       try {
-        sessionStorage.setItem("alezan42-km", JSON.stringify({ t: Date.now(), d: d }));
+        sessionStorage.setItem("troupe-km", JSON.stringify({ t: Date.now(), d: d }));
       } catch (e) {
         /* ignore */
       }
@@ -146,8 +148,8 @@
     ":host{all:initial;display:block}" +
     ".w{font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;color:var(--fg);background:var(--bg);border:1px solid var(--bd);border-radius:20px;padding:20px;width:100%;box-sizing:border-box;line-height:1.35}" +
     ".w *{box-sizing:border-box}" +
-    ".clair{--bg:#fffaf3;--fg:#2b1d12;--mu:#7a6250;--bd:#ecdcc8;--ac:#e8782a;--row:#f6ecdf}" +
-    ".sombre{--bg:#1d1814;--fg:#f6eadb;--mu:#bba48f;--bd:#3a2f26;--ac:#f08a3c;--row:#2a221c}" +
+    ".clair{--bg:#f4f8fb;--fg:#152c3d;--mu:#5f7484;--bd:#d5e2ea;--ac:#f28c28;--row:#e8f0f6}" +
+    ".sombre{--bg:#102435;--fg:#eaf2f8;--mu:#a9bdcb;--bd:#2d4659;--ac:#f28c28;--row:#1c3447}" +
     ".hd{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 14px}" +
     ".t{font-weight:800;font-size:17px;margin:0}" +
     ".p{font-size:13px;color:var(--mu);margin:2px 0 0}" +
@@ -213,8 +215,8 @@
   }
 
   function render(el) {
-    if (el.__alezan42) return;
-    el.__alezan42 = true;
+    if (el.__troupeKm) return;
+    el.__troupeKm = true;
     var sections = (el.getAttribute("data-sections") || "total,patrouilles")
       .toLowerCase()
       .split(",")
@@ -224,7 +226,8 @@
     var period = (el.getAttribute("data-period") || "semaine").toLowerCase();
     var limit = Math.max(1, Math.min(20, parseInt(el.getAttribute("data-limit") || "5", 10) || 5));
     var theme = el.getAttribute("data-theme") === "sombre" ? "sombre" : "clair";
-    var title = el.getAttribute("data-titre") || "Défi kilomètres ALEZAN 42";
+    var title = el.getAttribute("data-titre") || "Défi kilomètres de la troupe";
+    var troopName = el.getAttribute("data-troupe-name") || "la troupe";
 
     var root = el.attachShadow ? el.attachShadow({ mode: "open" }) : el;
     // Taille du bloc sur la page hôte (et pas seulement de l'écran) : s < 420 px ≤ m < 640 px ≤ l < 900 px ≤ xl
@@ -246,6 +249,10 @@
       }).observe(el);
     }
     box('<p class="e">Chargement du classement…</p>');
+    if (!SUPABASE_URL || !KEY || !SITE) {
+      box('<p class="e">Configuration du widget manquante : ajoutez data-supabase-url, data-supabase-key et data-site-url au script.</p>');
+      return;
+    }
 
     loadData()
       .then(function (d) {
@@ -266,8 +273,8 @@
           html +=
             '<div class="tot"><b>' +
             nf.format(c.total) +
-            " km</b><span>parcourus par la troupe " +
-            c.label +
+            " km</b><span>parcourus par " +
+            esc(troopName) + " · " + c.label +
             "</span></div>";
         }
         html +=
@@ -292,7 +299,7 @@
   }
 
   function init() {
-    var els = document.querySelectorAll("[data-alezan42-km]");
+    var els = document.querySelectorAll("[data-troupe-km]");
     for (var i = 0; i < els.length; i++) render(els[i]);
   }
 

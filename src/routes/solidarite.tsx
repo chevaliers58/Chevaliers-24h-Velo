@@ -22,6 +22,7 @@ import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/lib/supabase";
 import { db } from "@/lib/database";
 import { useAuth } from "@/lib/useAuth";
+import { SITE_URL, TROOP_NAME } from "@/lib/troop-config";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 type GoalIcon = "bike" | "walk" | "target";
@@ -60,22 +61,20 @@ export const Route = createFileRoute("/solidarite")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "ASBL Profitivisme & Solidarité — ALEZAN 42" },
+      { title: `ASBL Profitivisme & Solidarité — ${TROOP_NAME}` },
       {
         name: "description",
         content:
-          "Objectifs solidaires, 24h et marche parrainée de la troupe ALEZAN 42 au profit de l'ASBL Profitivisme.",
+          `Objectifs solidaires, 24h et marche parrainée de la troupe ${TROOP_NAME} au profit de l'ASBL Profitivisme.`,
       },
-      { property: "og:title", content: "ASBL Profitivisme & Solidarité — ALEZAN 42" },
+      { property: "og:title", content: `ASBL Profitivisme & Solidarité — ${TROOP_NAME}` },
       {
         property: "og:description",
         content:
           "Profiter de la vie malgré tout. Pédaler ensemble pour soutenir l'ASBL Profitivisme.",
       },
     ],
-    links: [
-      { rel: "canonical", href: "https://alezan42-cycling.lesscoutsdemoustier.be/solidarite" },
-    ],
+    links: SITE_URL ? [{ rel: "canonical", href: `${SITE_URL}/solidarite` }] : [],
   }),
   component: SolidarityPage,
 });
@@ -225,7 +224,7 @@ function SolidarityPage() {
               </h1>
               <p className="mt-2 max-w-xl text-base text-bark-foreground/80">
                 Inspirés par l'énergie de Gilles Van der Spek et le documentaire de Charles Masset,
-                la Troupe ALEZAN 42 met ses roues au service de la lutte contre le cancer.
+                la Troupe {TROOP_NAME} met ses roues au service de la lutte contre le cancer.
               </p>
             </div>
             <div>
@@ -476,7 +475,7 @@ function SolidarityPage() {
             Prêt à porter les couleurs du Profitivisme ?
           </h2>
           <p className="text-xs sm:text-sm text-muted-foreground max-w-xl mx-auto">
-            Enfilez vos casques, cumulez vos kilomètres sur la plateforme de la troupe ALEZAN 42 et
+            Enfilez vos casques, cumulez vos kilomètres sur la plateforme de la troupe {TROOP_NAME} et
             portons ensemble ce magnifique projet solidaire !
           </p>
           <div className="pt-2">

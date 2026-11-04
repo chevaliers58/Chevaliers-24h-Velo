@@ -1,3 +1,19 @@
+-- Default-deny for future public API objects. Each application table/view/RPC
+-- below receives explicit grants alongside its RLS or function-level checks.
+alter default privileges for role postgres in schema public
+  revoke all on tables from public, anon, authenticated;
+alter default privileges for role postgres in schema public
+  revoke execute on functions from public, anon, authenticated;
+alter default privileges for role postgres in schema public
+  revoke usage, select on sequences from public, anon, authenticated;
+
+alter default privileges for role supabase_admin in schema public
+  revoke all on tables from public, anon, authenticated;
+alter default privileges for role supabase_admin in schema public
+  revoke execute on functions from public, anon, authenticated;
+alter default privileges for role supabase_admin in schema public
+  revoke usage, select on sequences from public, anon, authenticated;
+
 create type public.app_role as enum ('admin','user');
 create type public.patrol_category as enum ('homme','femme');
 create type public.activity_status as enum ('pending','approved','rejected');
@@ -14,8 +30,14 @@ alter table public.user_roles enable row level security;
 
 create or replace function public.has_role(_user_id uuid, _role app_role)
 returns boolean language sql stable security definer set search_path = public as $$
-  select exists (select 1 from public.user_roles where user_id = _user_id and role = _role)
+  select exists (
+    select 1 from public.user_roles
+    where user_id = _user_id and _user_id = auth.uid() and role = _role
+  )
 $$;
+
+-- RLS policies call this helper as the authenticated caller.
+grant execute on function public.has_role(uuid, public.app_role) to authenticated;
 
 create policy "own or admin read roles" on public.user_roles for select to authenticated
   using (user_id = auth.uid() or public.has_role(auth.uid(),'admin'));
@@ -39,9 +61,6 @@ create policy "admin manage patrols ins" on public.patrols for insert to authent
 create policy "admin manage patrols upd" on public.patrols for update to authenticated using (public.has_role(auth.uid(),'admin'));
 create policy "admin manage patrols del" on public.patrols for delete to authenticated using (public.has_role(auth.uid(),'admin'));
 
-insert into public.patrols (name, category) values
- ('Lynx','femme'),('Gazelles','femme'),('Girafes','femme'),('Marmottes','femme'),
- ('Cougars','homme'),('Condors','homme'),('Jaguars','homme'),('Bisons','homme'),('Faucons','homme');
 
 create table public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -74,9 +93,6 @@ begin
   insert into public.profiles (id, email, full_name)
   values (new.id, new.email, coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name'));
   insert into public.user_roles (user_id, role) values (new.id, 'user');
-  if lower(new.email) = 'baudeletgauthier@gmail.com' then
-    insert into public.user_roles (user_id, role) values (new.id, 'admin');
-  end if;
   return new;
 end; $$;
 create trigger on_auth_user_created after insert on auth.users
@@ -150,7 +166,6 @@ begin
   if _make_admin then
     insert into public.user_roles(user_id, role) values (uid,'admin') on conflict do nothing;
   else
-    if lower(_email) = 'baudeletgauthier@gmail.com' then raise exception 'Admin principal non modifiable'; end if;
     delete from public.user_roles where user_id = uid and role='admin';
   end if;
 end; $$;

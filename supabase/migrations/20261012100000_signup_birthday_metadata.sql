@@ -54,11 +54,6 @@ begin
   values (new.id, 'user')
   on conflict (user_id, role) do nothing;
 
-  if lower(new.email) = 'baudeletgauthier@gmail.com' then
-    insert into public.user_roles (user_id, role)
-    values (new.id, 'admin')
-    on conflict (user_id, role) do nothing;
-  end if;
 
   return new;
 end; $function$;

@@ -1,5 +1,5 @@
 // =====================================================================
-// Fonction Edge « menage » : ménage automatique du site Alezan 42
+// Fonction Edge « menage » : ménage des données de la troupe
 //
 // Appelée chaque nuit par pg_cron (en-tête x-cron-secret) ou par un admin
 // depuis la page Admin (jeton de session). Elle :
@@ -21,9 +21,11 @@ const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const PHOTO_DAYS = 30;
 const ORPHAN_DAYS = 7;
 const MAX_FILES_PER_RUN = 300;
+const siteUrl = (Deno.env.get("SITE_URL") ?? "http://localhost:3000").replace(/\/+$/, "");
+const siteOrigin = new URL(siteUrl).origin;
 
 const cors = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": siteOrigin,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
@@ -44,6 +46,27 @@ function fileName(url: string | null | undefined, bucket: string): string | null
 }
 
 const daysAgo = (n: number) => new Date(Date.now() - n * 24 * 3600 * 1000).toISOString();
+
+type PageResult<T> = {
+  data: T[] | null;
+  error: { message: string } | null;
+};
+
+/** Read every row, not just PostgREST's default first 1,000. */
+async function loadAllRows<T>(
+  fetchPage: (from: number, to: number) => PromiseLike<PageResult<T>>,
+): Promise<PageResult<T>> {
+  const rows: T[] = [];
+  const pageSize = 1000;
+  const maxRows = 100_000;
+  for (let offset = 0; offset < maxRows; offset += pageSize) {
+    const { data, error } = await fetchPage(offset, offset + pageSize - 1);
+    if (error) return { data: null, error };
+    rows.push(...(data ?? []));
+    if (!data || data.length < pageSize) return { data: rows, error: null };
+  }
+  return { data: null, error: { message: `Plus de ${maxRows} lignes : nettoyage interrompu par sécurité` } };
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -114,11 +137,21 @@ Deno.serve(async (req) => {
   if (!errors.length) {
     // Tout ce qui est encore référencé quelque part
     const [acts, challenges, routes, timeline, settings] = await Promise.all([
-      admin.from("activities").select("proof_path, gpx_path"),
-      admin.from("scout_challenges").select("gpx_template_path"),
-      admin.from("proposed_routes").select("gpx_url"),
-      admin.from("timeline").select("image_url"),
-      admin.from("site_settings").select("value"),
+      loadAllRows((from, to) =>
+        admin.from("activities").select("proof_path, gpx_path").order("id").range(from, to),
+      ),
+      loadAllRows((from, to) =>
+        admin.from("scout_challenges").select("gpx_template_path").order("id").range(from, to),
+      ),
+      loadAllRows((from, to) =>
+        admin.from("proposed_routes").select("gpx_url").order("id").range(from, to),
+      ),
+      loadAllRows((from, to) =>
+        admin.from("timeline").select("image_url").order("id").range(from, to),
+      ),
+      loadAllRows((from, to) =>
+        admin.from("site_settings").select("value").order("key").range(from, to),
+      ),
     ]);
     const queryErrors = [acts, challenges, routes, timeline, settings].filter((r) => r.error);
     if (queryErrors.length) {

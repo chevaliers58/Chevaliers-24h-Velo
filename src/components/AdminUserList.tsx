@@ -35,8 +35,8 @@ interface AdminUserListProps {
   patrols: Patrol[];
   admins: string[];
   onRefresh: () => void | Promise<void>;
-  currentUserId?: string;
-  currentUserEmail?: string | null;
+  currentUserId?: string | undefined;
+  currentUserEmail?: string | null | undefined;
 }
 
 export function AdminUserList({
@@ -61,7 +61,7 @@ export function AdminUserList({
     if (initialMembersTracked.current || profiles.length === 0) return;
     initialMembersTracked.current = true;
 
-    const storageKey = "alezan-admin-members-last-seen-at";
+    const storageKey = "chevaliers58-admin-members-last-seen-at";
     const now = Date.now();
     try {
       const storedLastSeenAt = Number(window.localStorage.getItem(storageKey));
@@ -93,7 +93,6 @@ export function AdminUserList({
   // Check if a profile is an admin
   const isUserAdmin = useCallback(
     (p: Profile): boolean => {
-      if (p.email?.toLowerCase() === "baudeletgauthier@gmail.com") return true;
       return !!p.is_admin || admins.includes(p.id);
     },
     [admins],
@@ -124,8 +123,8 @@ export function AdminUserList({
   };
 
   const handleToggleAdmin = async (target: Profile, newChecked: boolean) => {
-    if (target.email?.toLowerCase() === "baudeletgauthier@gmail.com" && !newChecked) {
-      toast.error("Impossible de retirer les droits du compte administrateur principal.");
+    if (target.id === currentUserId && !newChecked) {
+      toast.error("Tu ne peux pas retirer tes propres droits administrateur.");
       return;
     }
 
@@ -496,7 +495,6 @@ export function AdminUserList({
               ) : (
                 filteredProfiles.map((p) => {
                   const isAdm = isUserAdmin(p);
-                  const isMaster = p.email?.toLowerCase() === "baudeletgauthier@gmail.com";
                   const isCurrent = currentUserId === p.id || currentUserEmail === p.email;
                   const isBusy = togglingUserId === p.id;
                   const currentPatrol = p.patrol_id ? patrolMap.get(p.patrol_id) : null;
@@ -515,11 +513,9 @@ export function AdminUserList({
                           <div
                             className={cn(
                               "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-black text-sm",
-                              isMaster
-                                ? "bg-amber-500/20 text-amber-700 ring-2 ring-amber-500/30"
-                                : isAdm
-                                  ? "bg-amber-500/10 text-amber-700"
-                                  : "bg-primary/10 text-primary",
+                              isAdm
+                                ? "bg-amber-500/10 text-amber-700"
+                                : "bg-primary/10 text-primary",
                             )}
                           >
                             {p.totem ? (
@@ -536,12 +532,7 @@ export function AdminUserList({
                               <span className="font-bold text-foreground truncate">
                                 {p.full_name || "Sans nom"}
                               </span>
-                              {isMaster && (
-                                <Badge className="bg-amber-500/20 text-amber-700 border-amber-500/30 text-[9px] font-bold px-1.5 py-0">
-                                  👑 Principal
-                                </Badge>
-                              )}
-                              {isCurrent && !isMaster && (
+                              {isCurrent && (
                                 <Badge
                                   variant="outline"
                                   className="text-[9px] px-1.5 py-0 font-medium"
@@ -622,7 +613,7 @@ export function AdminUserList({
                             <Switch
                               id={`switch-admin-${p.id}`}
                               checked={isAdm}
-                              disabled={isMaster || isBusy}
+                              disabled={isCurrent || isBusy}
                               onCheckedChange={(checked) => handleToggleAdmin(p, checked)}
                               className="data-[state=checked]:bg-amber-500"
                               aria-label={`Attribuer ou révoquer les droits admin pour ${p.full_name || p.email}`}

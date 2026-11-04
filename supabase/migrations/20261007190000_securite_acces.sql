@@ -191,6 +191,9 @@ returns boolean language sql stable security definer set search_path = public as
   );
 $$;
 
+revoke execute on function public.owns_proof_object(text) from public, anon;
+grant execute on function public.owns_proof_object(text) to authenticated;
+
 create policy "preuves lecture proprietaire ou admin" on storage.objects
   for select to authenticated
   using (bucket_id = 'proofs' and public.owns_proof_object(name));
@@ -208,7 +211,13 @@ create policy "preuves suppression proprietaire ou admin" on storage.objects
 -- ---------------------------------------------------------------------
 -- 6. Fonctions : search_path fixé, fonctions internes non appelables via l'API
 -- ---------------------------------------------------------------------
-alter function public.delete_rejected_activity() set search_path = public;
+do $guard$
+begin
+  if to_regprocedure('public.delete_rejected_activity()') is not null then
+    execute 'alter function public.delete_rejected_activity() set search_path = public';
+    execute 'revoke execute on function public.delete_rejected_activity() from public, anon, authenticated';
+  end if;
+end $guard$;
 
 -- Ancienne fonction vide, attachée à aucun trigger.
 drop function if exists public.handle_activity_action();
@@ -225,9 +234,6 @@ begin
   if _make_admin then
     insert into public.user_roles(user_id, role) values (uid, 'admin') on conflict do nothing;
   else
-    if lower(_email) = 'baudeletgauthier@gmail.com' then
-      raise exception 'Admin principal non modifiable';
-    end if;
     delete from public.user_roles where user_id = uid and role = 'admin';
   end if;
 end; $$;
@@ -236,9 +242,7 @@ revoke execute on function public.set_admin_by_email(text, boolean) from public,
 grant execute on function public.set_admin_by_email(text, boolean) to authenticated;
 
 -- Fonctions de trigger : jamais appelées directement par le site.
-revoke execute on function public.delete_rejected_activity() from public, anon, authenticated;
 revoke execute on function public.set_activity_status() from public, anon, authenticated;
 revoke execute on function public.protect_profile_admin_flag() from public, anon, authenticated;
 revoke execute on function public.sync_profile_admin_flag() from public, anon, authenticated;
 revoke execute on function public.handle_new_user() from public, anon, authenticated;
-revoke execute on function public.auto_confirm_user() from public, anon, authenticated;

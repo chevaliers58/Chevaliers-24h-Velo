@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { TROOP_NAME } from "@/lib/troop-config";
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
 import {
@@ -40,13 +41,13 @@ export const Route = createFileRoute("/_authenticated/mes-km")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Mes kilomètres — ALEZAN 42" },
+      { title: `Mes kilomètres — ${TROOP_NAME}` },
       {
         name: "description",
         content:
           "Enregistre tes sorties vélo, course à pied ou marche avec capture, Strava ou GPX.",
       },
-      { property: "og:title", content: "Mes kilomètres — ALEZAN 42" },
+      { property: "og:title", content: `Mes kilomètres — ${TROOP_NAME}` },
       {
         property: "og:description",
         content: "Ajoute tes km de vélo, course à pied et marche pour ta patrouille.",

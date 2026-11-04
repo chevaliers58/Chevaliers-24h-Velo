@@ -5,13 +5,13 @@ import { getAlezanQuote, type AlezanContext } from "@/lib/alezanQuotes";
 import { useSeasonalTheme } from "@/context/SeasonalThemeContext";
 import { useAuth } from "@/lib/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import mascotClassique from "@/assets/Perso/Alezan_Classique.png";
+import mascotHalloween from "@/assets/Perso/Alezan_Halloween.png";
+import mascotNoel from "@/assets/Perso/Alezan_Noel.png";
+import mascotSaintValentin from "@/assets/Perso/Alezan_St_Valentin.png";
+import mascotAnniversaire from "@/assets/Perso/Alezan_Anniversaire.png";
+import mascotEte from "@/assets/Perso/Alezan_Ete.png";
 
-import alezanClassique from "@/assets/Perso/Alezan_Classique.png";
-import alezanHalloween from "@/assets/Perso/Alezan_Halloween.png";
-import alezanNoel from "@/assets/Perso/Alezan_Noel.png";
-import alezanStValentin from "@/assets/Perso/Alezan_St_Valentin.png";
-import alezanAnniversaire from "@/assets/Perso/Alezan_Anniversaire.png";
-import alezanEte from "@/assets/Perso/Alezan_Ete.png";
 
 interface Birthday {
   user_id: string;
@@ -34,13 +34,13 @@ interface AlezanMascotProps {
   context?: AlezanContext;
 }
 
-/** Alezouille accueille les scouts avec un message lié à la page. */
+/** La mascotte accueille les scouts avec un message lié à la page. */
 export function AlezanMascot({ context }: AlezanMascotProps) {
   const { pathname } = useLocation();
   const { user } = useAuth();
   const { theme: currentTheme } = useSeasonalTheme();
   const pageContext = context ?? PAGE_CONTEXT[pathname] ?? "general";
-  // Téléphone : Alezouille est une pastille ; on touche pour lire son message
+  // Téléphone : la mascotte est une pastille ; on touche pour lire son message
   const [open, setOpen] = useState(false);
   const [seen, setSeen] = useState(false);
   const rootRef = useRef<HTMLElement>(null);
@@ -84,31 +84,26 @@ export function AlezanMascot({ context }: AlezanMascotProps) {
         ? "Joyeux anniversaire au staff de la troupe ! 🎉"
         : quote;
 
-  const currentImage = birthdayMode
-    ? alezanAnniversaire
-    : currentTheme === "ete"
-      ? alezanEte
-      : currentTheme === "halloween"
-        ? alezanHalloween
-        : currentTheme === "noel"
-          ? alezanNoel
-          : currentTheme === "valentin"
-            ? alezanStValentin
-            : alezanClassique;
+  const mascotImage =
+    birthdayMode ? mascotAnniversaire :
+    currentTheme === "ete" ? mascotEte :
+    currentTheme === "halloween" ? mascotHalloween :
+    currentTheme === "noel" ? mascotNoel :
+    currentTheme === "valentin" ? mascotSaintValentin : mascotClassique;
 
   return (
     <aside
       ref={rootRef}
-      aria-label="Le message d'Alezouille"
+      aria-label="Le message de la mascotte"
       className="mobile-mascot pointer-events-none fixed bottom-4 right-3 z-40 flex max-w-[calc(100vw-1.5rem)] items-end gap-2 sm:bottom-6 sm:right-6 sm:gap-3"
     >
       <div
-        id="alezouille-message"
+        id="troop-mascot-message"
         data-open={open ? "true" : undefined}
         className={`mobile-mascot-bubble relative mb-6 ${birthdayMode ? "max-w-[min(8rem,calc(100vw-12rem))] sm:max-w-[min(13rem,calc(100vw-13rem))]" : "max-w-[min(13rem,calc(100vw-9rem))]"} rounded-2xl border border-border/80 bg-card/95 px-3 py-2.5 shadow-lg shadow-black/10 backdrop-blur-sm after:absolute after:-right-1.5 after:bottom-4 after:h-3 after:w-3 after:rotate-45 after:border-r after:border-t after:border-border/80 after:bg-card`}
       >
         <p className="mb-0.5 text-[9px] font-black uppercase tracking-[0.14em] text-primary">
-          {birthdayMode ? "Mode anniversaire" : "Alezouille te glisse un message"}
+          {birthdayMode ? "Mode anniversaire" : "La mascotte te glisse un message"}
         </p>
         <p
           role="status"
@@ -120,9 +115,9 @@ export function AlezanMascot({ context }: AlezanMascotProps) {
       <button
         type="button"
         className="mobile-mascot-toggle relative shrink-0 cursor-default rounded-full border-0 bg-transparent p-0"
-        aria-label={open ? "Fermer le message d'Alezouille" : "Lire le message d'Alezouille"}
+        aria-label={open ? "Fermer le message de la mascotte" : "Lire le message de la mascotte"}
         aria-expanded={open}
-        aria-controls="alezouille-message"
+        aria-controls="troop-mascot-message"
         onClick={() => {
           setOpen((value) => !value);
           setSeen(true);
@@ -130,8 +125,8 @@ export function AlezanMascot({ context }: AlezanMascotProps) {
       >
         {!seen && <span className="mobile-mascot-dot" aria-hidden="true" />}
         <img
-          src={currentImage}
-          alt="Alezouille, le compagnon de route de la troupe"
+          src={mascotImage}
+          alt="La mascotte des Chevaliers 58"
           className={
             birthdayMode
               ? "h-20 w-36 shrink-0 object-contain drop-shadow-md sm:h-28 sm:w-52"

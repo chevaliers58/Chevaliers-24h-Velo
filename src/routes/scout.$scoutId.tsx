@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { TROOP_NAME } from "@/lib/troop-config";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
@@ -23,7 +24,7 @@ export const Route = createFileRoute("/scout/$scoutId")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Profil scout — ALEZAN 42" },
+      { title: `Profil scout — ${TROOP_NAME}` },
       { name: "description", content: "Profil, sorties validées et badges de distance." },
     ],
   }),

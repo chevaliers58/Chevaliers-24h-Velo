@@ -38,34 +38,34 @@
 :root {
   --radius: 0.5rem;
   --background: oklch(0.965 0.02 75);
-  --foreground: oklch(0.27 0.05 45);
-  --card: oklch(0.985 0.012 80);
-  --card-foreground: oklch(0.27 0.05 45);
-  --popover: oklch(0.985 0.012 80);
-  --popover-foreground: oklch(0.27 0.05 45);
-  /* Orange de la troupe, un ton plus sombre pour un contraste de 4,8 : 1 avec le texte blanc (avant 0.66 0.18 48) */
-  --primary: oklch(0.56 0.17 48);
+  --foreground: oklch(0.27 0.045 250);
+  --card: oklch(0.985 0.008 235);
+  --card-foreground: oklch(0.27 0.045 250);
+  --popover: oklch(0.985 0.008 235);
+  --popover-foreground: oklch(0.27 0.045 250);
+  /* Bleu Chevaliers pour les actions principales ; orange pour les accents de la troupe. */
+  --primary: oklch(0.43 0.12 250);
   --primary-foreground: oklch(0.985 0.01 80);
-  --secondary: oklch(0.9 0.04 70);
-  --secondary-foreground: oklch(0.3 0.06 45);
-  --muted: oklch(0.92 0.025 72);
-  --muted-foreground: oklch(0.48 0.05 50);
-  --accent: oklch(0.88 0.08 65);
-  --accent-foreground: oklch(0.3 0.06 45);
+  --secondary: oklch(0.91 0.055 65);
+  --secondary-foreground: oklch(0.32 0.07 48);
+  --muted: oklch(0.93 0.018 235);
+  --muted-foreground: oklch(0.48 0.04 250);
+  --accent: oklch(0.82 0.13 62);
+  --accent-foreground: oklch(0.28 0.07 45);
   --destructive: oklch(0.55 0.2 27);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.84 0.04 65);
-  --input: oklch(0.84 0.04 65);
-  --ring: oklch(0.56 0.17 48);
-  --bark: oklch(0.3 0.06 45);
-  --bark-foreground: oklch(0.95 0.03 75);
+  --border: oklch(0.86 0.025 235);
+  --input: oklch(0.86 0.025 235);
+  --ring: oklch(0.43 0.12 250);
+  --bark: oklch(0.25 0.055 250);
+  --bark-foreground: oklch(0.96 0.012 235);
   --success: oklch(0.55 0.13 145);
-  --header: #1e231e;
+  --header: #12304a;
   /* Compte à rebours et bouton secondaire de l'accueil : suivent le thème */
-  --countdown: #241a12;
-  --countdown-accent: #fb923c;
+  --countdown: #102a43;
+  --countdown-accent: #f28c28;
   --countdown-accent-2: #fcd34d;
-  --cta-2: #7c2d12;
+  --cta-2: #c45a13;
   --cta-2-foreground: #ffffff;
 }
 
@@ -1064,7 +1064,7 @@ body {
     gap: 0;
   }
 
-  /* Alezouille en pastille : on touche pour ouvrir sa bulle */
+  /* Mascotte de troupe en pastille : on touche pour ouvrir sa bulle */
   .mobile-mascot {
     gap: 0.5rem;
   }
@@ -1092,6 +1092,7 @@ body {
     width: 3.25rem;
     height: 3.25rem;
     border-radius: 9999px;
+    object-fit: contain;
     filter: none;
   }
 
