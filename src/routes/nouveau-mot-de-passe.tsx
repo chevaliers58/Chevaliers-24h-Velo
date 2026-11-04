@@ -65,7 +65,7 @@ function NewPasswordPage() {
       return;
     }
     toast.success("Mot de passe changé ! Tu es connecté.");
-    window.location.href = "/";
+    window.location.href = import.meta.env.BASE_URL;
   };
 
   return (
