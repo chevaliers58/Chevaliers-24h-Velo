@@ -77,7 +77,7 @@ function ErrorComponent({ error }: ErrorComponentProps) {
           <button
             onClick={() => {
               try {
-                localStorage.removeItem("alezan_standalone_db_v2");
+                localStorage.removeItem("chevaliers58_standalone_db_v1");
               } catch {
                 // ignore storage error
               }
