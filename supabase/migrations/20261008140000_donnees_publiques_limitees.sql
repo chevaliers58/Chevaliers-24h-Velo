@@ -31,7 +31,7 @@ returns text language sql stable set search_path = public as $$
              else '' end
       ), '')
   end;
-$;
+$$;
 
 -- The public profile view invokes this helper for both anonymous and signed-in readers.
 grant execute on function public.public_display_name(text) to anon, authenticated;
