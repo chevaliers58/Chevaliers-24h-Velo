@@ -107,6 +107,25 @@ La sortie Node actuelle ne doit pas être envoyée telle quelle à Cloudflare Pa
 Références : [TanStack Start sur Cloudflare Workers](https://developers.cloudflare.com/workers/framework-guides/web-apps/tanstack-start/)
 et [déploiement Nitro Cloudflare](https://nitro.build/deploy/providers/cloudflare).
 
+## Secrets des fonctions Supabase
+
+Les Edge Functions reçoivent automatiquement `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` depuis Supabase. Ne jamais copier la clé `service_role` dans le frontend ni dans Git.
+
+À configurer dans **Supabase → Edge Functions → Secrets** avant le déploiement :
+
+| Secret | Utilisation |
+|---|---|
+| `SITE_URL` = `https://19-58.net/velo` | CORS, liens d'e-mail et redirections |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Notifications PWA (générer avec `npx web-push generate-vapid-keys`) |
+| `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`, `STRAVA_REDIRECT_URI` | Connexion OAuth Strava |
+| `STRAVA_WEBHOOK_VERIFY_TOKEN`, `STRAVA_WEBHOOK_SUBSCRIPTION_ID` | Vérification du webhook Strava |
+| `RESEND_API_KEY`, `PENDING_ACTIVITY_ALERT_FROM`, `PENDING_ACTIVITY_ALERT_TO` | E-mail d'alerte des sorties en attente (destinataires séparés par des virgules) |
+
+`STRAVA_REDIRECT_URI` doit être `https://qxlsdauqoivqhoojlrwk.supabase.co/functions/v1/strava-oauth`. Créer une nouvelle application API Strava pour Chevaliers 58 et enregistrer le webhook sur `https://qxlsdauqoivqhoojlrwk.supabase.co/functions/v1/strava-webhook`.
+
+Le secret `SITE_URL` des fonctions est distinct de `VITE_SITE_URL`, qui est injecté au build du frontend. La clé VAPID privée, le secret Strava et la clé Resend restent exclusivement dans Supabase.
+
+
 Le préfixe `/velo` devra également être routé vers l'application par le proxy ou la configuration
 de routage de l'hébergeur. Ne pas modifier la zone DNS ni la production avant d'avoir identifié
 l'hébergement actuel et validé le routage.
