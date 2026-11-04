@@ -211,13 +211,13 @@ create policy "preuves suppression proprietaire ou admin" on storage.objects
 -- ---------------------------------------------------------------------
 -- 6. Fonctions : search_path fixé, fonctions internes non appelables via l'API
 -- ---------------------------------------------------------------------
-do $
+do $guard$
 begin
   if to_regprocedure('public.delete_rejected_activity()') is not null then
     execute 'alter function public.delete_rejected_activity() set search_path = public';
     execute 'revoke execute on function public.delete_rejected_activity() from public, anon, authenticated';
   end if;
-end $;
+end $guard$;
 
 -- Ancienne fonction vide, attachée à aucun trigger.
 drop function if exists public.handle_activity_action();
