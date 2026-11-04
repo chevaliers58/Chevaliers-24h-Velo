@@ -181,11 +181,11 @@ export const SEASONAL_THEMES: SeasonalThemeMeta[] = [
   },
 ];
 
-export const SEASONAL_THEME_STORAGE_KEY = "alezan_theme";
+export const SEASONAL_THEME_STORAGE_KEY = "troupe_theme";
 /** Préférence personnelle : couper les animations sur cet appareil */
-export const ANIMATIONS_OFF_STORAGE_KEY = "alezan_animations_off";
+export const ANIMATIONS_OFF_STORAGE_KEY = "troupe_animations_off";
 /** Aperçu admin (cet onglet seulement) */
-export const THEME_PREVIEW_STORAGE_KEY = "alezan_theme_preview";
+export const THEME_PREVIEW_STORAGE_KEY = "troupe_theme_preview";
 
 export function isSeasonalThemeId(value: unknown): value is SeasonalThemeId {
   return SEASONAL_THEMES.some((t) => t.id === value);
