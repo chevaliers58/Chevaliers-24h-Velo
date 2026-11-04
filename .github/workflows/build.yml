@@ -46,6 +46,12 @@ jobs:
               sys.exit(1)
           print("All SQL dollar-quote delimiters are balanced.")
           PY
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check cleanup Edge Function
+        run: deno check supabase/functions/menage/index.ts
       - name: Build
         run: npm run build
         env:
