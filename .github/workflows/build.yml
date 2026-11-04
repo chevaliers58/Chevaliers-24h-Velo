@@ -60,8 +60,12 @@ jobs:
           done
           test -s /tmp/chevaliers58-home.html
           grep -q "Chevaliers 58" /tmp/chevaliers58-home.html
-          curl --fail --silent http://127.0.0.1:3000/velo/sw.js > /dev/null
-          curl --fail --silent http://127.0.0.1:3000/velo/widget/troupe-km.js > /dev/null
+          sw_status=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:3000/velo/sw.js || true)
+          widget_status=$(curl --silent --output /dev/null --write-out '%{http_code}' http://127.0.0.1:3000/velo/widget/troupe-km.js || true)
+          echo "Service worker HTTP status: $sw_status"
+          echo "Widget HTTP status: $widget_status"
+          test "$sw_status" = "200" || { cat /tmp/chevaliers58-server.log; exit 1; }
+          test "$widget_status" = "200" || { cat /tmp/chevaliers58-server.log; exit 1; }
       - name: Upload build output for inspection
         uses: actions/upload-artifact@v4
         with:
