@@ -35,8 +35,8 @@ interface AdminUserListProps {
   patrols: Patrol[];
   admins: string[];
   onRefresh: () => void | Promise<void>;
-  currentUserId?: string;
-  currentUserEmail?: string | null;
+  currentUserId?: string | undefined;
+  currentUserEmail?: string | null | undefined;
 }
 
 export function AdminUserList({
