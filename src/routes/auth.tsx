@@ -249,7 +249,7 @@ function AuthPage() {
       await refreshProfile();
       setBusy(false);
       toast.success("Bon retour parmi nous !");
-      window.location.href = "/";
+      window.location.href = import.meta.env.BASE_URL;
     } catch (err: unknown) {
       setBusy(false);
       const msg = err instanceof Error ? err.message : String(err);
@@ -373,7 +373,7 @@ function AuthPage() {
           "Compte créé dans Supabase ! Si la confirmation par e-mail est active, vérifie ta boîte de réception.",
         );
       }
-      window.location.href = "/";
+      window.location.href = import.meta.env.BASE_URL;
     } catch (err: unknown) {
       setBusy(false);
       const msg = err instanceof Error ? err.message : String(err);
