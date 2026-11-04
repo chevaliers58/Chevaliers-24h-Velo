@@ -114,7 +114,10 @@ security definer
 set search_path = public
 as $function$
 begin
-  delete from public.activities where id = new.id;
+  if new.status = 'rejected' then
+    delete from public.activities where id = new.id;
+    return null;
+  end if;
   return new;
 end;
 $function$;
