@@ -152,10 +152,10 @@ public en lecture pour conserver l'affichage des photos et des traces GPX.
 6. Configurer les URL d'authentification Supabase et tester les inscriptions,
    les notifications, le nettoyage en mode aperçu et les retours OAuth.
 
-**À valider avant d'appliquer les migrations :** la première migration et le mode démo local
-contiennent encore les noms de patrouilles de l'ancien site (Lynx, Gazelles, Girafes,
-Marmottes, Cougars, Condors, Jaguars, Bisons et Faucons). Ils doivent être remplacés par
-les patrouilles réelles des Chevaliers 58 avant toute création de la base. Le compte à rebours
-du mode démo utilise aussi la date du 15 novembre 2026 ; elle doit être confirmée ou adaptée.
+Les migrations ne préchargent volontairement pas les patrouilles de l'ancien site. Après
+création du premier administrateur, celui-ci devra créer les patrouilles réelles des Chevaliers 58
+dans l'administration avant l'ouverture des inscriptions. Le mode démo local ne contient que
+la patrouille Staff. Son compte à rebours de démonstration utilise le 15 novembre 2026 ; cette
+date n'est pas une échéance Supabase et peut être adaptée dans l'interface.
 
 Aucune de ces opérations n'est exécutée automatiquement par le dépôt.
