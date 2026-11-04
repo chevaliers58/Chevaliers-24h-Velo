@@ -3,9 +3,9 @@
 -- NE PAS EXÉCUTER : les politiques ci-dessous sont obsolètes et trop permissives.
 -- Utiliser exclusivement les migrations versionnées de supabase/migrations/.
 
-do $ begin
+do $guard$ begin
   raise exception 'Script historique désactivé. Appliquer uniquement les migrations revues de supabase/migrations/.';
-end $;
+end $guard$;
 -- ==============================================================================
 
 -- 1. AJOUT DE LA PATROUILLE STAFF SI MANQUANTE
