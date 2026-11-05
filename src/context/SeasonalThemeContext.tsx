@@ -55,7 +55,7 @@ interface SeasonalThemeContextValue {
   refresh: () => Promise<void>;
 }
 
-// Le client exporté est une union (vrai client | client local de secours) : on le type une fois ici.
+// Le client est configuré pour le projet Supabase Chevaliers 58.
 const supabase = supabaseClient as unknown as SupabaseClient;
 
 const DEFAULT_SETTINGS: ThemeSettings = {
