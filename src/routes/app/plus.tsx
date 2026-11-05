@@ -20,7 +20,7 @@ import { AppPageShell } from "@/components/AppPageShell";
 import { AppCard, AppList, AppListRow, AppSection } from "@/components/app/AppUi";
 import { AnimationToggle } from "@/components/AnimationToggle";
 import { useAuth } from "@/lib/useAuth";
-import { getPatrolEmblem } from "@/lib/database";
+import { getPatrolEmblem } from "@/lib/patrolEmblem";
 
 export const Route = createFileRoute("/app/plus")({ ssr: false, component: MoreScreen });
 
