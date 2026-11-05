@@ -38,7 +38,7 @@ import type { Patrol, Profile, Activity, TimelineEvent } from "@/lib/database";
 import { getActivitySport, cleanActivityNote } from "@/lib/activity";
 import { AdminUserList } from "@/components/AdminUserList";
 import { ExportDialog } from "@/components/ExportDialog";
-import { CATEGORY_LABELS, type PatrolCategory, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
+import { CATEGORY_LABELS, type PatrolCategory } from "@/lib/categories";
 import { SeasonalThemeAdmin } from "@/components/SeasonalThemeAdmin";
 import { CleanupAdmin } from "@/components/CleanupAdmin";
 import { ScoutSportifAdmin, type SportifBadge } from "@/components/ScoutSportifAdmin";
@@ -111,27 +111,6 @@ function Admin() {
     const ptList = ptData ?? [];
     setPatrols(ptList);
 
-    const hasStaffInDb = ptData?.some(
-      (p) => p.name.toLowerCase().includes("staff") || p.name.toLowerCase().includes("chef"),
-    );
-    if (!hasStaffInDb && ptData && ptData.length > 0) {
-      supabase
-        .from("patrols")
-        .insert({ name: TROOP_STAFF_PATROL_NAME, category: "staff" })
-        .then((res) => {
-          if (!res.error) {
-            supabase
-              .from("patrols")
-              .select("*")
-              .order("name")
-              .then((fresh) => {
-                const fData = (fresh as { data: Patrol[] | null }).data;
-                if (fData) setPatrols(fData);
-              });
-          }
-        });
-    }
-
     // 2. Profiles
     const { data: prData } = (await supabase.from("profiles").select("*")) as {
       data: Profile[] | null;
@@ -195,7 +174,6 @@ function Admin() {
 
   useEffect(() => {
     load();
-    return undefined;
   }, [load]);
 
   if (loading) {
