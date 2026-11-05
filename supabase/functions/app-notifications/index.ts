@@ -5,7 +5,7 @@ const url = Deno.env.get("SUPABASE_URL")!;
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY") ?? "";
 const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
-const vapidSubject = Deno.env.get("VAPID_SUBJECT") ?? "https://alezan42-cycling.pages.dev";
+const vapidSubject = Deno.env.get("VAPID_SUBJECT") ?? Deno.env.get("SITE_URL") ?? "";
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -76,7 +76,7 @@ async function deleteExpiredReadNotifications() {
 }
 
 async function dispatchPending() {
-  if (!vapidPublicKey || !vapidPrivateKey)
+  if (!vapidPublicKey || !vapidPrivateKey || !vapidSubject)
     throw new Error("Clés VAPID absentes (VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY)");
   webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
   const { data: notifications, error } = await admin
