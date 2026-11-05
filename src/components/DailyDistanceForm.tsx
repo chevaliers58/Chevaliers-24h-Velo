@@ -220,7 +220,7 @@ export function DailyDistanceForm({
 
       if (error) throw error;
 
-      let list = (data as Patrol[]) || [];
+      const list = (data as Patrol[]) || [];
 
       setPatrols(list);
     } catch (err) {
@@ -406,30 +406,21 @@ export function DailyDistanceForm({
 
       const targetUserId = realUser.id;
 
-      // Upsert profile
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.from("profiles") as any).upsert(
-          {
-            id: targetUserId,
-            email: realUser.email || user?.email || "scout@alezan42.fr",
-            full_name: profile?.full_name || realUser.email?.split("@")[0] || "Scout",
-            totem: profile?.totem || null,
-            quali: profile?.quali || null,
-            patrol_id:
-              selectedPatrolId && isUUID(selectedPatrolId)
-                ? selectedPatrolId
-                : profile?.patrol_id || null,
-            onboarded: true,
-          },
-          { onConflict: "id" },
-        );
-        if (refreshProfile) {
-          await refreshProfile();
-        }
-      } catch (err) {
-        console.warn("Synchronisation du profil avec la patrouille sélectionnée :", err);
-      }
+      // Ensure the authenticated member has a profile before creating an activity.
+      const { error: profileError } = await (supabase.from("profiles") as any).upsert(
+        {
+          id: targetUserId,
+          email: realUser.email || user?.email || null,
+          full_name: profile?.full_name || realUser.email?.split("@")[0] || "Scout",
+          totem: profile?.totem || null,
+          quali: profile?.quali || null,
+          patrol_id: selectedPatrolId && isUUID(selectedPatrolId) ? selectedPatrolId : profile?.patrol_id || null,
+          onboarded: true,
+        },
+        { onConflict: "id" },
+      );
+      if (profileError) throw profileError;
+      await refreshProfile();
 
       // 5. Envoi de l'image de preuve vers Supabase Storage
       let proofPublicUrl: string | null = null;
