@@ -142,7 +142,6 @@ function MesKm() {
 
   useEffect(() => {
     load();
-    return undefined;
   }, [load]);
 
   const remove = async (a: Act) => {
