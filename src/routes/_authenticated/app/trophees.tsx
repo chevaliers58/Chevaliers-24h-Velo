@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/useAuth";
 import { formatKm, useMyActivities } from "@/lib/appData";
 import { useDistanceAwards } from "@/lib/useDistanceAwards";
 import { getBestSingleActivityDistances, getNextDistanceTrophy } from "@/lib/distanceTrophies";
-import { SPORT_INFO, type ActivitySport } from "@/lib/database";
+import { SPORT_INFO, type ActivitySport } from "@/lib/activity";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/app/trophees")({

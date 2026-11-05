@@ -1,4 +1,4 @@
-import { SPORT_INFO, type ActivitySport } from "@/lib/database";
+import { SPORT_INFO, type ActivitySport } from "@/lib/activity";
 
 /** Une entrée du journal `activity_corrections` (écrite par la base, jamais par le site). */
 export interface ActivityCorrection {

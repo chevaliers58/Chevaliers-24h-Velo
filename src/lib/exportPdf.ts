@@ -1,5 +1,5 @@
 import type { Activity, Patrol } from "@/lib/database";
-import { getActivitySport, SPORT_INFO } from "@/lib/database";
+import { getActivitySport, SPORT_INFO } from "@/lib/activity";
 
 /* -------------------------------------------------------------------------- */
 /*  Types d'export                                                            */

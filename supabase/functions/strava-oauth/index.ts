@@ -5,7 +5,7 @@ const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const clientId = Deno.env.get("STRAVA_CLIENT_ID");
 const clientSecret = Deno.env.get("STRAVA_CLIENT_SECRET");
 const redirectUri = Deno.env.get("STRAVA_REDIRECT_URI") ?? `${supabaseUrl}/functions/v1/strava-oauth`;
-const siteUrl = Deno.env.get("SITE_URL") ?? "https://alezan42-cycling.lesscoutsdemoustier.be";
+const siteUrl = Deno.env.get("SITE_URL") ?? "";
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -24,7 +24,7 @@ Deno.serve(async (request) => {
   const admin = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
 
   if (request.method === "POST") {
-    if (!clientId || !clientSecret) return json({ error: "Intégration Strava pas encore configurée" }, 503);
+    if (!clientId || !clientSecret || !siteUrl) return json({ error: "Intégration Strava ou SITE_URL pas encore configurée" }, 503);
     const token = (request.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
     const { data, error } = await admin.auth.getUser(token);
     if (error || !data.user) return json({ error: "Connexion requise" }, 401);

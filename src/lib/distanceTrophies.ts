@@ -1,4 +1,4 @@
-import { getActivitySport, type ActivitySport } from "@/lib/database";
+import { getActivitySport, type ActivitySport } from "@/lib/activity";
 
 export type DistanceActivity = { km: number | null; note?: string | null; status?: string | null };
 

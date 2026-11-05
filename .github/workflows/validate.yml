@@ -1,0 +1,30 @@
+name: Validate Chevaliers 58 app
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [setup/chevaliers58-supabase]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      VITE_SUPABASE_URL: https://example.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Run lint (advisory while legacy lint issues are cleaned up)
+        run: npm run lint
+        continue-on-error: true
+      - name: Build application
+        if: always()
+        run: npm run build

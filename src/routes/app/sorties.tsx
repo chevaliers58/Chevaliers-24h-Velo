@@ -5,7 +5,8 @@ import { AppPageShell } from "@/components/AppPageShell";
 import { AppCard, AppEmpty, AppSection } from "@/components/app/AppUi";
 import { SportIcon, SPORT_COLORS } from "@/components/SportIcon";
 import { formatKm, useTroopData } from "@/lib/appData";
-import { getActivitySport, getPatrolEmblem, SPORT_INFO } from "@/lib/database";
+import { getActivitySport, SPORT_INFO } from "@/lib/activity";
+import { getPatrolEmblem } from "@/lib/patrolEmblem";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/sorties")({ ssr: false, component: TroopFeed });

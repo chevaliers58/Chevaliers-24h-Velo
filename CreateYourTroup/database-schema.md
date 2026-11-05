@@ -1,3 +1,7 @@
+> ⚠️ **NE PAS EXÉCUTER CE SCRIPT POUR CHEVALIERS 58.** Ce schéma est historique et incomplet : ses politiques RLS sont trop permissives et plusieurs tables/fonctions utilisées par l'application n'y figurent pas. Une migration dédiée, auditée et sécurisée doit être préparée avant toute initialisation. Voir [les notes de migration Chevaliers 58](./chevaliers58-migration-notes.md).
+
+---
+
 # 🗄️ Schéma de la Base de Données — ALEZAN 42
 
 Ce fichier contient l'intégralité des scripts SQL nécessaires pour recréer l'architecture de la base de données dans un nouveau projet Supabase (tables, politiques RLS et configuration).

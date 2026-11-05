@@ -12,7 +12,6 @@ import {
   Navigation,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { db } from "@/lib/database";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -108,7 +107,7 @@ export function CollectiveRouteMap({ className, overrideKm }: CollectiveRouteMap
   useEffect(() => {
     loadWaypoints();
     loadCollectiveDistance();
-    return db.subscribe(() => loadCollectiveDistance(false));
+    return undefined;
   }, [loadCollectiveDistance]);
 
   // Calcul des étapes actuelles et suivantes

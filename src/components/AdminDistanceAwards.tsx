@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { ActivitySport } from "@/lib/database";
+import type { ActivitySport } from "@/lib/activity";
 import {
   DEFAULT_AWARD_THRESHOLDS,
   type DistanceAward,

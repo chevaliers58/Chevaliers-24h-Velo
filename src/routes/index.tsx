@@ -32,14 +32,9 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { weekRange, monthRange, useAuth } from "@/lib/useAuth";
 import { isAppMode } from "@/lib/standalone";
-import {
-  db,
-  type Patrol,
-  getActivitySport,
-  type ActivitySport,
-  getPatrolEmblem,
-  SPORT_INFO,
-} from "@/lib/database";
+import type { Patrol } from "@/lib/database";
+import { getActivitySport, type ActivitySport, SPORT_INFO } from "@/lib/activity";
+import { getPatrolEmblem } from "@/lib/patrolEmblem";
 import { SportIcon, SPORT_COLORS } from "@/components/SportIcon";
 import { cn } from "@/lib/utils";
 import {

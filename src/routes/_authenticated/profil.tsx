@@ -15,8 +15,8 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/useAuth";
-import { db, getPatrolEmblem } from "@/lib/database";
-import { isStaffPatrol, isTroopStaffPatrol, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
+import { getPatrolEmblem } from "@/lib/patrolEmblem";
+import { isStaffPatrol } from "@/lib/categories";
 
 export const Route = createFileRoute("/_authenticated/profil")({
   ssr: false,
@@ -124,14 +124,7 @@ function Profil() {
         .select("id, name, category")
         .order("name");
 
-      let list = pts && pts.length > 0 ? pts : db.getPatrols();
-      if (
-        !list.some(
-          (p) => p.name.toLowerCase().includes("staff") || p.name.toLowerCase().includes("chef"),
-        )
-      ) {
-        list = [{ id: "staff", name: TROOP_STAFF_PATROL_NAME, category: "staff" }, ...list];
-      }
+      const list = pts ?? [];
       if (active) {
         setPatrols(list);
       }
@@ -143,7 +136,7 @@ function Profil() {
         .eq("id", user.id)
         .maybeSingle();
 
-      const p = profile || db.getProfile(user.id);
+      const p = profile;
       if (active && p) {
         setF({
           full_name: p.full_name ?? "",
@@ -203,13 +196,7 @@ function Profil() {
       return;
     }
 
-    let targetPatrolId: string | null = d.patrol_id;
-    if (!targetPatrolId || d.patrol_id === "staff" || d.patrol_id.includes("staff")) {
-      const staffItem = patrols.find((p) => isTroopStaffPatrol(p));
-      if (staffItem) {
-        targetPatrolId = staffItem.id;
-      }
-    }
+    const targetPatrolId: string | null = d.patrol_id;
 
     const profilePayload = {
       id: user.id,
@@ -234,13 +221,6 @@ function Profil() {
       if (error) {
         throw new Error(error.message);
       }
-
-      // Mise à jour du cache local
-      db.updateProfile(user.id, {
-        ...profilePayload,
-        email: user.email ?? null,
-        is_chef: isChefPatrol,
-      });
 
       await refreshProfile();
       toast.success("Profil scout enregistré avec succès !");

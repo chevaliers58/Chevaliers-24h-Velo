@@ -23,7 +23,9 @@ import { parseElevation } from "@/lib/jerseys";
 import { useAuth } from "@/lib/useAuth";
 import { useSeasonalTheme } from "@/context/SeasonalThemeContext";
 import { buildEncouragement } from "@/lib/encouragement";
-import { db, type Patrol, type ActivitySport, getPatrolEmblem, SPORT_INFO } from "@/lib/database";
+import type { Patrol } from "@/lib/database";
+import { type ActivitySport, SPORT_INFO } from "@/lib/activity";
+import { getPatrolEmblem } from "@/lib/patrolEmblem";
 import { SportIcon, SPORT_COLORS } from "@/components/SportIcon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +40,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { isStaffPatrol, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
+import { isStaffPatrol } from "@/lib/categories";
 import { CHALLENGE_START, CHALLENGE_START_LABEL } from "@/lib/challengeStart";
 
 export interface DailyDistanceFormProps {
@@ -218,25 +220,12 @@ export function DailyDistanceForm({
 
       if (error) throw error;
 
-      let list = (data as Patrol[]) || [];
+      const list = (data as Patrol[]) || [];
 
-      const hasStaff = list.some((p) => isStaffPatrol(p));
-      if (!hasStaff) {
-        list = [
-          ...list,
-          {
-            id: "staff",
-            name: TROOP_STAFF_PATROL_NAME,
-            category: "staff",
-            created_at: new Date().toISOString(),
-          },
-        ];
-      }
       setPatrols(list);
     } catch (err) {
-      console.warn("Erreur chargement patrouilles depuis Supabase, repli local:", err);
-      const localPatrols = db.getPatrols();
-      setPatrols(localPatrols);
+      console.error("Erreur chargement des patrouilles depuis Supabase :", err);
+      setPatrols([]);
     } finally {
       setLoadingPatrols(false);
     }
@@ -417,30 +406,21 @@ export function DailyDistanceForm({
 
       const targetUserId = realUser.id;
 
-      // Upsert profile
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.from("profiles") as any).upsert(
-          {
-            id: targetUserId,
-            email: realUser.email || user?.email || "scout@alezan42.fr",
-            full_name: profile?.full_name || realUser.email?.split("@")[0] || "Scout",
-            totem: profile?.totem || null,
-            quali: profile?.quali || null,
-            patrol_id:
-              selectedPatrolId && isUUID(selectedPatrolId)
-                ? selectedPatrolId
-                : profile?.patrol_id || null,
-            onboarded: true,
-          },
-          { onConflict: "id" },
-        );
-        if (refreshProfile) {
-          await refreshProfile();
-        }
-      } catch (err) {
-        console.warn("Synchronisation du profil avec la patrouille sélectionnée :", err);
-      }
+      // Ensure the authenticated member has a profile before creating an activity.
+      const { error: profileError } = await (supabase.from("profiles") as any).upsert(
+        {
+          id: targetUserId,
+          email: realUser.email || user?.email || null,
+          full_name: profile?.full_name || realUser.email?.split("@")[0] || "Scout",
+          totem: profile?.totem || null,
+          quali: profile?.quali || null,
+          patrol_id: selectedPatrolId && isUUID(selectedPatrolId) ? selectedPatrolId : profile?.patrol_id || null,
+          onboarded: true,
+        },
+        { onConflict: "id" },
+      );
+      if (profileError) throw profileError;
+      await refreshProfile();
 
       // 5. Envoi de l'image de preuve vers Supabase Storage
       let proofPublicUrl: string | null = null;
@@ -496,7 +476,7 @@ export function DailyDistanceForm({
         }
       }
 
-      const isAutoApproved = !!(trimmedStrava || isAdmin || profile?.is_admin);
+      const isAutoApproved = isAdmin;
       const activityStatus: "approved" | "pending" = isAutoApproved ? "approved" : "pending";
 
       const finalNote =
@@ -583,22 +563,6 @@ export function DailyDistanceForm({
           ? createdData.status
           : activityStatus;
 
-      const localActivity = db.addActivity({
-        id: createdData?.id,
-        user_id: targetUserId,
-        km: kmNumber,
-        ride_date: rideDate,
-        strava_link: trimmedStrava || null,
-        proof_path: proofPublicUrl,
-        gpx_path: gpxPublicUrl,
-        sport,
-        note: finalNote,
-        status: finalStatus,
-      });
-
-      if (profile && selectedPatrolId) {
-        db.updateProfile(targetUserId, { patrol_id: selectedPatrolId });
-      }
 
       const sportLabel = SPORT_INFO[sport].label;
 
@@ -662,7 +626,7 @@ export function DailyDistanceForm({
 
       if (onSuccess) {
         onSuccess({
-          id: createdData?.id || localActivity.id,
+          id: createdData.id,
           km: kmNumber,
           ride_date: rideDate,
           patrol_id: selectedPatrolId,
