@@ -16,7 +16,6 @@ export interface ScoutProfile {
   patrol_name?: string | null;
   patrol_category?: string | null;
   is_chef?: boolean;
-  is_admin?: boolean;
   onboarded: boolean;
   created_at?: string | null | undefined;
 }
@@ -52,7 +51,6 @@ interface DbProfile {
   strava_url?: string | null;
   patrol_id?: string | null;
   onboarded?: boolean;
-  is_admin?: boolean;
   created_at?: string;
   patrols?: {
     name?: string | null;
@@ -101,9 +99,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           patrol_name: patrolData?.name ?? (isChef ? TROOP_STAFF_PATROL_NAME : null),
           patrol_category: patrolData?.category ?? (isChef ? "staff" : null),
           is_chef: isChef,
-          // Droits admin : uniquement ceux enregistrés en base (user_roles -> is_admin).
-          // Être dans une patrouille staff ne rend pas admin.
-          is_admin: !!prof.is_admin,
           onboarded: !!prof.onboarded,
           created_at: prof.created_at,
         });
