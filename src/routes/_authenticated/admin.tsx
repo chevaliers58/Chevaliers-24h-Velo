@@ -34,14 +34,8 @@ import {
 import { useAuth } from "@/lib/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { approveActivity, rejectActivity } from "@/lib/proofStorage";
-import {
-  type Patrol,
-  type Profile,
-  type Activity,
-  type TimelineEvent,
-  getActivitySport,
-  cleanActivityNote,
-} from "@/lib/database";
+import type { Patrol, Profile, Activity, TimelineEvent } from "@/lib/database";
+import { getActivitySport, cleanActivityNote } from "@/lib/activity";
 import { AdminUserList } from "@/components/AdminUserList";
 import { ExportDialog } from "@/components/ExportDialog";
 import { CATEGORY_LABELS, type PatrolCategory, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
