@@ -33,7 +33,7 @@ Le code actuel dépasse largement le guide SQL historique. Les noms repérés lo
 - `scout_challenges`, `scout_challenge_participants`
 - `activity_corrections`, `timeline_distance_milestone_overrides`
 - `app_notifications`, `app_notification_settings`
-- `cleanup_runs`, `expedition_waypoints`, `site_settings`
+- `cleanup_runs`, `expedition_waypoints`, `site_settings`, `solidarity_goals`
 - Vues : `profiles_public`, `activities_public`
 
 La liste doit encore être comparée à tous les composants et aux requêtes dynamiques avant de rédiger la migration initiale.
