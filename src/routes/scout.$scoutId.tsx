@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SportBadge } from "@/components/SportIcon";
 import { CumulativeDistanceLevels } from "@/components/DistanceTrophies";
 import { supabase } from "@/integrations/supabase/client";
-import { SPORT_INFO, getActivitySport, type ActivitySport } from "@/lib/database";
+import { SPORT_INFO, getActivitySport, type ActivitySport } from "@/lib/activity";
 import { getBestSingleActivityDistances } from "@/lib/distanceTrophies";
 import { useDistanceAwards } from "@/lib/useDistanceAwards";
 
