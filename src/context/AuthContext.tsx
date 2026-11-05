@@ -120,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const metaYear = meta["scout_year"] ? Number(meta["scout_year"]) : null;
         const metaPatrol = (meta["patrol_id"] as string) || null;
         const metaPhone = (meta["phone"] as string) || null;
-        const isChef = isStaffPatrol(metaPatrol ? { name: metaPatrol } : null);
+
 
         try {
           const { data: createdProf, error: createErr } = await supabase
@@ -144,6 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if (!createErr && createdProf) {
             const patrolData = (createdProf as DbProfile).patrols;
+            const isChef = isStaffPatrol(patrolData);
             setProfile({
               id: createdProf.id,
               email: createdProf.email ?? currentUser.email ?? null,
@@ -160,7 +161,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               onboarded: true,
               created_at: createdProf.created_at,
             });
-            return;
           }
         } catch (e) {
           console.warn("[AuthContext] Auto-création profil Supabase :", e);
