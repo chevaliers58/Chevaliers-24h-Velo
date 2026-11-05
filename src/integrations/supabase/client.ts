@@ -59,7 +59,7 @@ function createSupabaseClient() {
     !isLegacyAnonKey(SUPABASE_PUBLISHABLE_KEY)
   ) {
     throw new Error(
-      "[Supabase] Utilise une clé publishable sb_publishable_ ou une ancienne clé anon. Une clé secret/service_role est interdite dans le navigateur."
+      "[Supabase] Utilise une clé publishable sb_publishable_ ou une ancienne clé anon. Une clé secret/service_role est interdite dans le navigateur.",
     );
   }
 
