@@ -28,6 +28,7 @@ Le code actuel dépasse largement le guide SQL historique. Les noms repérés lo
 - `profiles`, `patrols`, `activities`, `user_roles`
 - `countdowns`, `timeline`, `proposed_routes`
 - `group_rides`, `group_ride_members`
+- `planned_rides`, `planned_ride_responses`, `member_links`
 - `weekly_badges`, `distance_awards`
 - `scout_challenges`, `scout_challenge_participants`
 - `activity_corrections`, `timeline_distance_milestone_overrides`
