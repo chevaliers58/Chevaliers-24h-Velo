@@ -68,6 +68,8 @@ Le code utilise deux buckets : `proofs` (photos de preuve et fichiers GPX) et `b
 - `app-notifications`
 - `menage`
 
+Variables serveur à prévoir (à configurer uniquement dans les secrets Supabase Edge Functions, jamais dans VITE_ ni dans le frontend) : `SUPABASE_SERVICE_ROLE_KEY`, `SITE_URL`, `CRON_SECRET`; pour Strava : `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`, `STRAVA_REDIRECT_URI`, `STRAVA_WEBHOOK_VERIFY_TOKEN`, `STRAVA_WEBHOOK_SUBSCRIPTION_ID`; pour les notifications push : `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`.
+
 Aucune Edge Function n'existe actuellement dans le nouveau projet. Ces fonctions sont des fonctionnalités distinctes à implémenter ou désactiver proprement avant un déploiement complet.
 
 ## Points de sécurité à traiter dans la migration
