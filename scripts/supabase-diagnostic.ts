@@ -5,7 +5,7 @@
  * Ce script ne crée, ne modifie et ne supprime aucune donnée.
  */
 
-import { supabase } from "../src/integrations/supabase/client";
+import { createClient } from "@supabase/supabase-js";
 
 async function runDiagnostics() {
   const url = process.env["VITE_SUPABASE_URL"]?.trim();
@@ -17,6 +17,13 @@ async function runDiagnostics() {
     return;
   }
 
+  if (key.startsWith("sb_secret_")) {
+    console.error("❌ Une clé secret/service_role ne doit jamais être utilisée par ce diagnostic navigateur.");
+    process.exitCode = 1;
+    return;
+  }
+
+  const supabase = createClient(url, key);
   console.log("Diagnostic du backend Supabase");
   console.log("Projet configuré :", url);
 
