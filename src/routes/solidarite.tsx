@@ -20,7 +20,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/lib/supabase";
-import { db } from "@/lib/database";
 import { useAuth } from "@/lib/useAuth";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -131,7 +130,7 @@ function SolidarityPage() {
 
   useEffect(() => {
     loadCollectiveDistance();
-    return db.subscribe(() => loadCollectiveDistance());
+    return undefined;
   }, [loadCollectiveDistance]);
 
   useEffect(() => {
