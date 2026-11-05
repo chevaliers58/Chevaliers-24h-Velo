@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/useAuth";
-import { db, getPatrolEmblem } from "@/lib/database";
+import { getPatrolEmblem } from "@/lib/patrolEmblem";
 import { isStaffPatrol, isTroopStaffPatrol, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
 
 export const Route = createFileRoute("/_authenticated/profil")({
@@ -124,7 +124,7 @@ function Profil() {
         .select("id, name, category")
         .order("name");
 
-      let list = pts && pts.length > 0 ? pts : db.getPatrols();
+      let list = pts ?? [];
       if (
         !list.some(
           (p) => p.name.toLowerCase().includes("staff") || p.name.toLowerCase().includes("chef"),
@@ -143,7 +143,7 @@ function Profil() {
         .eq("id", user.id)
         .maybeSingle();
 
-      const p = profile || db.getProfile(user.id);
+      const p = profile;
       if (active && p) {
         setF({
           full_name: p.full_name ?? "",
@@ -234,13 +234,6 @@ function Profil() {
       if (error) {
         throw new Error(error.message);
       }
-
-      // Mise à jour du cache local
-      db.updateProfile(user.id, {
-        ...profilePayload,
-        email: user.email ?? null,
-        is_chef: isChefPatrol,
-      });
 
       await refreshProfile();
       toast.success("Profil scout enregistré avec succès !");
