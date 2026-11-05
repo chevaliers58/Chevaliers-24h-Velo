@@ -16,7 +16,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/useAuth";
 import { getPatrolEmblem } from "@/lib/patrolEmblem";
-import { isStaffPatrol, isTroopStaffPatrol, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
+import { isStaffPatrol } from "@/lib/categories";
 
 export const Route = createFileRoute("/_authenticated/profil")({
   ssr: false,
@@ -125,13 +125,6 @@ function Profil() {
         .order("name");
 
       let list = pts ?? [];
-      if (
-        !list.some(
-          (p) => p.name.toLowerCase().includes("staff") || p.name.toLowerCase().includes("chef"),
-        )
-      ) {
-        list = [{ id: "staff", name: TROOP_STAFF_PATROL_NAME, category: "staff" }, ...list];
-      }
       if (active) {
         setPatrols(list);
       }
@@ -204,12 +197,7 @@ function Profil() {
     }
 
     let targetPatrolId: string | null = d.patrol_id;
-    if (!targetPatrolId || d.patrol_id === "staff" || d.patrol_id.includes("staff")) {
-      const staffItem = patrols.find((p) => isTroopStaffPatrol(p));
-      if (staffItem) {
-        targetPatrolId = staffItem.id;
-      }
-    }
+    if (!targetPatrolId) targetPatrolId = null;
 
     const profilePayload = {
       id: user.id,
