@@ -122,6 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const metaPhone = (meta["phone"] as string) || null;
 
 
+        let profileLoaded = false;
         try {
           const { data: createdProf, error: createErr } = await supabase
             .from("profiles")
@@ -161,12 +162,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               onboarded: true,
               created_at: createdProf.created_at,
             });
+            profileLoaded = true;
           }
         } catch (e) {
           console.warn("[AuthContext] Auto-création profil Supabase :", e);
         }
 
-        setProfile({
+        if (!profileLoaded) {
+          setProfile({
           id: currentUser.id,
           email: currentUser.email ?? null,
           full_name: metaName,
@@ -178,7 +181,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           patrol_id: metaPatrol && metaPatrol.includes("-") ? metaPatrol : null,
           is_chef: false,
           onboarded: false,
-        });
+          });
+        }
       }
 
       // Les droits administrateur proviennent exclusivement de la table user_roles.
