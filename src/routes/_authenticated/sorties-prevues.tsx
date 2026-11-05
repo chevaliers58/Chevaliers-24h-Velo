@@ -43,7 +43,7 @@ import { PlannedRideForm } from "@/components/PlannedRideForm";
 import { WhatsAppGroupCard } from "@/components/WhatsAppGroupCard";
 import { SportBadge, SportIcon } from "@/components/SportIcon";
 import { useAuth } from "@/lib/useAuth";
-import { SPORT_INFO, type ActivitySport } from "@/lib/database";
+import { SPORT_INFO, type ActivitySport } from "@/lib/activity";
 import {
   downloadIcs,
   formatRideTime,
