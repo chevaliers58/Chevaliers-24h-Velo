@@ -476,7 +476,7 @@ export function DailyDistanceForm({
         }
       }
 
-      const isAutoApproved = !!(trimmedStrava || isAdmin || profile?.is_admin);
+      const isAutoApproved = !!(trimmedStrava || isAdmin);
       const activityStatus: "approved" | "pending" = isAutoApproved ? "approved" : "pending";
 
       const finalNote =
