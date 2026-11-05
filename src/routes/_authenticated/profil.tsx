@@ -124,7 +124,7 @@ function Profil() {
         .select("id, name, category")
         .order("name");
 
-      let list = pts ?? [];
+      const list = pts ?? [];
       if (active) {
         setPatrols(list);
       }
@@ -196,8 +196,7 @@ function Profil() {
       return;
     }
 
-    let targetPatrolId: string | null = d.patrol_id;
-    if (!targetPatrolId) targetPatrolId = null;
+    const targetPatrolId: string | null = d.patrol_id;
 
     const profilePayload = {
       id: user.id,
