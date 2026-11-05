@@ -36,6 +36,7 @@ Le code actuel dépasse largement le guide SQL historique. Les noms repérés lo
 - `activity_corrections`, `timeline_distance_milestone_overrides`
 - `app_notifications`, `app_notification_settings`
 - `cleanup_runs`, `expedition_waypoints`, `site_settings`, `solidarity_goals`
+- `strava_connections`, `strava_oauth_states`, `app_push_subscriptions`, `app_installations`
 - Vues : `profiles_public`, `activities_public`
 
 La liste doit encore être comparée à tous les composants et aux requêtes dynamiques avant de rédiger la migration initiale.
