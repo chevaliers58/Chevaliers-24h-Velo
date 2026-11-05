@@ -23,7 +23,9 @@ import { parseElevation } from "@/lib/jerseys";
 import { useAuth } from "@/lib/useAuth";
 import { useSeasonalTheme } from "@/context/SeasonalThemeContext";
 import { buildEncouragement } from "@/lib/encouragement";
-import { db, type Patrol, type ActivitySport, getPatrolEmblem, SPORT_INFO } from "@/lib/database";
+import type { Patrol } from "@/lib/database";
+import { type ActivitySport, SPORT_INFO } from "@/lib/activity";
+import { getPatrolEmblem } from "@/lib/patrolEmblem";
 import { SportIcon, SPORT_COLORS } from "@/components/SportIcon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,7 +40,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { isStaffPatrol, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
+import { isStaffPatrol } from "@/lib/categories";
 import { CHALLENGE_START, CHALLENGE_START_LABEL } from "@/lib/challengeStart";
 
 export interface DailyDistanceFormProps {
@@ -220,23 +222,10 @@ export function DailyDistanceForm({
 
       let list = (data as Patrol[]) || [];
 
-      const hasStaff = list.some((p) => isStaffPatrol(p));
-      if (!hasStaff) {
-        list = [
-          ...list,
-          {
-            id: "staff",
-            name: TROOP_STAFF_PATROL_NAME,
-            category: "staff",
-            created_at: new Date().toISOString(),
-          },
-        ];
-      }
       setPatrols(list);
     } catch (err) {
-      console.warn("Erreur chargement patrouilles depuis Supabase, repli local:", err);
-      const localPatrols = db.getPatrols();
-      setPatrols(localPatrols);
+      console.error("Erreur chargement des patrouilles depuis Supabase :", err);
+      setPatrols([]);
     } finally {
       setLoadingPatrols(false);
     }
@@ -583,22 +572,6 @@ export function DailyDistanceForm({
           ? createdData.status
           : activityStatus;
 
-      const localActivity = db.addActivity({
-        id: createdData?.id,
-        user_id: targetUserId,
-        km: kmNumber,
-        ride_date: rideDate,
-        strava_link: trimmedStrava || null,
-        proof_path: proofPublicUrl,
-        gpx_path: gpxPublicUrl,
-        sport,
-        note: finalNote,
-        status: finalStatus,
-      });
-
-      if (profile && selectedPatrolId) {
-        db.updateProfile(targetUserId, { patrol_id: selectedPatrolId });
-      }
 
       const sportLabel = SPORT_INFO[sport].label;
 
@@ -662,7 +635,7 @@ export function DailyDistanceForm({
 
       if (onSuccess) {
         onSuccess({
-          id: createdData?.id || localActivity.id,
+          id: createdData.id,
           km: kmNumber,
           ride_date: rideDate,
           patrol_id: selectedPatrolId,
