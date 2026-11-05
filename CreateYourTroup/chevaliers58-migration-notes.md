@@ -58,6 +58,10 @@ La liste doit encore être comparée à tous les composants et aux requêtes dyn
 
 Ces fonctions devront être définies avec des droits `SECURITY DEFINER` uniquement lorsqu'ils sont nécessaires, un `search_path` fixé, et des contrôles explicites de rôle.
 
+## Stockage Supabase
+
+Le code utilise deux buckets : `proofs` (photos de preuve et fichiers GPX) et `backgrounds` (fonds d'écran des thèmes). Aucun bucket n'existe encore dans le projet. Par défaut, ils devront être privés et utiliser des URL signées ; les traces GPX et les preuves peuvent révéler des informations personnelles ou de localisation. Le code qui utilise actuellement `getPublicUrl` devra être adapté avant l'activation de cette politique.
+
 ## Fonctions Edge requises par le code
 
 - `strava-oauth`
