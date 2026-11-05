@@ -20,6 +20,8 @@ Ce document suit la préparation technique de l'application indépendante **24h 
 - Le rôle admin provient de `user_roles`, sans privilège automatique lié à une adresse e-mail héritée.
 - Les écrans principaux d'administration, de profil, d'historique et d'enregistrement ne font plus de lectures/écritures de secours dans la base locale.
 - Les utilitaires d'affichage des sports et emblèmes de patrouille ont été séparés de l'ancien module de base locale.
+- L'ancienne implémentation `StandaloneDatabase` et ses données locales ont été retirées ; `database.ts` ne conserve que des types de compatibilité.
+- Le serveur Vite ne crée plus de fichier `data/db.json`, d'endpoint `/api/db`, ni de route de diagnostic avec les identifiants de l'ancien projet.
 
 ## Inventaire des tables et vues appelées par le code
 
