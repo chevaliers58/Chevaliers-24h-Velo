@@ -81,6 +81,10 @@ Aucune Edge Function n'existe actuellement dans le nouveau projet. Ces fonctions
 - Les écritures de patrouilles, comptes à rebours, badges, défis, corrections et réglages doivent être réservées au staff autorisé.
 - Les opérations d'administration de comptes et de mots de passe ne doivent jamais être faites depuis le navigateur avec une clé privilégiée.
 
+## Résultat de validation automatisée
+
+Sur le commit `d3d3132c0488ffc3642f1fe44de7723824a37053`, GitHub Actions a terminé avec succès : installation des dépendances et build de production (client, SSR et Nitro). Le lint détecte encore **74 erreurs et 11 avertissements** ; le workflow le laisse temporairement en avertissement pour que le build continue. Cela ne signifie donc pas que le lint est propre. Une passe de formatage et de correction TypeScript/ESLint reste nécessaire.
+
 ## Validation restante
 
 - Terminer l'inventaire des requêtes, triggers, vues, politiques RLS et fonctions.
