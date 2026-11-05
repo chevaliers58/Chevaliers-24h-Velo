@@ -103,7 +103,7 @@ Réglages du projet Cloudflare Pages :
 | Build command | `npm run build` |
 | Build output directory | `.output/public` |
 | Variable d'environnement | `NODE_VERSION` = `22` |
-| Variables d'environnement | `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID` |
+| Variables d'environnement | `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` |
 
 Après la première mise en ligne, ajouter l'adresse du site dans Supabase →
 Authentication → URL Configuration (*Site URL* et *Redirect URLs*).
