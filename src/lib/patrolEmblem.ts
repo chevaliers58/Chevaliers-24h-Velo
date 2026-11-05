@@ -21,15 +21,31 @@ export function setCustomPatrolEmoji(patrolIdOrName: string, emoji: string) {
 
 export function getPatrolEmblem(patrolName?: string | null, patrolId?: string | null): string {
   if (!patrolName) return "⚜️";
+
   const customMap = getCustomPatrolEmojis();
-  if (patrolId && customMap[patrolId.toLowerCase().trim()]) return customMap[patrolId.toLowerCase().trim()];
+  if (patrolId && customMap[patrolId.toLowerCase().trim()]) {
+    return customMap[patrolId.toLowerCase().trim()];
+  }
+
   const nameKey = patrolName.toLowerCase().trim();
   if (customMap[nameKey]) return customMap[nameKey];
-  const emojiPrefixMatch = patrolName.match(/^([\p{Emoji_Presentation}\p{Extended_Pictographic}])/u);
+
+  const emojiPrefixMatch = patrolName.match(
+    /^([\p{Emoji_Presentation}\p{Extended_Pictographic}])/u,
+  );
   if (emojiPrefixMatch) return emojiPrefixMatch[1];
+
   const n = nameKey;
   if (n.includes("baladin") || n.includes("castor") || n.includes("nuton")) return "🧸";
-  if (n.includes("louvet") || n.includes("seeonee") || n.includes("waingunga") || n.includes("loup") || n.includes("meute")) return "🐺";
+  if (
+    n.includes("louvet") ||
+    n.includes("seeonee") ||
+    n.includes("waingunga") ||
+    n.includes("loup") ||
+    n.includes("meute")
+  ) {
+    return "🐺";
+  }
   if (n.includes("lynx")) return "🐱";
   if (n.includes("gazelle")) return "🦌";
   if (n.includes("girafe")) return "🦒";
@@ -47,6 +63,14 @@ export function getPatrolEmblem(patrolName?: string | null, patrolId?: string | 
   if (n.includes("lion")) return "🦁";
   if (n.includes("écureuil")) return "🐿️";
   if (n.includes("dauphin")) return "🐬";
-  if (n.includes("staff") || n.includes("chef") || n.includes("maîtrise") || n.includes("routi") || n.includes("clan")) return "👑";
+  if (
+    n.includes("staff") ||
+    n.includes("chef") ||
+    n.includes("maîtrise") ||
+    n.includes("routi") ||
+    n.includes("clan")
+  ) {
+    return "👑";
+  }
   return "⚜️";
 }
