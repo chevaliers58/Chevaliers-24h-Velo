@@ -11,6 +11,8 @@ Ce projet est conçu pour être facilement réutilisable par n'importe quelle tr
 | Compte Supabase (gratuit) | Base de données, authentification, stockage | [supabase.com](https://supabase.com) |
 | Compte Vercel ou Netlify (gratuit) | Héberger le site | [vercel.com](https://vercel.com) · [netlify.com](https://www.netlify.com) |
 
+> ⚠️ **Important pour Chevaliers 58 :** le fichier `database-schema.md` est un ancien schéma ALEZAN 42. Ne l’exécute pas : ses permissions sont trop larges et il ne correspond pas à toutes les fonctionnalités du code. Attends la migration dédiée décrite dans [`chevaliers58-migration-notes.md`](./chevaliers58-migration-notes.md).
+>
 > 📚 Documents complémentaires :
 > - [`database-schema.md`](./database-schema.md) : tous les scripts SQL pour recréer la base de données.
 > - [`code.md`](./code.md) : architecture technique et organisation du code.
@@ -50,7 +52,7 @@ L'application fonctionne avec un backend cloud gratuit fourni par [Supabase](htt
 
 ```env
 VITE_SUPABASE_URL=https://ton-projet-supabase.supabase.co
-VITE_SUPABASE_ANON_KEY=ta-cle-anon-publique
+VITE_SUPABASE_PUBLISHABLE_KEY=ta-cle-publishable-publique
 ```
 
 - Le préfixe `VITE_` est obligatoire pour que [Vite](https://vite.dev/guide/env-and-mode) expose ces variables au site.
