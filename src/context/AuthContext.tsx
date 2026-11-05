@@ -239,19 +239,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Subscribe to Supabase auth updates
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event: string, newSession: unknown) => {
+    } = supabase.auth.onAuthStateChange((_event, newSession) => {
       if (!mounted) return;
-      const s = (newSession ?? null) as Session | null;
-      const u = (s?.user ?? null) as User | null;
-      if (u) {
-        setSession(s);
-        setUser(u);
-        await loadUserData(u);
+      const nextSession = (newSession ?? null) as Session | null;
+      const nextUser = nextSession?.user ?? null;
+      setSession(nextSession);
+      setUser(nextUser);
+
+      if (nextUser) {
+        // Avoid making Supabase requests inside the auth callback itself.
+        window.setTimeout(() => {
+          if (mounted) void loadUserData(nextUser);
+        }, 0);
       } else {
-        syncSession();
+        setProfile(null);
+        setIsAdmin(false);
+        setLoading(false);
       }
     });
-
 
     return () => {
       mounted = false;
