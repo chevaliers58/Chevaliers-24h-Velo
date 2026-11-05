@@ -35,7 +35,6 @@ import { useAuth } from "@/lib/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { approveActivity, rejectActivity } from "@/lib/proofStorage";
 import {
-  db,
   type Patrol,
   type Profile,
   type Activity,
@@ -115,7 +114,7 @@ function Admin() {
     const { data: ptData } = (await supabase.from("patrols").select("*").order("name")) as {
       data: Patrol[] | null;
     };
-    const ptList = ptData && ptData.length > 0 ? ptData : db.getPatrols();
+    const ptList = ptData ?? [];
     setPatrols(ptList);
 
     const hasStaffInDb = ptData?.some(
@@ -169,7 +168,7 @@ function Admin() {
     if (rolesData && rolesData.length > 0) {
       setAdmins(rolesData.map((r: { user_id: string }) => r.user_id));
     } else {
-      setAdmins(db.getAdmins());
+      setAdmins([]);
     }
 
     try {
@@ -180,10 +179,10 @@ function Admin() {
       if (tlData && tlData.length > 0) {
         setTimeline(tlData as unknown as TimelineEvent[]);
       } else {
-        setTimeline(db.getTimeline());
+        setTimeline([]);
       }
     } catch {
-      setTimeline(db.getTimeline());
+      setTimeline([]);
     }
 
     // 6. Countdowns from Supabase
@@ -202,7 +201,7 @@ function Admin() {
 
   useEffect(() => {
     load();
-    return db.subscribe(load);
+    return undefined;
   }, [load]);
 
   if (loading) {
@@ -246,7 +245,6 @@ function Admin() {
     if (error) {
       toast.error("Erreur : " + error);
     } else {
-      db.updateActivityStatus(act.id, "approved");
       toast.success("Sortie validée et photo de preuve supprimée.");
     }
     load();
@@ -257,7 +255,6 @@ function Admin() {
     if (error) {
       toast.error("Erreur : " + error);
     } else {
-      db.updateActivityStatus(act.id, "rejected");
       toast.error("Sortie refusée.");
     }
     load();
@@ -272,7 +269,6 @@ function Admin() {
       name: newPatrol.name.trim(),
       category: cat,
     })) as { error: { message: string } | null };
-    db.addPatrol(newPatrol.name.trim(), newPatrol.category);
     if (res?.error) {
       toast.error("Erreur : " + res.error.message);
     } else {
@@ -287,7 +283,6 @@ function Admin() {
       const res = (await supabase.from("patrols").delete().eq("id", id)) as {
         error: { message: string } | null;
       };
-      db.deletePatrol(id);
       if (res?.error) {
         toast.error("Erreur : " + res.error.message);
       } else {
