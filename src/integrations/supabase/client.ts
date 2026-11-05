@@ -54,8 +54,13 @@ function createSupabaseClient() {
     throw new Error("[Supabase] VITE_SUPABASE_URL doit être l'URL HTTPS de ton projet Supabase.");
   }
 
-  if (!SUPABASE_PUBLISHABLE_KEY.startsWith("sb_publishable_") && !/^[\w-]+\.[\w-]+\.[\w-]+$/.test(SUPABASE_PUBLISHABLE_KEY)) {
-    throw new Error("[Supabase] La clé doit être une clé publishable (ou une ancienne clé anon), jamais une clé service_role.");
+  if (
+    !SUPABASE_PUBLISHABLE_KEY.startsWith("sb_publishable_") &&
+    !isLegacyAnonKey(SUPABASE_PUBLISHABLE_KEY)
+  ) {
+    throw new Error(
+      "[Supabase] Utilise une clé publishable sb_publishable_ ou une ancienne clé anon. Une clé secret/service_role est interdite dans le navigateur."
+    );
   }
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
