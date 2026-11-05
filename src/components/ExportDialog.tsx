@@ -19,7 +19,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { getActivitySport, type Patrol } from "@/lib/database";
+import { getActivitySport } from "@/lib/activity";
+import type { Patrol } from "@/lib/database";
 import { isStaffPatrol } from "@/lib/categories";
 import {
   generatePdf,
