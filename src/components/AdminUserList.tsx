@@ -436,7 +436,7 @@ export function AdminUserList({
                 <th className="py-3 px-4 text-center">
                   <div className="inline-flex items-center gap-1.5 justify-center">
                     <Shield className="h-3.5 w-3.5 text-amber-600" />
-                    <span>Statut Admin (is_admin)</span>
+                    <span>Statut administrateur</span>
                   </div>
                 </th>
               </tr>
@@ -545,7 +545,7 @@ export function AdminUserList({
 
                       {/* Scout Year / Role status */}
                       <td className="block self-center text-right md:table-cell md:py-3.5 md:px-4 md:text-left">
-                        {p.is_chef || isStaffPatrol(currentPatrol) ? (
+                        {isStaffPatrol(currentPatrol) ? (
                           <Badge className="bg-amber-500/15 text-amber-700 text-[10px] font-bold">
                             Staff
                           </Badge>
