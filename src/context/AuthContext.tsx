@@ -170,17 +170,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (!profileLoaded) {
           setProfile({
-          id: currentUser.id,
-          email: currentUser.email ?? null,
-          full_name: metaName,
-          totem: metaTotem,
-          quali: metaQuali,
-          scout_year: metaYear,
-          phone: metaPhone,
-          strava_url: null,
-          patrol_id: metaPatrol && metaPatrol.includes("-") ? metaPatrol : null,
-          is_chef: false,
-          onboarded: false,
+            id: currentUser.id,
+            email: currentUser.email ?? null,
+            full_name: metaName,
+            totem: metaTotem,
+            quali: metaQuali,
+            scout_year: metaYear,
+            phone: metaPhone,
+            strava_url: null,
+            patrol_id: metaPatrol && metaPatrol.includes("-") ? metaPatrol : null,
+            is_chef: false,
+            onboarded: false,
           });
         }
       }
