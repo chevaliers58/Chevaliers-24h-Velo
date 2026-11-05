@@ -35,12 +35,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { SportBadge, SportIcon, SPORT_COLORS } from "@/components/SportIcon";
-import {
-  getActivitySport,
-  cleanActivityNote,
-  SPORT_INFO,
-  type ActivitySport,
-} from "@/lib/database";
+import { getActivitySport, cleanActivityNote, SPORT_INFO, type ActivitySport } from "@/lib/activity";
 import { deleteActivity } from "@/lib/proofStorage";
 import { CHALLENGE_START } from "@/lib/challengeStart";
 import { correctionSummary, type ActivityCorrection } from "@/lib/corrections";
