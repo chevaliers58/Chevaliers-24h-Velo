@@ -27,7 +27,8 @@ import {
 } from "@/lib/appData";
 import { useDistanceAwards } from "@/lib/useDistanceAwards";
 import { getNextDistanceTrophy } from "@/lib/distanceTrophies";
-import { getActivitySport, getPatrolEmblem, SPORT_INFO } from "@/lib/database";
+import { getActivitySport, SPORT_INFO } from "@/lib/activity";
+import { getPatrolEmblem } from "@/lib/patrolEmblem";
 import { cn } from "@/lib/utils";
 import { ExpeditionGoal } from "@/components/ExpeditionGoal";
 import { WeeklyStreakCard } from "@/components/WeeklyStreakCard";
