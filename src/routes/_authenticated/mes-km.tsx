@@ -23,13 +23,8 @@ import { groupSizes, pelotonMultiplier, type PelotonActivity } from "@/lib/pelot
 import { supabase } from "@/integrations/supabase/client";
 import { gpxDownloadUrl, gpxFileName } from "@/lib/gpxDownload";
 import { deleteActivity as deleteActivityWithFiles } from "@/lib/proofStorage";
-import {
-  type Profile,
-  getActivitySport,
-  cleanActivityNote,
-  type ActivitySport,
-  SPORT_INFO,
-} from "@/lib/database";
+import type { Profile } from "@/lib/database";
+import { getActivitySport, cleanActivityNote, type ActivitySport, SPORT_INFO } from "@/lib/activity";
 import { cn } from "@/lib/utils";
 import { SportBadge, SPORT_COLORS } from "@/components/SportIcon";
 import { CorrectionNotice } from "@/components/CorrectionNotice";
