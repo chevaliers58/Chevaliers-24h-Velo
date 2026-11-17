@@ -397,6 +397,14 @@ try {
     await eventually(() => held, "captured genuine admin role response");
     await switchingPage.getByRole("button", { name: /Classement Individuel/ }).click();
     await switchingPage.getByText("Admin Test Navigateur", { exact: true }).first().waitFor();
+    const detailObserver = await switching.newPage();
+    await detailObserver.goto(base + "/scout/" + created.user.id);
+    await detailObserver
+      .getByRole("heading", { name: "Admin Test Navigateur", exact: true })
+      .waitFor();
+    await detailObserver.evaluate(() => {
+      document.documentElement.dataset.e2eDetail = "retained";
+    });
     await switchingPage.evaluate(() => {
       document.documentElement.dataset.e2eSession = "retained";
     });
@@ -404,11 +412,23 @@ try {
     await switchingPage.getByRole("link", { name: "Connexion", exact: true }).first().waitFor();
     await switchingPage.getByRole("button", { name: /Classement Individuel/ }).click();
     await switchingPage.getByText("Admin T.", { exact: true }).first().waitFor();
+    await detailObserver.getByRole("heading", { name: "Admin T.", exact: true }).waitFor();
+    assert.equal(
+      await detailObserver
+        .getByRole("heading", { name: "Admin Test Navigateur", exact: true })
+        .count(),
+      0,
+    );
     assert.equal(
       await switchingPage.getByText("Admin Test Navigateur", { exact: true }).count(),
       0,
     );
     await login(controllingPage, email);
+    await detailObserver
+      .getByRole("heading", { name: "Admin Test Navigateur", exact: true })
+      .waitFor();
+    assert.equal(await detailObserver.locator("html").getAttribute("data-e2e-detail"), "retained");
+    await detailObserver.close();
     await switchingPage.getByRole("link", { name: "Profil", exact: true }).click();
     await eventually(
       async () => (await switchingPage.locator("#totem").inputValue()) === totem,

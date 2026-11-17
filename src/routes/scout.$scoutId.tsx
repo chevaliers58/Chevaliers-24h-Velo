@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SPORT_INFO, getActivitySport, type ActivitySport } from "@/lib/activity";
 import { getBestSingleActivityDistances } from "@/lib/distanceTrophies";
 import { useDistanceAwards } from "@/lib/useDistanceAwards";
+import { useAuth } from "@/lib/useAuth";
 
 export const Route = createFileRoute("/scout/$scoutId")({
   ssr: false,
@@ -68,6 +69,14 @@ function SportIcon({ sport }: { sport: ActivitySport }) {
 
 function ScoutProfilePage() {
   const { scoutId } = Route.useParams();
+  const { user, loading } = useAuth();
+  // A public view can return different names for members and visitors.
+  // Never retain another viewer's response or query anonymously before Auth initializes.
+  if (!user && loading) return <main className="min-h-screen bg-background" />;
+  return <ScoutProfileForViewer key={`${user?.id ?? "anonymous"}:${scoutId}`} scoutId={scoutId} />;
+}
+
+function ScoutProfileForViewer({ scoutId }: { scoutId: string }) {
   const { thresholds } = useDistanceAwards();
   const [profile, setProfile] = useState<ScoutProfile | null>(null);
   const [patrolName, setPatrolName] = useState<string | null>(null);
