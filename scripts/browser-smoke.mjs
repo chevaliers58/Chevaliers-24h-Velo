@@ -176,10 +176,11 @@ try {
   assert.equal(manual.status, "approved");
   assert.equal(Number(manual.km), 12);
   assert.equal(manual.source, "manual");
-  assert.ok(manual.gpx_path?.startsWith(api));
-  const gpxResponse = await fetch(manual.gpx_path);
-  assert.ok(gpxResponse.ok);
-  const storedGpx = await gpxResponse.text();
+  assert.ok(manual.gpx_path?.startsWith(scout.id + "_"));
+  const publicGpx = api + "/storage/v1/object/public/proofs/" + manual.gpx_path;
+  assert.ok(!(await fetch(publicGpx)).ok);
+  const gpxBlob = good(await admin.storage.from("proofs").download(manual.gpx_path));
+  const storedGpx = await gpxBlob.text();
   assert.ok(storedGpx.includes('lon="0.003"'));
   assert.ok(storedGpx.includes('lon="0.036"'));
   assert.ok(!storedGpx.includes('lon="0"'));
@@ -214,14 +215,26 @@ try {
     "photo activity persistence",
   );
   assert.equal(pending.status, "pending");
-  assert.ok(pending.proof_path?.startsWith(api));
-  assert.ok((await fetch(pending.proof_path)).ok);
-  console.log("PASS photo upload, existing public URL and pending approval");
+  assert.ok(pending.proof_path?.startsWith(scout.id + "_"));
+  const publicPhoto = api + "/storage/v1/object/public/proofs/" + pending.proof_path;
+  assert.ok(!(await fetch(publicPhoto)).ok);
+  const owner = createClient(api, process.env.VITE_SUPABASE_PUBLISHABLE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  good(await owner.auth.signInWithPassword({ email, password }));
+  assert.ok((await owner.storage.from("proofs").download(pending.proof_path)).error);
+  assert.ok((await owner.storage.from("proofs").download(manual.gpx_path)).error);
+  assert.ok((await owner.storage.from("proofs").createSignedUrl(pending.proof_path, 60)).error);
+  console.log("PASS private photo upload and refused owner/public downloads");
   stage = "admin approval preserves photo";
   const staff = await context();
   const staffPage = await staff.newPage();
   await login(staffPage, adminEmail);
   await staffPage.goto(base + "/admin");
+  const proofDownload = staffPage.waitForEvent("download");
+  await staffPage.getByRole("button", { name: "Photo de preuve" }).click();
+  const privateFile = await proofDownload;
+  assert.ok(privateFile.suggestedFilename().endsWith(".png"));
   await staffPage.getByRole("button", { name: "Valider les km" }).click();
   const approved = await eventually(
     async () =>
@@ -230,7 +243,8 @@ try {
   );
   assert.equal(approved.proof_path, pending.proof_path);
   assert.ok(approved.validated_at);
-  assert.ok((await fetch(approved.proof_path)).ok);
+  assert.ok(!(await fetch(publicPhoto)).ok);
+  assert.ok(good(await admin.storage.from("proofs").download(approved.proof_path)).size > 0);
   console.log("PASS admin approval and retained proof");
   stage = "public leaderboard after approval";
   const visitor = await context();

@@ -155,8 +155,8 @@ export function RecentActivityFeed({
 
         // 3. Récupérer les activités réelles depuis Supabase
         // Visiteur sans compte : vue publique (ni lien Strava, ni photo, ni note libre).
-        // Membre connecté : détail complet.
-        const { data: actsData } = user
+        // Staff vérifié : détail complet ; les autres utilisent la projection publique.
+        const { data: actsData } = isAdmin
           ? await supabase
               .from("activities")
               .select(

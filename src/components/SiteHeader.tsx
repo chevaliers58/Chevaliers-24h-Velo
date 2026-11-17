@@ -102,10 +102,11 @@ export function SiteHeader() {
     },
     {
       to: "/carte",
-      label: "Carte",
-      description: "Carte interactive des zones roulées et courues (-200m protégés)",
+      label: "Parcours GPS privés",
+      description: "Vérification des traces par le staff",
       icon: MapPinned,
       requiresAuth: true,
+      requiresAdmin: true,
     },
     {
       to: "/sorties-prevues",

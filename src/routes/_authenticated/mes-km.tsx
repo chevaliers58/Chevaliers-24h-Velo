@@ -131,7 +131,7 @@ function MesKm() {
       if (groupIds.length > 0) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: linked } = (await (supabase as any)
-          .from("activities")
+          .from("activities_public")
           .select("user_id, km, status, group_ride_id")
           .in("group_ride_id", groupIds)) as { data: PelotonActivity[] | null };
         setPelotonSizes(groupSizes(linked || []));
@@ -452,18 +452,6 @@ function MesKm() {
 
                             {a.gpx_path && (
                               <Badge variant="outline">GPX transmis au staff</Badge>
-                            )}
-                                download={gpxFileName(`sortie ${a.ride_date} ${a.km} km`)}
-                                title="Télécharger le tracé GPX"
-                              >
-                                <Badge
-                                  variant="outline"
-                                  className="text-[10px] border-cyan-400/40 bg-cyan-500/10 text-cyan-700 hover:bg-cyan-500/20 dark:text-cyan-300 gap-1 cursor-pointer"
-                                >
-                                  <MapPin className="h-2.5 w-2.5" />
-                                  <span>Tracé GPX ⤓</span>
-                                </Badge>
-                              </a>
                             )}
                           </div>
 

@@ -31,3 +31,12 @@ create policy chevaliers_proofs_scoped_insert
       )
     )
   );
+
+-- Activity/proposal rows must not disclose other members' evidence paths or notes.
+-- Public ranking reads use activities_public, not the unrestricted base table.
+create policy chevaliers_activities_staff_or_owner
+  on public.activities as restrictive for select to authenticated
+  using (user_id = (select auth.uid()) or (select public.has_role(auth.uid(),'admin')));
+create policy chevaliers_proposals_staff_only
+  on public.proposed_routes as restrictive for select to authenticated
+  using (public.has_role(auth.uid(),'admin'));

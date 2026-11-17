@@ -110,7 +110,7 @@ export function Leaderboard({ className }: { className?: string }) {
         supabase
           .from("profiles_public")
           .select("id, full_name, totem, quali, scout_year, patrol_id, is_admin, strava_url"),
-        supabase.from("activities").select("id, user_id, ride_date, km, status, strava_link, note"),
+        supabase.from("activities_public").select("id, user_id, ride_date, km, status, note"),
         supabase.from("patrols").select("id, name, category"),
       ]);
 

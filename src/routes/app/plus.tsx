@@ -97,12 +97,12 @@ function MoreScreen() {
             title="Sorties de la troupe"
           />
           <AppListRow to="/app/compte-a-rebours" icon={CalendarClock} title="Compte à rebours" />
-          {user && (
+          {isAdmin && (
             <AppListRow
               to="/carte"
               icon={MapPinned}
               iconClassName="bg-sky-500/12 text-sky-600"
-              title="Carte des parcours"
+              title="Parcours GPS privés"
             />
           )}
         </AppList>
