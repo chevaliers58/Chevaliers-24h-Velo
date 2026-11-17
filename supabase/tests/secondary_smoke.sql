@@ -9,8 +9,8 @@ insert into public.user_roles(user_id,role) values ('11111111-1111-1111-1111-111
 
 -- The app revokes default PUBLIC function EXECUTE. Grant only this temporary
 -- test-session helper, which the historic scenarios replace in place.
-create or replace function pg_temp.as_user(_uid text) returns void language plpgsql as $
-begin perform set_config('request.jwt.claim.sub', coalesce(_uid, ''), false); end; $;
+create or replace function pg_temp.as_user(_uid text) returns void language plpgsql as $helper$
+begin perform set_config('request.jwt.claim.sub', coalesce(_uid, ''), false); end; $helper$;
 grant execute on function pg_temp.as_user(text) to authenticated, anon;
 
 \echo 'RUN peloton'
