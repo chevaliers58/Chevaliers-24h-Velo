@@ -237,7 +237,7 @@ export function DailyDistanceForm({
         return;
       }
       setGpxFile(file);
-      toast.success(`Fichier GPX "${file.name}" attaché (vie privée protégée)`);
+      toast.success(`Fichier GPX "${file.name}" attaché (vérifié avant envoi)`);
     }
   };
 
@@ -325,6 +325,8 @@ export function DailyDistanceForm({
     setSubmitting(true);
 
     try {
+      // Validate and redact before any profile update or proof upload.
+      const croppedGpx = gpxFile ? await processAndCropGpx(gpxFile) : null;
       const selectedPatrol = patrols.find((p) => p.id === selectedPatrolId);
       const patrolName = selectedPatrol ? selectedPatrol.name : "Patrouille";
 
@@ -387,34 +389,19 @@ export function DailyDistanceForm({
         proofPublicUrl = urlData.publicUrl;
       }
 
-      // 6. Traitement et envoi optionnel du fichier GPX (rogné 200m début/fin)
+      // 6. Upload only the already-redacted track. Never silently omit it.
       let gpxPublicUrl: string | null = null;
-      if (gpxFile) {
-        try {
-          const croppedContent = await processAndCropGpx(gpxFile);
-          const gpxBlob = new Blob([croppedContent], { type: "application/gpx+xml" });
-          const gpxFileName = `${targetUserId}_${Date.now()}_${crypto.randomUUID()}.gpx`;
-
-          const { error: gpxUploadError } = await supabase.storage
-            .from("proofs")
-            .upload(gpxFileName, gpxBlob, { upsert: true });
-
-          if (!gpxUploadError) {
-            const { data: gpxUrlData } = supabase.storage.from("proofs").getPublicUrl(gpxFileName);
-            gpxPublicUrl = gpxUrlData.publicUrl;
-          } else if (selectedChallenge?.route_validation || selectedChallenge?.gpx_template_path) {
-            toast.error("Impossible d’envoyer le GPX requis pour ce défi.");
-            setSubmitting(false);
-            return;
-          }
-        } catch (err) {
-          console.warn("Erreur lors du traitement GPX :", err);
-          if (selectedChallenge?.route_validation || selectedChallenge?.gpx_template_path) {
-            toast.error("Impossible de préparer le GPX requis pour ce défi.");
-            setSubmitting(false);
-            return;
-          }
+      if (croppedGpx) {
+        const gpxBlob = new Blob([croppedGpx], { type: "application/gpx+xml" });
+        const gpxFileName = `${targetUserId}_${Date.now()}_${crypto.randomUUID()}.gpx`;
+        const { error: gpxUploadError } = await supabase.storage
+          .from("proofs")
+          .upload(gpxFileName, gpxBlob, { upsert: true });
+        if (gpxUploadError) {
+          await removeStorageFiles([proofPublicUrl]);
+          throw new Error("Impossible d’envoyer le GPX : " + gpxUploadError.message);
         }
+        gpxPublicUrl = supabase.storage.from("proofs").getPublicUrl(gpxFileName).data.publicUrl;
       }
 
       const isAutoApproved = isAdmin;
@@ -671,7 +658,7 @@ export function DailyDistanceForm({
         </div>
         <p className="text-[11px] text-muted-foreground">
           🔒 <strong>Vie privée :</strong> Les 200 premiers et derniers mètres de ton tracé GPX
-          seront automatiquement rognés pour masquer ton départ et ton arrivée.
+          seront rognés et les métadonnées supprimées. Un tracé trop court ou trop peu détaillé sera refusé ; un parcours en boucle peut toutefois repasser près du départ.
         </p>
       </div>
     </>

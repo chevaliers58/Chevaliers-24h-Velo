@@ -132,11 +132,22 @@ try {
   await form
     .getByPlaceholder("https://www.strava.com/activities/123456789...")
     .fill("https://www.strava.com/activities/123456789");
+  // A short track must not silently send the original or create an activity.
+  const gpxInput = form.locator('input[type="file"][accept*=".gpx"]');
+  await gpxInput.setInputFiles({
+    name: "short.gpx",
+    mimeType: "application/gpx+xml",
+    buffer: Buffer.from('<gpx creator="PRIVATE"><trk><trkseg><trkpt lat="0" lon="0"/><trkpt lat="0" lon="0.001"/></trkseg></trk></gpx>'),
+  });
+  await form.locator('button[type="submit"]').click();
+  await scoutPage.getByText(/tracé GPX est trop court ou trop peu détaillé/).waitFor();
+  assert.equal((await activities(scout.id)).length, 0);
+  await form.getByRole("button", { name: "Retirer", exact: true }).click();
   // Synthetic two-segment track (equator; not a real member location).
   const segment = (xs) =>
-    "<trkseg>" + xs.map((x) => '<trkpt lat="0" lon="' + x + '"/>').join("") + "</trkseg>";
+    "<trkseg>" + xs.map((x) => '<trkpt lat="0" lon="' + x + '"><ele>12</ele><time>2026-10-01T00:00:00Z</time><extensions><private>PRIVATE_DATA</private></extensions></trkpt>').join("") + "</trkseg>";
   const track =
-    '<gpx version="1.1" creator="CI"><trk>' +
+    '<gpx version="1.1" creator="PRIVATE_DEVICE"><metadata><name>PRIVATE_NAME</name><bounds minlat="0" minlon="0" maxlat="0" maxlon="0.039"/></metadata><wpt lat="0" lon="0"><name>PRIVATE_HOME</name></wpt><rte><rtept lat="0" lon="0"/></rte><trk><name>PRIVATE_TRACK</name>' +
     segment(["0", "0.003", "0.006", "0.009"]) +
     segment(["0.030", "0.033", "0.036", "0.039"]) +
     "</trk></gpx>";
@@ -165,7 +176,10 @@ try {
   assert.equal((storedGpx.match(/<trkseg>/g) ?? []).length, 2);
   assert.equal((storedGpx.match(/<trkpt /g) ?? []).length, 6);
   console.log("PASS manual activity and approved status");
-  console.log("PASS GPX upload trims endpoints across segments");
+  assert.ok(storedGpx.includes("<ele>12</ele>"));
+  assert.ok(!storedGpx.includes("PRIVATE_"));
+  assert.ok(!/<(?:metadata|bounds|wpt|rte|time|extensions)(?:\s|>)/.test(storedGpx));
+  console.log("PASS GPX upload trims endpoints across segments and removes metadata; short track rejected");
   stage = "submit photo and verify storage";
   await scoutPage.goto(base + "/mes-km");
   await form.locator("#distance-km").fill("8");
