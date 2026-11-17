@@ -50,7 +50,8 @@ function fileName(value: string | null | undefined, bucket: string): string | nu
       if (!prefix) return null;
       name = decodeURIComponent(url.pathname.slice(prefix.length));
     }
-    return /^[^/\\:?%\x00-\x1f]+$/.test(name) && !name.startsWith(".") ? name : null;
+    if (Array.from(name).some((char) => char.charCodeAt(0) < 32)) return null;
+    return /^[^/\\:?%]+$/.test(name) && !name.startsWith(".") ? name : null;
   } catch {
     return null;
   }
@@ -189,9 +190,7 @@ Deno.serve(async (req) => {
   if (proofError) errors.push("photos : " + proofError.message);
   const photoRows = (oldProofs ?? []) as ProofRow[];
   const expiringPhotos = new Map(
-    photoRows
-      .filter((r) => ownedName(r.proof_path, r.user_id))
-      .map((r) => [r.id, r.proof_path]),
+    photoRows.filter((r) => ownedName(r.proof_path, r.user_id)).map((r) => [r.id, r.proof_path]),
   );
   const used = new Set<string>();
 
