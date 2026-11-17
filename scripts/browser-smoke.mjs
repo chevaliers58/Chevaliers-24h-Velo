@@ -552,8 +552,9 @@ try {
   await mobileScoutPage.locator("#patrol-select").click();
   await mobileScoutPage.getByRole("option", { name: new RegExp(patrolName) }).click();
   await mobileScoutPage
-    .getByPlaceholder("https://www.strava.com/activities/123456789...")
+    .getByPlaceholder("Colle le lien de ton activité Strava")
     .fill("https://www.strava.com/activities/987654321");
+  await mobileScoutPage.getByRole("button", { name: /Plus de détails/ }).click();
   await mobileScoutPage.locator("#ride-note").fill("E2E mobile manual link");
   await mobileScoutPage.locator('main.app-screen button[type="submit"]').click();
   const mobileRide = await eventually(
