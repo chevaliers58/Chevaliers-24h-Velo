@@ -1,0 +1,66 @@
+name: Dependency upgrade trial
+on:
+  push:
+    branches: [test/chevaliers58-dependency-upgrades]
+permissions:
+  contents: read
+jobs:
+  trial:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VITE_SUPABASE_PROJECT_ID: ci-local
+      VITE_SUPABASE_URL: https://ci-placeholder.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
+      VITE_TROOP_NAME: Chevaliers 58
+      VITE_SITE_URL: https://19-58.net/velo
+      VITE_BASE_PATH: /velo/
+      VITE_TROOP_STRAVA_CLUB_URL: https://www.strava.com/clubs/Chevaliers58
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Resolve targeted upgrades in a disposable checkout
+        run: |
+          npm view zod@4.6.7 version
+          npm view vite@8.3.8 version
+          npm pkg set 'dependencies.zod=4.6.7' 'devDependencies.vite=8.3.8'
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm audit fix --package-lock-only --ignore-scripts --no-fund || true
+          npm ls zod vite seroval minimatch --package-lock-only || true
+      - name: Record candidate files
+        run: |
+          git diff --stat -- package.json package-lock.json
+          git diff -- package.json package-lock.json > /tmp/dependency-candidate.patch
+          echo 'CANDIDATE_DIFF_START'
+          cat /tmp/dependency-candidate.patch
+          echo 'CANDIDATE_DIFF_END'
+      - name: Install and test
+        run: npm ci
+      - name: Audit after updates
+        run: |
+          npm audit --omit=dev || true
+          npm audit || true
+      - name: Lint
+        run: npm run lint
+      - name: TypeScript diagnostic
+        continue-on-error: true
+        run: npx tsc --noEmit
+      - name: Build
+        run: npm run build
+      - name: Smoke test
+        run: |
+          node .output/server/index.mjs >/tmp/chevaliers-test.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3000/velo/ >/tmp/home.html; then break; fi
+            sleep 1
+          done
+          grep -q 'Chevaliers 58' /tmp/home.html
+          for route in auth timeline solidarite nouveau-mot-de-passe sw.js widget/troupe-km.js; do
+            curl --fail --silent "http://127.0.0.1:3000/velo/$route" >/dev/null
+          done
