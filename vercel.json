@@ -1,0 +1,100 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm ci",
+  "buildCommand": "bash scripts/build-protected-preview.sh",
+  "outputDirectory": ".output/pages",
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/velo/",
+      "permanent": false
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/velo/auth",
+      "destination": "/velo/index.html"
+    },
+    {
+      "source": "/velo/admin",
+      "destination": "/velo/index.html"
+    },
+    {
+      "source": "/velo/carte",
+      "destination": "/velo/index.html"
+    },
+    {
+      "source": "/velo/mes-km",
+      "destination": "/velo/index.html"
+    },
+    {
+      "source": "/velo/profil",
+      "destination": "/velo/index.html"
+    },
+    {
+      "source": "/velo/sorties-prevues",
+      "destination": "/velo/index.html"
+    },
+    {
+      "source": "/velo/nouveau-mot-de-passe",
+      "destination": "/velo/index.html"
+    },
+    {
+      "source": "/velo/solidarite",
+      "destination": "/velo/index.html"
+    },
+    {
+      "source": "/velo/timeline",
+      "destination": "/velo/index.html"
+    },
+    {
+      "source": "/velo/app",
+      "destination": "/velo/index.html"
+    },
+    {
+      "source": "/velo/scout/:scoutId",
+      "destination": "/velo/index.html"
+    },
+    {
+      "source": "/velo/app/:path*",
+      "destination": "/velo/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/:path*",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "geolocation=(), microphone=(), camera=(), payment=(), usb=()"
+        }
+      ]
+    },
+    {
+      "source": "/velo/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    }
+  ]
+}
