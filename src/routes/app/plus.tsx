@@ -6,8 +6,7 @@ import {
   CalendarDays,
   CircleUserRound,
   Compass,
-  HandHeart,
-  History,
+  ListChecks,
   LogIn,
   LogOut,
   MapPinned,
@@ -98,7 +97,6 @@ function MoreScreen() {
             title="Sorties de la troupe"
           />
           <AppListRow to="/app/compte-a-rebours" icon={CalendarClock} title="Compte à rebours" />
-          <AppListRow to="/timeline" icon={History} title="Ligne du temps" />
           {user && (
             <AppListRow
               to="/carte"
@@ -107,18 +105,13 @@ function MoreScreen() {
               title="Carte des parcours"
             />
           )}
-          <AppListRow
-            to="/solidarite"
-            icon={HandHeart}
-            iconClassName="bg-pink-500/12 text-pink-600"
-            title="Solidarité"
-          />
         </AppList>
       </AppSection>
 
       {user && (
         <AppSection title="Moi">
           <AppList>
+            <AppListRow to="/app/mes-kms" icon={ListChecks} title="Mes sorties" />
             <AppListRow
               icon={Bell}
               iconClassName="bg-primary/12 text-primary"

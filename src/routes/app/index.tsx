@@ -78,6 +78,7 @@ function AppHome() {
   const myPatrolRank = profile?.patrol_id
     ? rankOf(patrols, (p) => p.id === profile.patrol_id)
     : null;
+  const myPatrol = rankPatrols(troop.data, "all", "all").find((p) => p.id === profile?.patrol_id);
   const top = patrols.filter((p) => p.km > 0).slice(0, 3);
   const maxKm = Math.max(1, ...top.map((p) => p.km));
 
@@ -129,13 +130,20 @@ function AppHome() {
                 }
               />
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-3 border-t border-border/60 pt-4">
+            <div className="mt-4 grid grid-cols-3 gap-3 border-t border-border/60 pt-4">
               <div>
                 <p className="font-display text-[22px] font-black leading-none tabular-nums text-foreground">
                   {formatKm(stats.total)}
                   <span className="ml-1 text-[13px] font-bold text-muted-foreground">km</span>
                 </p>
                 <p className="mt-1 text-[13px] text-muted-foreground">Mon total</p>
+              </div>
+              <div>
+                <p className="font-display text-[22px] font-black leading-none tabular-nums text-foreground">
+                  {formatKm(myPatrol?.km ?? 0)}
+                  <span className="ml-1 text-[13px] font-bold text-muted-foreground">km</span>
+                </p>
+                <p className="mt-1 text-[13px] text-muted-foreground">Ma patrouille</p>
               </div>
               <div>
                 <p className="font-display text-[22px] font-black leading-none tabular-nums text-foreground">

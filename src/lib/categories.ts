@@ -12,8 +12,8 @@
 export type PatrolCategory = "homme" | "femme" | "staff";
 
 export const CATEGORY_LABELS: Record<PatrolCategory, string> = {
-  homme: "Garçons",
-  femme: "Filles",
+  homme: "Patrouille",
+  femme: "Patrouille",
   staff: "Staff",
 };
 

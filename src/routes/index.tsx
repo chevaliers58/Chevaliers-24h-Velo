@@ -40,7 +40,6 @@ import { SportIcon, SPORT_COLORS } from "@/components/SportIcon";
 import { cn } from "@/lib/utils";
 import {
   isStaffPatrol,
-  matchesCategory,
   TROOP_STAFF_PATROL_NAME,
   isTroopStaffPatrol,
 } from "@/lib/categories";
@@ -122,7 +121,6 @@ const PERIOD_LABELS: Record<Period, string> = {
   lastMonth: "Mois passé",
   all: "Depuis le début",
 };
-type GenderCat = "all" | "homme" | "femme";
 type ScoutYearFilter = "all" | "scouts" | "1" | "2" | "3" | "4" | "chef";
 type SportMode = "velo" | "course" | "marche" | "all";
 
@@ -191,7 +189,6 @@ function IndexForViewer() {
   }, [navigate]);
   const [sportMode, setSportMode] = useState<SportMode>("all");
   const [period, setPeriod] = useState<Period>("all");
-  const [cat, setCat] = useState<GenderCat>("all");
   const [scoutYear, setScoutYear] = useState<ScoutYearFilter>("all");
   const [view, setView] = useState<
     "patrols" | "scouts" | "peloton" | "map" | "chart" | "challenges"
@@ -449,16 +446,12 @@ function IndexForViewer() {
     },
   });
 
-  // Filter scouts by gender category AND scout year
-  // Rule: Patrol "Staff" / scouts who are staff are considered both "homme et femme" (fille et garçon)
+  // Filter scouts by scout year only.
   const filteredScouts = useMemo(() => {
     if (!Array.isArray(leaderboardData)) return [];
     return leaderboardData.filter((r) => {
       if (!r) return false;
       const isStaffOrChef = !!r.is_chef || r.category === "staff";
-
-      // 1. Catégorie : le staff apparaît chez les Garçons ET chez les Filles
-      if (!matchesCategory(r.category, isStaffOrChef, cat)) return false;
 
       // 2. Scout year filter:
       if (scoutYear !== "all") {
@@ -477,7 +470,7 @@ function IndexForViewer() {
 
       return true;
     });
-  }, [leaderboardData, cat, scoutYear]);
+  }, [leaderboardData, scoutYear]);
 
   // Aggregate patrol rows
   const patrolRows = useMemo(() => {
@@ -505,8 +498,7 @@ function IndexForViewer() {
         // filtre par année : pas de patrouilles staff (elles n'ont pas d'année)
         if (scoutYear === "chef" && !staff) return false;
         if (scoutYear !== "all" && scoutYear !== "chef" && staff) return false;
-        // Les patrouilles staff apparaissent chez les Garçons ET chez les Filles
-        return matchesCategory(p.category, staff, cat);
+        return true;
       })
       .map((p) => {
         const staffPatrol = isStaffPatrol(p);
@@ -534,7 +526,7 @@ function IndexForViewer() {
         };
       })
       .sort((a, b) => b.km - a.km);
-  }, [patrols, filteredScouts, cat, scoutYear]);
+  }, [patrols, filteredScouts, scoutYear]);
 
   const scoutRows = useMemo(() => {
     let list = [...filteredScouts].sort((a, b) => Number(b.km) - Number(a.km));
@@ -1099,20 +1091,6 @@ function IndexForViewer() {
               ))}
             </div>
 
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider mr-1">
-                Genre :
-              </span>
-              <FilterPill active={cat === "all"} onClick={() => setCat("all")}>
-                Toutes
-              </FilterPill>
-              <FilterPill active={cat === "homme"} onClick={() => setCat("homme")}>
-                Garçons
-              </FilterPill>
-              <FilterPill active={cat === "femme"} onClick={() => setCat("femme")}>
-                Filles
-              </FilterPill>
-            </div>
           </div>
 
           {/* Row 2: Scout Year Filter */}
@@ -1285,7 +1263,6 @@ function IndexForViewer() {
                   key={p.id}
                   rank={p.rank}
                   name={p.name}
-                  category={p.category}
                   isChef={p.isChef}
                   members={p.members}
                   km={p.km}
@@ -1522,7 +1499,6 @@ function IndexForViewer() {
 function PatrolLeaderboardRow({
   rank,
   name,
-  category,
   isChef,
   members,
   km,
@@ -1532,7 +1508,6 @@ function PatrolLeaderboardRow({
 }: {
   rank: number;
   name: string;
-  category: string;
   isChef?: boolean;
   members: number;
   km: number;
@@ -1599,13 +1574,9 @@ function PatrolLeaderboardRow({
               <span className="text-xl shrink-0">{getPatrolEmblem(name)}</span>
               <span>{name}</span>
             </span>
-            {isChef ? (
+            {isChef && (
               <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-600 uppercase tracking-wider">
                 👑 Staff
-              </span>
-            ) : (
-              <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold text-secondary-foreground">
-                {category === "homme" ? "Garçons" : "Filles"}
               </span>
             )}
           </div>

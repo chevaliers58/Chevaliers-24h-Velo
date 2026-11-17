@@ -8,7 +8,6 @@ import {
   LogOut,
   Bike,
   LogIn,
-  HandHeart,
   MapPinned,
   X,
   ChevronRight,
@@ -90,8 +89,8 @@ export function SiteHeader() {
   const navItems: NavItem[] = [
     {
       to: "/",
-      label: "Accueil",
-      description: "Classement hebdomadaire des patrouilles et des scouts",
+      label: "Classements",
+      description: "Classements des patrouilles et des scouts",
       icon: Trophy,
     },
     {
@@ -114,12 +113,6 @@ export function SiteHeader() {
       description: "Proposer une sortie de groupe et s'inscrire",
       icon: CalendarClock,
       requiresAuth: true,
-    },
-    {
-      to: "/solidarite",
-      label: "Solidarité",
-      description: "Actions solidaires et kilomètres partagés",
-      icon: HandHeart,
     },
     {
       to: "/mes-km",
@@ -150,15 +143,14 @@ export function SiteHeader() {
   });
 
   const mobileItems = user
-    ? visibleItems.filter((item) => ["/", "/mes-km", "/carte", "/profil"].includes(item.to))
-    : visibleItems.filter((item) => ["/", "/timeline", "/solidarite"].includes(item.to));
+    ? visibleItems.filter((item) => ["/", "/mes-km", "/timeline", "/profil"].includes(item.to))
+    : visibleItems.filter((item) => ["/", "/timeline"].includes(item.to));
   const mobileItemIcons: Record<string, React.ComponentType<{ className?: string }>> = {
     "/": House,
     "/mes-km": Bike,
     "/carte": MapPinned,
     "/profil": CircleUserRound,
     "/timeline": History,
-    "/solidarite": HandHeart,
   };
 
   return (

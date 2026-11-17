@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { House, Trophy, Plus, ListChecks, LayoutGrid } from "lucide-react";
+import { House, Trophy, Plus, History, LayoutGrid } from "lucide-react";
 import { useAuth } from "@/lib/useAuth";
 import { cn } from "@/lib/utils";
 
@@ -14,22 +14,22 @@ export function AppTabBar() {
   const tabs = [
     {
       to: "/app",
-      label: "Accueil",
+      label: "Mon espace",
       icon: House,
       active: pathname === "/app" || pathname === "/app/",
     },
     {
       to: "/app/classement",
-      label: "Classement",
+      label: "Classements",
       icon: Trophy,
       active: pathname.startsWith("/app/classement"),
     },
     null,
     {
-      to: user ? "/app/mes-kms" : "/auth",
-      label: "Mes km",
-      icon: ListChecks,
-      active: pathname.startsWith("/app/mes-kms") || pathname.startsWith("/app/trophees"),
+      to: "/timeline",
+      label: "Timeline",
+      icon: History,
+      active: pathname.startsWith("/timeline"),
     },
     {
       to: "/app/plus",
@@ -37,7 +37,7 @@ export function AppTabBar() {
       icon: LayoutGrid,
       active:
         pathname.startsWith("/app/plus") ||
-        ["/profil", "/admin", "/solidarite", "/timeline", "/carte"].some((p) =>
+        ["/profil", "/admin", "/carte", "/app/mes-kms", "/app/trophees"].some((p) =>
           pathname.startsWith(p),
         ) ||
         [

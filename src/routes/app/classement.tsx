@@ -67,6 +67,9 @@ function RankingScreen() {
   return (
     <AppPageShell root title="Classement">
       <div className="space-y-3">
+        <Link to="/app/maillots" className="text-sm font-semibold text-primary">
+          Maillots jaune, à pois et blanc
+        </Link>
         {profile?.is_chef && (
           <div className="flex justify-end">
             <RankingStoryExport />
@@ -95,6 +98,7 @@ function RankingScreen() {
             onChange={setGroup}
             options={[
               { value: "all", label: "Tout le monde" },
+              { value: "young", label: "Jeunes (1re et 2e)" },
               { value: "scouts", label: "Scouts (1re à 4e)" },
               { value: "1", label: "1re" },
               { value: "2", label: "2e" },

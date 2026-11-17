@@ -18,17 +18,17 @@ import { toast } from "sonner";
 import { TROOP_NAME, SITE_URL } from "@/lib/troop-config";
 
 type JerseyType = "yellow" | "polka" | "white";
-type JerseyCategory = "homme" | "femme";
+type JerseyCategory = "general";
 type Section = "patrols" | JerseyType;
 interface StoryRankings {
   patrols: Array<{ name: string; km: number }>;
   holders: Array<{ type: JerseyType; category: JerseyCategory; candidate: JerseyCandidate | null }>;
 }
 const SECTION_LABELS: Record<Section, string> = {
-  patrols: "Classement des patrouilles (scouts)",
-  yellow: "Maillots jaunes (garçons et filles)",
-  polka: "Maillots à pois (garçons et filles)",
-  white: "Maillots blancs (garçons et filles)",
+  patrols: "Classement des patrouilles",
+  yellow: "Maillot jaune",
+  polka: "Maillot à pois",
+  white: "Maillot blanc",
 };
 const PERIOD_LABELS: Record<AppPeriod, string> = {
   week: "Cette semaine",
@@ -45,7 +45,7 @@ export function RankingStoryExport() {
 
   const rankings = useMemo(() => {
     if (!data) return null;
-    const patrols = rankPatrols(data, period, "all").filter((p) => !p.is_staff && p.km > 0);
+    const patrols = rankPatrols(data, period, "all").filter((p) => p.km > 0);
     const range =
       period === "week" ? currentRange("week") : period === "month" ? currentRange("month") : null;
     const profiles = data.profiles;
@@ -76,7 +76,7 @@ export function RankingStoryExport() {
       };
     });
     const jerseys = computeJerseys(candidates);
-    const categories: JerseyCategory[] = ["homme", "femme"];
+    const categories: JerseyCategory[] = ["general"];
     const holders: StoryRankings["holders"] = (["yellow", "polka", "white"] as const).flatMap(
       (type) =>
         categories.map((category) => ({
@@ -285,8 +285,7 @@ function drawStory(
       ctx.font = "italic 700 22px Georgia, serif";
       ctx.fillText(jerseyName.toLocaleLowerCase("fr"), 270, centerY - 23);
       for (const holder of group.holders) {
-        const rowY = centerY + (holder.category === "homme" ? 20 : 60);
-        const label = holder.category === "homme" ? "1H" : "1F";
+        const rowY = centerY + 25;
         const name = holder.candidate?.display_name ?? "En attente";
         const metric = holder.candidate
           ? group.type === "polka"
@@ -296,7 +295,7 @@ function drawStory(
         ctx.fillStyle = "#fffaf1";
         ctx.font = "bold 30px Georgia, serif";
         ctx.textAlign = "left";
-        ctx.fillText(`${label}  ${name}`, 270, rowY);
+        ctx.fillText(name, 270, rowY);
         ctx.textAlign = "right";
         ctx.fillText(metric, width - 125, rowY);
       }

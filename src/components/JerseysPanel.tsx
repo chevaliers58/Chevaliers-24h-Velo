@@ -8,9 +8,7 @@ import {
 } from "@/lib/jerseys";
 
 const CATEGORY_TITLES: Record<JerseyCategory, string> = {
-  homme: "Garçons",
-  femme: "Filles",
-  staff: "Staff",
+  general: "Classement général",
 };
 
 function Holder({
@@ -74,7 +72,7 @@ function Holder({
   );
 }
 
-/** Maillot jaune (km), à pois (D+) et blanc (meilleur 1re/2e année) pour chaque catégorie. */
+/** Maillot jaune (km), à pois (D+) et blanc (meilleur 1re/2e année) pour toute la troupe. */
 export function JerseysPanel({
   jerseys,
   periodLabel,
@@ -90,15 +88,15 @@ export function JerseysPanel({
           {periodLabel} · sorties validées uniquement
         </span>
       </div>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="space-y-2">
         {JERSEY_CATEGORIES.map((cat) => (
-          <div key={cat} className="space-y-2">
-            <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          <div key={cat} className="grid gap-2 md:grid-cols-3">
+            <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground md:col-span-3">
               {CATEGORY_TITLES[cat]}
             </div>
             <Holder kind="yellow" holder={jerseys[cat].yellow} />
             <Holder kind="climber" holder={jerseys[cat].climber} />
-            {cat !== "staff" && <Holder kind="white" holder={jerseys[cat].white} />}
+            <Holder kind="white" holder={jerseys[cat].white} />
           </div>
         ))}
       </div>

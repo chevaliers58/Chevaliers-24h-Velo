@@ -238,12 +238,13 @@ export function daysUntil(iso: string) {
 }
 
 /** Groupe de comparaison : tout le monde, les scouts (1re à 4e, sans le staff), une année, ou le staff. */
-export type AppGroup = "all" | "scouts" | "1" | "2" | "3" | "4" | "staff";
+export type AppGroup = "all" | "young" | "scouts" | "1" | "2" | "3" | "4" | "staff";
 
 export function inGroup(row: Pick<ScoutRow, "is_staff" | "scout_year">, group: AppGroup) {
   if (group === "all") return true;
   if (group === "staff") return row.is_staff;
   if (row.is_staff) return false;
+  if (group === "young") return row.scout_year === 1 || row.scout_year === 2;
   return group === "scouts" || row.scout_year === Number(group);
 }
 

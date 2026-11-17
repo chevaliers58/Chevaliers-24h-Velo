@@ -72,7 +72,7 @@ export interface RankedCyclist {
 }
 
 type PeriodFilter = "week" | "last" | "all";
-type CategoryFilter = "all" | "homme" | "femme" | "staff";
+type CategoryFilter = "all" | "staff";
 
 function getWeekBoundaries(offsetWeeks: number = 0) {
   const now = new Date();
@@ -211,14 +211,6 @@ export function Leaderboard({ className }: { className?: string }) {
       // Category filter
       if (category === "staff") {
         if (!cyclist.isChef && !cyclist.patrolName.toLowerCase().includes("staff")) {
-          return false;
-        }
-      } else if (category === "homme") {
-        if (!cyclist.isChef && cyclist.patrolCategory !== "homme") {
-          return false;
-        }
-      } else if (category === "femme") {
-        if (!cyclist.isChef && cyclist.patrolCategory !== "femme") {
           return false;
         }
       }
@@ -394,28 +386,6 @@ export function Leaderboard({ className }: { className?: string }) {
               )}
             >
               Tous
-            </button>
-            <button
-              onClick={() => setCategory("homme")}
-              className={cn(
-                "rounded-md px-2.5 py-1 font-medium transition-colors",
-                category === "homme"
-                  ? "bg-muted text-foreground font-semibold"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              Garçons
-            </button>
-            <button
-              onClick={() => setCategory("femme")}
-              className={cn(
-                "rounded-md px-2.5 py-1 font-medium transition-colors",
-                category === "femme"
-                  ? "bg-muted text-foreground font-semibold"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              Filles
             </button>
             <button
               onClick={() => setCategory("staff")}

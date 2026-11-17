@@ -740,8 +740,7 @@ function Admin() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="homme">Garçons</SelectItem>
-                        <SelectItem value="femme">Filles</SelectItem>
+                        <SelectItem value="homme">Patrouille</SelectItem>
                         <SelectItem value="staff">👑 Staff</SelectItem>
                       </SelectContent>
                     </Select>

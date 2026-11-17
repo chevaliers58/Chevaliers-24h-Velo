@@ -49,9 +49,12 @@ export function getPatrolEmblem(patrolName?: string | null, patrolId?: string | 
   if (n.includes("gazelle")) return "🦌";
   if (n.includes("girafe")) return "🦒";
   if (n.includes("marmotte")) return "🦫";
-  if (n.includes("cougar") || n.includes("panthère")) return "🐆";
+  if (n.includes("puma") || n.includes("cougar")) return "🐈";
+  if (n.includes("guépard") || n.includes("guepard") || n.includes("ocelot")) return "🐆";
+  if (n.includes("panthère")) return "🐆";
   if (n.includes("condor") || n.includes("aigle")) return "🦅";
-  if (n.includes("jaguar") || n.includes("tigre")) return "🐅";
+  if (n.includes("jaguar")) return "🐆";
+  if (n.includes("tigre")) return "🐅";
   if (n.includes("bison") || n.includes("buffle")) return "🦬";
   if (n.includes("faucon") || n.includes("épervier")) return "🦅";
   if (n.includes("pimiento") || n.includes("piment")) return "🌶️";
