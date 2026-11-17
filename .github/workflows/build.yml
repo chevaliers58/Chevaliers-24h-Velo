@@ -139,6 +139,16 @@ jobs:
             echo "$asset -> HTTP $status"
             test "$status" = "307"
           done
+      - name: Prepare static Pages preview package
+        run: |
+          bash scripts/package-pages.sh
+          test -s .output/pages/index.html
+          test -s .output/pages/velo/index.html
+          test -s .output/pages/velo/sw.js
+          test -s .output/pages/velo/manifest.webmanifest
+          test -s .output/pages/velo/widget/troupe-km.js
+          test -s .output/pages/_headers
+          test -s .output/pages/_redirects
       - name: Upload build output for inspection
         uses: actions/upload-artifact@v4
         with:

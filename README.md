@@ -92,20 +92,32 @@ touche aux mêmes fichiers.
 
 ## 🌍 Mise en ligne
 
-Le build utilise actuellement Nitro avec le preset `node-server`. Il génère un serveur
-(`.output/server/index.mjs`) et les ressources web (`.output/public`). Il ne faut donc pas
-considérer ce dépôt comme un export Pages statique validé tant que les contrôles CI n'ont pas
-confirmé les deux sorties.
+Le build standard Nitro conserve le serveur Node (`.output/server/index.mjs`) et les
+ressources web (`.output/public`). Un paquet statique indépendant a été essayé localement
+avec `wrangler pages dev` : routes directes sous `/velo`, ressources, PWA (fichiers),
+inscription, connexion, activités, stockage, validation admin, classement et export CSV.
+L'essai utilise une instance Supabase temporaire ; il ne constitue pas un déploiement Cloudflare.
 
-Pour un hébergement Node, lancer `npm run build`, puis
-`node .output/server/index.mjs`.
+Pour un hébergement Node : `npm run build`, puis `node .output/server/index.mjs`.
 
-Pour Cloudflare, la documentation actuelle de TanStack Start recommande Cloudflare Workers
-avec `@cloudflare/vite-plugin` et Wrangler. Cela demande de remplacer l'adaptateur Nitro
-dans `vite.config.ts` et d'ajouter une configuration Wrangler ; ce n'est pas encore fait ici.
-La sortie Node actuelle ne doit pas être envoyée telle quelle à Cloudflare Pages statique.
-Références : [TanStack Start sur Cloudflare Workers](https://developers.cloudflare.com/workers/framework-guides/web-apps/tanstack-start/)
-et [déploiement Nitro Cloudflare](https://nitro.build/deploy/providers/cloudflare).
+Pour une **prévisualisation autonome Cloudflare Pages** (aucun déploiement automatique
+dans ce dépôt) :
+
+- Framework preset : None
+- Node : 22
+- Build command : `npm run build:pages`
+- Build output directory : `.output/pages`
+- Root directory : racine du dépôt
+- Définir les variables publiques Vite décrites ci-dessous, avec `VITE_BASE_PATH=/velo/`.
+
+`scripts/package-pages.sh` prépare les ressources au chemin `/velo/`, le shell SPA de
+secours, un redirect racine propre à la prévisualisation autonome et les en-têtes de sécurité.
+Le script ne téléverse rien ; ne pas copier le redirect racine sur le site d'unité existant.
+Le site sur `19-58.net` devra conserver ses autres chemins : le routage du seul sous-chemin
+`/velo` nécessite la configuration de l'hébergeur actuel et un accord explicite.
+Les fonctions Edge Supabase restent indépendantes du paquet statique.
+
+Référence : [Cloudflare Pages — serving Pages](https://developers.cloudflare.com/pages/configuration/serving-pages/).
 
 ## Configuration Supabase avant mise en service
 
