@@ -38,11 +38,7 @@ import { getActivitySport, type ActivitySport, SPORT_INFO } from "@/lib/activity
 import { getPatrolEmblem } from "@/lib/patrolEmblem";
 import { SportIcon, SPORT_COLORS } from "@/components/SportIcon";
 import { cn } from "@/lib/utils";
-import {
-  isStaffPatrol,
-  TROOP_STAFF_PATROL_NAME,
-  isTroopStaffPatrol,
-} from "@/lib/categories";
+import { isStaffPatrol, TROOP_STAFF_PATROL_NAME, isTroopStaffPatrol } from "@/lib/categories";
 import { computeJerseys } from "@/lib/jerseys";
 import { JerseysPanel } from "@/components/JerseysPanel";
 import { ScoutSportifCard } from "@/components/ScoutSportifCard";
@@ -1090,7 +1086,6 @@ function IndexForViewer() {
                 </FilterPill>
               ))}
             </div>
-
           </div>
 
           {/* Row 2: Scout Year Filter */}

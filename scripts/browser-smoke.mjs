@@ -577,6 +577,18 @@ try {
     await mobilePage.getByRole("heading", { name: heading, exact: true, level: 1 }).waitFor();
     assert.equal(new URL(mobilePage.url()).pathname, "/velo/app/" + path);
   }
+  await mobilePage.goto(base + "/app/classement");
+  await mobilePage.getByText("Individuel", { exact: true }).click();
+  await mobilePage.getByText("Jeunes (1re et 2e)", { exact: true }).click();
+  assert.equal(await mobilePage.getByText("Filles", { exact: true }).count(), 0);
+  await mobilePage.goto(base + "/app/maillots");
+  await mobilePage.getByText("Maillot jaune", { exact: true }).waitFor();
+  await mobilePage.getByText("Maillot à pois", { exact: true }).waitFor();
+  await mobilePage.getByText("Maillot blanc · 1re et 2e", { exact: true }).waitFor();
+  await mobilePage.goto(base + "/app/plus");
+  assert.equal(await mobilePage.getByRole("link", { name: "Solidarité" }).count(), 0);
+  await mobilePage.getByRole("link", { name: "Timeline", exact: true }).click();
+  await mobilePage.waitForURL((url) => url.pathname === "/velo/timeline");
   await mobilePage.goto(base + "/app/mes-kms");
   await mobilePage.waitForURL((url) => url.pathname === "/velo/auth");
   await mobile.close();

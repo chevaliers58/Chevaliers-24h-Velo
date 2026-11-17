@@ -34,8 +34,9 @@ export interface JerseyHolders {
 /** Années qui peuvent porter le maillot blanc */
 export const WHITE_JERSEY_YEARS = [1, 2];
 
-export const isWhiteJerseyEligible = (c: Pick<JerseyCandidate, "scout_year" | "category" | "is_chef">) =>
-  !c.is_chef && c.category !== "staff" && WHITE_JERSEY_YEARS.includes(Number(c.scout_year));
+export const isWhiteJerseyEligible = (
+  c: Pick<JerseyCandidate, "scout_year" | "category" | "is_chef">,
+) => !c.is_chef && c.category !== "staff" && WHITE_JERSEY_YEARS.includes(Number(c.scout_year));
 
 /** Tous les participants concourent ensemble pour les maillots jaune et à pois. */
 export function jerseyCategoryOf(): JerseyCategory {
