@@ -154,3 +154,27 @@ SHA de code testé : `81e5110f2bbef526569f4c4cebcff6f95177d669`. Tous les workfl
 ## Initialisation distante autorisée — 17 novembre 2026
 
 57/57 migrations, 3 fonctions Edge actives, 28 tables RLS, 2 buckets et 0 utilisateur/activité. Trois cron en pause. Contrôles et historique complet dans `CreateYourTroup/initialisation-supabase-2026-11-17.md` ; lire impérativement l'avertissement sur les versions de migrations générées par le connecteur avant tout db push. Les avis de sécurité persistent ; révision et tests réels avant ouverture. Aucun site publié ni compte réel créé.
+
+## Hébergement de prévisualisation Vercel — 17 novembre 2026
+
+- Accès au compte Vercel autorisé par le responsable. Projet isolé `chevaliers58-velo-preview`, équipe `chevaliers58-6014`, ID `prj_CcryBxmzuRqbCwusJafWdSKCegDB`. Vercel Authentication activée pour toutes les URL (all), Node 22, clé publishable du Supabase Chevaliers 58 configurée exclusivement pour Preview. Aucun raccordement de domaine ni activation des cron.
+- Branche `preview/chevaliers58-vercel` : configuration statique et script preview-only. L'API GitHub utilisée par Vercel retourne 429, même avec l'ID du dépôt. Solution de secours : déploiement inline de trois fichiers (package.json minimal Node 22, vercel.json dérivé de la branche, script ci-dessous). Le premier essai sans cible explicite a été inféré production par Vercel et arrêté par le garde ; rien n'a été publié. Le paramètre target=preview explicite est rejeté par l'API ; target=staging correspond au déploiement de test accepté. Le premier staging (dpl_6KLQGTWPuayBNHSAuUfrhFXYnGpK) a récupéré exactement 5281eae7, npm ci réussi mais script shell invalide (apostrophe dans expansion). Correction 982b3c819d22f1592b2ba753e878be262230a7a6, bash -n réussi. Le test actuel : dpl_6TDyJZUMa7zwWLMmFUSfQKG9aKd6, staging, commit 982b3c8. Vérifier état et protection, puis l'URL du déploiement. Pas de production ni de données réelles.
+
+Script inline du staging (vercel.json reprend les routes de la branche, installCommand=true, buildCommand=bash build-reviewed-source.sh, outputDirectory=.output/pages) :
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "${VERCEL_ENV:-}" != preview ]]; then echo "Refusing non-preview deployment" >&2; exit 1; fi
+src="$(mktemp -d)"
+git -C "$src" init -q
+git -C "$src" fetch --depth=1 https://github.com/chevaliers58/Chevaliers-24h-Velo.git 982b3c819d22f1592b2ba753e878be262230a7a6
+git -C "$src" checkout --detach FETCH_HEAD
+test "$(git -C "$src" rev-parse HEAD)" = "982b3c819d22f1592b2ba753e878be262230a7a6"
+export VERCEL_GIT_COMMIT_SHA="982b3c819d22f1592b2ba753e878be262230a7a6"
+(cd "$src" && npm ci && bash scripts/build-protected-preview.sh)
+mkdir -p .output/pages
+cp -a "$src/.output/pages/." .output/pages/
+```
+
+Ne pas réutiliser ce script pour une publication officielle ; avant ouverture les risques de sécurité Supabase, règles de confidentialité et d'inscription, dates, SMTP, URL Auth et SITE_URL restent à traiter.
