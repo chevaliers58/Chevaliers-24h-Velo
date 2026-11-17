@@ -5,12 +5,7 @@ import { getAlezanQuote, type AlezanContext } from "@/lib/alezanQuotes";
 import { useSeasonalTheme } from "@/context/SeasonalThemeContext";
 import { useAuth } from "@/lib/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import mascotClassique from "@/assets/Perso/Alezan_Classique.png";
-import mascotHalloween from "@/assets/Perso/Alezan_Halloween.png";
-import mascotNoel from "@/assets/Perso/Alezan_Noel.png";
-import mascotSaintValentin from "@/assets/Perso/Alezan_St_Valentin.png";
-import mascotAnniversaire from "@/assets/Perso/Alezan_Anniversaire.png";
-import mascotEte from "@/assets/Perso/Alezan_Ete.png";
+import mascotKnight from "@/assets/chevaliers58-mascotte.svg";
 
 interface Birthday {
   user_id: string;
@@ -83,17 +78,6 @@ export function AlezanMascot({ context }: AlezanMascotProps) {
         ? "Joyeux anniversaire au staff de la troupe ! 🎉"
         : quote;
 
-  const mascotImage = birthdayMode
-    ? mascotAnniversaire
-    : currentTheme === "ete"
-      ? mascotEte
-      : currentTheme === "halloween"
-        ? mascotHalloween
-        : currentTheme === "noel"
-          ? mascotNoel
-          : currentTheme === "valentin"
-            ? mascotSaintValentin
-            : mascotClassique;
 
   return (
     <aside
@@ -129,15 +113,9 @@ export function AlezanMascot({ context }: AlezanMascotProps) {
       >
         {!seen && <span className="mobile-mascot-dot" aria-hidden="true" />}
         <img
-          src={mascotImage}
+          src={mascotKnight}
           alt="La mascotte des Chevaliers 58"
-          className={
-            birthdayMode
-              ? "h-20 w-36 shrink-0 object-contain drop-shadow-md sm:h-28 sm:w-52"
-              : currentTheme === "ete"
-                ? "h-28 w-28 shrink-0 object-cover object-center drop-shadow-md sm:h-36 sm:w-36"
-                : "h-28 w-28 shrink-0 object-contain drop-shadow-md sm:h-36 sm:w-36"
-          }
+          className="h-28 w-28 shrink-0 object-contain drop-shadow-md sm:h-36 sm:w-36"
         />
       </button>
     </aside>

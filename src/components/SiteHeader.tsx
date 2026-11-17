@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { HeaderTrim } from "@/components/SeasonalDecor";
 import { PwaInstallButton } from "@/components/PwaInstallButton";
 import { AppTabBar } from "@/components/app/AppTabBar";
+import knightLogo from "@/assets/chevaliers58-logo.svg";
 import { APP_MAX_WIDTH, isAppMode } from "@/lib/standalone";
 
 interface NavItem {
@@ -172,12 +173,11 @@ export function SiteHeader() {
             }}
             className="flex items-center gap-2.5 group shrink-0"
           >
-            <span
-              aria-label="Fleur de lys scoute"
-              className="grid h-9 w-12 sm:h-10 sm:w-14 place-items-center text-3xl sm:text-4xl transition-transform group-hover:scale-105"
-            >
-              ⚜️
-            </span>
+            <img
+              src={knightLogo}
+              alt=""
+              className="h-10 w-12 object-contain transition-transform group-hover:scale-105 sm:h-12 sm:w-14"
+            />
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="font-display text-sm sm:text-lg font-black tracking-wider text-white">
