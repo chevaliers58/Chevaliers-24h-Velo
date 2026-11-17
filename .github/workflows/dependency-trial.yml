@@ -5,80 +5,37 @@ on:
 permissions:
   contents: read
 jobs:
-  compare-types:
+  verify-generated-types:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      VITE_SUPABASE_PROJECT_ID: ci-local
+      VITE_SUPABASE_URL: https://ci-placeholder.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
+      VITE_TROOP_NAME: Chevaliers 58
+      VITE_SITE_URL: https://19-58.net/velo
+      VITE_BASE_PATH: /velo/
+      VITE_TROOP_STRAVA_CLUB_URL: https://www.strava.com/clubs/Chevaliers58
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Compare original and candidate TypeScript diagnostics
+      - run: npm ci
+      - name: Format generated database types and record exact candidate
         run: |
-          git checkout dd0a466cff2a061e08ebe87550acbf57d427c02c -- package.json package-lock.json
-          npm ci --no-audit
-          npx tsc --noEmit --pretty false >/tmp/baseline-tsc.log 2>&1 || true
-          git checkout HEAD -- package.json package-lock.json
-          npm ci --no-audit
-          npx tsc --noEmit --pretty false >/tmp/candidate-tsc.log 2>&1 || true
-          python - <<'PY'
-          from collections import Counter
-          from pathlib import Path
-          import re
-          pattern = re.compile(r"^(.*?\(\d+,\d+\): error TS\d+:.*)$", re.M)
-          a = Counter(pattern.findall(Path('/tmp/baseline-tsc.log').read_text()))
-          b = Counter(pattern.findall(Path('/tmp/candidate-tsc.log').read_text()))
-          print("Baseline error count:", sum(a.values()))
-          print("Candidate error count:", sum(b.values()))
-          print("New or changed diagnostics:", sum((b-a).values()))
-          for line in sorted((b-a).elements()):
-              print(line)
-          print("Resolved or changed diagnostics:", sum((a-b).values()))
-          PY
-      - name: Verify dependency security
-        run: npm audit
-  regenerate-db-types:
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - uses: supabase/setup-cli@v3
-        with:
-          version: 2.122.1
-      - name: Prepare isolated test database
+          npx prettier --write src/integrations/supabase/types.ts
+          git hash-object src/integrations/supabase/types.ts
+          echo 'FORMATTED_TYPES_START'
+          cat src/integrations/supabase/types.ts
+          echo 'FORMATTED_TYPES_END'
+      - name: Diagnose remaining strict TypeScript errors
         run: |
-          mkdir -p "$RUNNER_TEMP/chevaliers-types"
-          cd "$RUNNER_TEMP/chevaliers-types"
-          supabase init
-          mkdir -p supabase/migrations
-          cp "$GITHUB_WORKSPACE"/supabase/migrations/*.sql supabase/migrations/
-          python - <<'PY'
-          from pathlib import Path
-          import re
-          count = 0
-          for p in Path("supabase/migrations").glob("*.sql"):
-              data,n = re.subn(r"https?://[A-Za-z0-9-]+\.supabase\.co/functions/v1/", "http://127.0.0.1:1/functions/v1/", p.read_text())
-              count += n
-              p.write_text(data)
-          assert count == 3
-          p = Path('supabase/config.toml')
-          p.write_text(re.sub(r"(?m)^major_version\s*=\s*\d+", "major_version = 17", p.read_text()))
-          PY
-      - name: Replay migrations and generate exact public schema types
-        working-directory: ${{ runner.temp }}/chevaliers-types
-        run: |
-          supabase db start
-          supabase db reset --local --no-seed
-          supabase gen types typescript --local --schema public >/tmp/chevaliers-db-types.ts
-          echo 'GENERATED_TYPES_START'
-          cat /tmp/chevaliers-db-types.ts
-          echo 'GENERATED_TYPES_END'
-      - name: Stop isolated database
-        if: always()
-        working-directory: ${{ runner.temp }}/chevaliers-types
-        run: supabase stop --no-backup
+          npx tsc --noEmit --pretty false >/tmp/tsc.log 2>&1 || true
+          cat /tmp/tsc.log
+          echo "Strict diagnostics: $(grep -c 'error TS[0-9]' /tmp/tsc.log || true)"
+      - run: npm run lint
+      - run: npm run build
+      - run: npm audit
