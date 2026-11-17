@@ -95,7 +95,7 @@ touche aux mêmes fichiers.
 Le build standard Nitro conserve le serveur Node (`.output/server/index.mjs`) et les
 ressources web (`.output/public`). Un paquet statique indépendant a été essayé localement
 avec `wrangler pages dev` : routes directes sous `/velo`, ressources, PWA (fichiers),
-inscription, connexion, activités, stockage, validation admin, classement et export CSV.
+inscription, connexion, activités, stockage, validation admin, classement et exports CSV/PDF.
 L'essai utilise une instance Supabase temporaire ; il ne constitue pas un déploiement Cloudflare.
 
 Pour un hébergement Node : `npm run build`, puis `node .output/server/index.mjs`.
