@@ -29,3 +29,7 @@
 ## Critères de passage
 
 Le développement est prêt pour l'initialisation de la base seulement lorsque la CI du SHA candidat est verte et l'accord d'initialisation recueilli. Le site est prêt pour l'ouverture seulement après validation sur le véritable environnement, confirmation des décisions métier/confidentialité, essais physiques et accord du gestionnaire du domaine. Le présent document n'est pas une preuve de ces validations.
+
+## Validation finale — 17 novembre 2026, 16 h 11 (Belgique)
+
+SHA de code testé : `81e5110f2bbef526569f4c4cebcff6f95177d669`. Tous les workflows sont terminés et réussis : build 44108851263 (0 erreurs lint, 12 avertissements, 0 vulnérabilité npm détectée), SQL 44108852772 (57 migrations, droits, règles métier), rétention 44108851104 (6 groupes de scénarios, CLEANUP_SMOKE_OK), navigateur 44108851212 (18 groupes de contrôles fonctionnels, y compris service worker contrôlant une nouvelle page, sept écrans publics et quatre écrans membres mobiles, redirections /velo, saisie manuelle et changement de compte sans fuite de nom ou rôle ; BROWSER_SMOKE_OK). Le build push 44108834974 est également réussi. Le blocage du test PWA est levé. Version technique prête pour la phase d'initialisation du Supabase cible, sous réserve de l'accord explicite. Les preuves par URL et GPX, accès à la troupe, dates, déploiement réel, SMTP/push et essais physiques demeurent des points à valider avant ouverture. Aucun changement distant Supabase ni publication. Ce commit de documentation ne modifie pas le code testé.
