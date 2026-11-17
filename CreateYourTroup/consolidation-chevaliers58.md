@@ -32,3 +32,11 @@ Ce document est un suivi de travail, pas une validation de la migration.
 - Nouveau workflow de test isolé avec une instance PostgreSQL 17 locale, sans jeton distant, et réécriture des trois URL cron dans la copie de test. Le smoke test couvre les tables/RLS, Storage, Auth et droits admin. Aucun accès au projet Supabase distant.
 - Le choix de patrouille Staff à l'inscription est hérité du site original. Ce choix ne doit jamais conférer un rôle admin. Il reste à vérifier les autres droits accordés par les fonctionnalités Staff et à documenter les implications.
 - npm audit signale 10 vulnérabilités (8 modérées, 2 élevées), à qualifier séparément.
+
+## Troisième étape — base vierge et sécurité Strava
+
+- Les 57 migrations et le test de permissions ont réussi sur Supabase local dans le run 44072278400 (commit 3cc8c02), sans contacter le projet distant.
+- La provenance automatique Strava est désormais réservée aux écritures serveur. Les liens soumis manuellement gardent leur comportement historique.
+- Les événements Strava entrants doivent être authentifiés par leur signature HMAC et horodatage (fenêtre 5 minutes). Le secret serveur STRAVA_WEBHOOK_SIGNING_SECRET sera requis avant activation du webhook, à obtenir via la configuration Strava ; aucune valeur n'est stockée dans GitHub. Les règles de validation OAuth, l'identifiant de souscription et les tests réels restent à vérifier lors de l'activation.
+- Les workflows collectent les résultats npm audit (dont production) et les contrôles TypeScript des cinq fonctions Edge. Aucune modification de dépendance automatique ou forcée.
+- Les tests opérationnels des connexions à Strava, de l'envoi d'emails et des notifications nécessitent encore une configuration réelle. La base distante n'est pas modifiée.

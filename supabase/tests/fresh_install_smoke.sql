@@ -79,6 +79,30 @@ begin
     raise exception 'Scout can self-assign admin role';
   exception when insufficient_privilege then null;
   end;
+  -- A manual Strava link keeps the original auto-approval behavior.
+  insert into public.activities(id,user_id,ride_date,km,strava_link)
+  values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1',auth.uid(),
+          greatest(current_date,date '2026-09-27'),12,'https://www.strava.com/activities/123');
+  if not exists (
+    select 1 from public.activities
+    where id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1'
+      and source = 'manual' and strava_activity_id is null and status = 'approved'
+  ) then
+    raise exception 'Manual Strava link no longer works';
+  end if;
+  begin
+    insert into public.activities(user_id,ride_date,km,strava_link,source,strava_activity_id)
+    values (auth.uid(),greatest(current_date,date '2026-09-27'),10,
+            'https://www.strava.com/activities/456','strava',456);
+    raise exception 'Scout can forge an automatic Strava import';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    update public.activities set source = 'strava', strava_activity_id = 123
+    where id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1';
+    raise exception 'Scout can modify the Strava import provenance';
+  exception when insufficient_privilege then null;
+  end;
   begin
     perform public.set_admin_by_email('scout@local-test.invalid',true);
     raise exception 'Scout can call admin assignment';
@@ -91,6 +115,26 @@ $test$;
 reset role;
 select set_config('request.jwt.claim.sub','',true);
 select set_config('request.jwt.claims','{}',true);
+
+-- The trusted service role can still import a verified activity.
+set local role service_role;
+select set_config('request.jwt.claims','{"role":"service_role"}',true);
+insert into public.activities(user_id,ride_date,km,strava_link,source,strava_activity_id,status)
+values ('22222222-2222-4222-8222-222222222222',
+        greatest(current_date,date '2026-09-27'),9,
+        'https://www.strava.com/activities/789','strava',789,'approved');
+reset role;
+select set_config('request.jwt.claims','{}',true);
+do $test$
+begin
+  if not exists (
+    select 1 from public.activities where strava_activity_id = 789
+      and source = 'strava' and status = 'approved'
+  ) then
+    raise exception 'Trusted Strava import no longer works';
+  end if;
+end;
+$test$;
 
 -- A public profile email is member-editable. Admin assignment must resolve
 -- the verified Auth email, not this display/profile field.

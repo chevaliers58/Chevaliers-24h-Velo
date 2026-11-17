@@ -1,10 +1,14 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { verifyStravaSignature } from "./signature.ts";
+
+declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void };
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const clientId = Deno.env.get("STRAVA_CLIENT_ID")!;
 const clientSecret = Deno.env.get("STRAVA_CLIENT_SECRET")!;
 const verifyToken = Deno.env.get("STRAVA_WEBHOOK_VERIFY_TOKEN");
+const signingSecret = Deno.env.get("STRAVA_WEBHOOK_SIGNING_SECRET");
 const expectedSubscriptionId = Deno.env.get("STRAVA_WEBHOOK_SUBSCRIPTION_ID");
 const admin = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
 
@@ -136,9 +140,24 @@ Deno.serve(async (request) => {
   }
 
   if (request.method !== "POST") return new Response("Method not allowed", { status: 405 });
+  if (!signingSecret) return new Response("Webhook not configured", { status: 503 });
+  const rawBody = new Uint8Array(await request.arrayBuffer());
+  if (rawBody.length > 65536) return new Response("Payload too large", { status: 413 });
+  if (
+    !(await verifyStravaSignature(
+      request.headers.get("x-strava-signature"),
+      rawBody,
+      signingSecret,
+    ))
+  ) {
+    return new Response("Forbidden", { status: 403 });
+  }
   let event: StravaEvent;
   try {
-    event = await request.json();
+    event = JSON.parse(new TextDecoder().decode(rawBody));
+    if (!event || typeof event !== "object" || Array.isArray(event)) {
+      return new Response("Bad request", { status: 400 });
+    }
   } catch {
     return new Response("Bad request", { status: 400 });
   }

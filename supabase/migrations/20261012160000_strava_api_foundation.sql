@@ -47,3 +47,33 @@ comment on table public.strava_connections is
   'Jetons OAuth privés; lecture et écriture réservées aux fonctions Edge avec service_role.';
 comment on column public.activities.strava_activity_id is
   'Identifiant d’activité Strava, unique pour empêcher les imports en double.';
+
+-- Only trusted server imports may set the Strava origin and identifier.
+-- Keep the historical manual link and proof workflows unchanged.
+create or replace function public.guard_strava_import_provenance()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $function$
+begin
+  if current_user in ('anon', 'authenticated')
+     or coalesce(auth.jwt()->>'role', '') in ('anon', 'authenticated') then
+    if tg_op = 'INSERT' then
+      if new.source is distinct from 'manual' or new.strava_activity_id is not null then
+        raise exception 'Provenance Strava réservée aux imports serveur' using errcode = '42501';
+      end if;
+    elsif new.source is distinct from old.source
+       or new.strava_activity_id is distinct from old.strava_activity_id then
+      raise exception 'Provenance Strava réservée aux imports serveur' using errcode = '42501';
+    end if;
+  end if;
+  return new;
+end;
+$function$;
+
+drop trigger if exists activity_import_provenance_guard on public.activities;
+create trigger activity_import_provenance_guard
+  before insert or update on public.activities
+  for each row execute function public.guard_strava_import_provenance();
+revoke execute on function public.guard_strava_import_provenance() from public, anon, authenticated;
