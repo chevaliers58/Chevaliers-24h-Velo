@@ -415,7 +415,13 @@ function IndexForViewer() {
 
   const selectedUserIds = selectedEntry?.userIds ?? [];
   const { data: entryActivities = [], isLoading: isEntryActivitiesLoading } = useQuery({
-    queryKey: ["leaderboard-entry-activities", selectedUserIds, period, sportMode, user?.id ?? null],
+    queryKey: [
+      "leaderboard-entry-activities",
+      selectedUserIds,
+      period,
+      sportMode,
+      user?.id ?? null,
+    ],
     enabled: !!selectedEntry && selectedUserIds.length > 0,
     queryFn: async () => {
       const { data, error } = await supabase
