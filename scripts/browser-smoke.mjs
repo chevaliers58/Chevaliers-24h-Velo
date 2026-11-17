@@ -486,8 +486,86 @@ try {
   });
   assert.ok(shell);
   await mobile.setOffline(false);
-  await mobile.close();
   console.log("PASS mobile manifest, service worker scope, cached shell and icons");
+
+  stage = "mobile public screens and protected routes";
+  for (const [path, heading] of [
+    ["classement", "Classement"],
+    ["maillots", "Maillots"],
+    ["expedition", "Expédition"],
+    ["defis", "Défis"],
+    ["sorties", "Sorties de la troupe"],
+    ["compte-a-rebours", "Compte à rebours"],
+    ["plus", "Plus"],
+  ]) {
+    await mobilePage.goto(base + "/app/" + path);
+    await mobilePage.getByRole("heading", { name: heading, exact: true, level: 1 }).waitFor();
+    assert.equal(new URL(mobilePage.url()).pathname, "/velo/app/" + path);
+  }
+  await mobilePage.goto(base + "/app/mes-kms");
+  await mobilePage.waitForURL((url) => url.pathname === "/velo/auth");
+  await mobile.close();
+  console.log("PASS seven public mobile screens and protected app history");
+
+  stage = "desktop app links stay within deployed site";
+  await publicPage.goto(base + "/app/classement");
+  await publicPage.waitForURL((url) => url.pathname === "/velo/" || url.pathname === "/velo");
+  await scoutPage.goto(base + "/app/sorties-prevues");
+  await scoutPage.waitForURL((url) => url.pathname === "/velo/sorties-prevues");
+  await scoutPage.getByRole("heading", { name: "Sorties prévues", exact: true }).waitFor();
+  console.log("PASS normal browser app links stay within /velo");
+
+  stage = "mobile member screens";
+  // Block service workers for account/form checks: this isolates the UI from
+  // push permission and external notification delivery. The real PWA cache
+  // was checked above in a separate context.
+  const mobileMember = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+    serviceWorkers: "block",
+  });
+  await mobileMember.route("**/*", (route) => {
+    const url = new URL(route.request().url());
+    return url.origin === origin || url.origin === api ? route.continue() : route.abort();
+  });
+  await mobileMember.addInitScript(() => {
+    Object.defineProperty(navigator, "standalone", { value: true, configurable: true });
+  });
+  const mobileScoutPage = await mobileMember.newPage();
+  await mobileScoutPage.goto(base + "/auth");
+  await mobileScoutPage.locator("#login-email").fill(email);
+  await mobileScoutPage.locator("#login-pw").fill(password);
+  await mobileScoutPage.getByRole("button", { name: "Se connecter", exact: true }).click();
+  await mobileScoutPage.waitForURL((url) => url.pathname === "/velo/app");
+  for (const [path, heading] of [
+    ["mes-kms", "Mes km"],
+    ["trophees", "Mes trophées"],
+    ["sorties-prevues", "Sorties prévues"],
+    ["enregistrer", "Nouvelle sortie"],
+  ]) {
+    await mobileScoutPage.goto(base + "/app/" + path);
+    await mobileScoutPage.getByRole("heading", { name: heading, exact: true, level: 1 }).waitFor();
+    assert.equal(new URL(mobileScoutPage.url()).pathname, "/velo/app/" + path);
+  }
+  await mobileScoutPage.locator("#distance-km").fill("3");
+  await mobileScoutPage.locator("#patrol-select").click();
+  await mobileScoutPage.getByRole("option", { name: new RegExp(patrolName) }).click();
+  await mobileScoutPage
+    .getByPlaceholder("https://www.strava.com/activities/123456789...")
+    .fill("https://www.strava.com/activities/987654321");
+  await mobileScoutPage.locator("#ride-note").fill("E2E mobile manual link");
+  await mobileScoutPage.locator('main.app-screen button[type="submit"]').click();
+  const mobileRide = await eventually(
+    async () => (await activities(scout.id)).find((a) => a.note === "E2E mobile manual link"),
+    "mobile ride saved",
+  );
+  assert.equal(mobileRide.status, "approved");
+  assert.equal(mobileRide.source, "manual");
+  assert.equal(Number(mobileRide.km), 3);
+  await mobileScoutPage.waitForURL((url) => url.pathname === "/velo/app/mes-kms");
+  await mobileMember.close();
+  console.log("PASS mobile member screens, manual activity and history navigation");
   console.log("BROWSER_SMOKE_OK");
 } catch (error) {
   console.error("Browser smoke failed at:", stage);
