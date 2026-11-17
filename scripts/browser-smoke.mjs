@@ -132,6 +132,19 @@ try {
   await form
     .getByPlaceholder("https://www.strava.com/activities/123456789...")
     .fill("https://www.strava.com/activities/123456789");
+  // Synthetic two-segment track (equator; not a real member location).
+  const segment = (xs) =>
+    "<trkseg>" + xs.map((x) => '<trkpt lat="0" lon="' + x + '"/>').join("") + "</trkseg>";
+  const track =
+    '<gpx version="1.1" creator="CI"><trk>' +
+    segment(["0", "0.003", "0.006", "0.009"]) +
+    segment(["0.030", "0.033", "0.036", "0.039"]) +
+    "</trk></gpx>";
+  await form.locator('input[type="file"][accept*=".gpx"]').setInputFiles({
+    name: "synthetic.gpx",
+    mimeType: "application/gpx+xml",
+    buffer: Buffer.from(track),
+  });
   await form.locator("#ride-note").fill("E2E manual link");
   await form.locator('button[type="submit"]').click();
   const manual = await eventually(
@@ -141,7 +154,18 @@ try {
   assert.equal(manual.status, "approved");
   assert.equal(Number(manual.km), 12);
   assert.equal(manual.source, "manual");
+  assert.ok(manual.gpx_path?.startsWith(api));
+  const gpxResponse = await fetch(manual.gpx_path);
+  assert.ok(gpxResponse.ok);
+  const storedGpx = await gpxResponse.text();
+  assert.ok(storedGpx.includes('lon="0.003"'));
+  assert.ok(storedGpx.includes('lon="0.036"'));
+  assert.ok(!storedGpx.includes('lon="0"'));
+  assert.ok(!storedGpx.includes('lon="0.039"'));
+  assert.equal((storedGpx.match(/<trkseg>/g) ?? []).length, 2);
+  assert.equal((storedGpx.match(/<trkpt /g) ?? []).length, 6);
   console.log("PASS manual activity and approved status");
+  console.log("PASS GPX upload trims endpoints across segments");
   stage = "submit photo and verify storage";
   await scoutPage.goto(base + "/mes-km");
   await form.locator("#distance-km").fill("8");
@@ -219,6 +243,54 @@ try {
   assert.equal(contents.subarray(0, 5).toString(), "%PDF-");
   assert.ok(contents.length > 1000);
   console.log("PASS admin PDF download without external CDN");
+  stage = "mobile application and service worker";
+  const mobile = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+    serviceWorkers: "allow",
+  });
+  await mobile.route("**/*", (route) => {
+    const url = new URL(route.request().url());
+    return url.origin === origin || url.origin === api ? route.continue() : route.abort();
+  });
+  const mobilePage = await mobile.newPage();
+  await mobilePage.goto(base + "/app");
+  await mobilePage.getByText("Chevaliers 58", { exact: false }).first().waitFor();
+  const registration = await mobilePage.evaluate(async () => {
+    const reg = await navigator.serviceWorker.ready;
+    return { scope: reg.scope, script: reg.active?.scriptURL };
+  });
+  assert.equal(registration.scope, base + "/");
+  assert.equal(registration.script, base + "/sw.js");
+  await mobilePage.reload();
+  await mobilePage.waitForFunction(() => !!navigator.serviceWorker.controller);
+  const manifest = await (await fetch(base + "/manifest.webmanifest")).json();
+  assert.equal(manifest.start_url, "/velo/app");
+  assert.equal(manifest.scope, "/velo/");
+  assert.equal(manifest.display, "standalone");
+  for (const icon of manifest.icons) {
+    const image = await fetch(origin + icon.src);
+    assert.ok(image.ok);
+    assert.ok(image.headers.get("content-type")?.includes("image/png"));
+  }
+  const cached = await mobilePage.evaluate(async () => {
+    await fetch("/unrelated-site-asset.png").catch(() => {});
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    const cache = await caches.open("chevaliers58-app-shell-v2");
+    return (await cache.keys()).map((request) => new URL(request.url).pathname);
+  });
+  assert.ok(cached.includes("/velo/"));
+  assert.ok(cached.every((path) => path.startsWith("/velo/")));
+  await mobile.setOffline(true);
+  const shell = await mobilePage.evaluate(async () => {
+    const response = await caches.match("/velo/");
+    return !!response && (await response.text()).includes("Chevaliers 58");
+  });
+  assert.ok(shell);
+  await mobile.setOffline(false);
+  await mobile.close();
+  console.log("PASS mobile manifest, service worker scope, cached shell and icons");
   console.log("BROWSER_SMOKE_OK");
 } catch (error) {
   console.error("Browser smoke failed at:", stage);

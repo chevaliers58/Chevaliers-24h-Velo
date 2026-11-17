@@ -18,27 +18,40 @@ export async function processAndCropGpx(file: File): Promise<string> {
   const text = await file.text();
   const parser = new DOMParser();
   const xmlDoc = parser.parseFromString(text, "text/xml");
+  if (
+    xmlDoc.getElementsByTagName("parsererror").length ||
+    xmlDoc.documentElement.localName !== "gpx"
+  ) {
+    throw new Error("Fichier GPX invalide");
+  }
   const trkpts = Array.from(xmlDoc.getElementsByTagName("trkpt"));
 
-  if (trkpts.length < 3) return text;
+  const points = trkpts.map((pt) => {
+    const lat = parseFloat(pt.getAttribute("lat") ?? "");
+    const lon = parseFloat(pt.getAttribute("lon") ?? "");
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+      throw new Error("Coordonnées GPX invalides");
+    }
+    return { lat, lon, node: pt };
+  });
 
-  const points = trkpts.map((pt) => ({
-    lat: parseFloat(pt.getAttribute("lat") || "0"),
-    lon: parseFloat(pt.getAttribute("lon") || "0"),
-    node: pt,
-  }));
+  // Preserve the inherited short-track fallback pending a privacy decision.
+  if (points.length < 3) return text;
 
   let distFromStart = 0;
   const distancesFromStart: number[] = [0];
   points.forEach((point, index) => {
     const previous = points[index - 1];
     if (!previous) return;
-    distFromStart += getDistanceFromLatLonInMeters(
-      previous.lat,
-      previous.lon,
-      point.lat,
-      point.lon,
-    );
+    // A gap between recorded segments is not distance actually traveled.
+    if (previous.node.parentElement === point.node.parentElement) {
+      distFromStart += getDistanceFromLatLonInMeters(
+        previous.lat,
+        previous.lon,
+        point.lat,
+        point.lon,
+      );
+    }
     distancesFromStart.push(distFromStart);
   });
 
@@ -54,10 +67,10 @@ export async function processAndCropGpx(file: File): Promise<string> {
 
   if (filteredTrkpts.length < 2) return text;
 
-  const parentTrkseg = filteredTrkpts[0]?.node.parentElement;
-  if (parentTrkseg) {
-    parentTrkseg.innerHTML = "";
-    filteredTrkpts.forEach((p) => parentTrkseg.appendChild(p.node));
+  // Remove discarded points from every segment without moving retained points.
+  const retained = new Set(filteredTrkpts.map((point) => point.node));
+  for (const point of trkpts) {
+    if (!retained.has(point)) point.remove();
   }
 
   const serializer = new XMLSerializer();

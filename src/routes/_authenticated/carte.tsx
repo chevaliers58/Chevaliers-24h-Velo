@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/useAuth";
 import { gpxDownloadUrl, gpxFileName } from "@/lib/gpxDownload";
+import { processAndCropGpx } from "@/lib/gpxUtils";
 import {
   MapPin,
   Shield,
@@ -123,55 +124,6 @@ function parseXmlGpxCoords(xmlDoc: Document): [number, number][] {
 }
 
 // Fonction pour rogner un fichier XML GPX avant upload
-async function processAndCropGpxString(file: File): Promise<string> {
-  const text = await file.text();
-  const parser = new DOMParser();
-  const xmlDoc = parser.parseFromString(text, "text/xml");
-  const trkpts = Array.from(xmlDoc.getElementsByTagName("trkpt"));
-
-  if (trkpts.length < 3) return text;
-
-  const points = trkpts.map((pt) => ({
-    lat: parseFloat(pt.getAttribute("lat") || "0"),
-    lon: parseFloat(pt.getAttribute("lon") || "0"),
-    node: pt,
-  }));
-
-  let distFromStart = 0;
-  const distancesFromStart: number[] = [0];
-  points.forEach((point, index) => {
-    const previous = points[index - 1];
-    if (!previous) return;
-    distFromStart += getDistanceFromLatLonInMeters(
-      previous.lat,
-      previous.lon,
-      point.lat,
-      point.lon,
-    );
-    distancesFromStart.push(distFromStart);
-  });
-
-  const totalDist = distFromStart;
-
-  const filteredTrkpts = points.filter((_, index) => {
-    const dStart = distancesFromStart[index];
-    if (dStart === undefined) return false;
-    const dEnd = totalDist - dStart;
-    return dStart >= 200 && dEnd >= 200;
-  });
-
-  if (filteredTrkpts.length < 2) return text;
-
-  const parentTrkseg = filteredTrkpts[0]?.node.parentElement;
-  if (parentTrkseg) {
-    parentTrkseg.innerHTML = "";
-    filteredTrkpts.forEach((p) => parentTrkseg.appendChild(p.node));
-  }
-
-  const serializer = new XMLSerializer();
-  return serializer.serializeToString(xmlDoc);
-}
-
 function MapPage() {
   const { user } = useAuth();
   const [items, setItems] = useState<ItemGpx[]>([]);
@@ -403,7 +355,7 @@ function MapPage() {
     setSubmitting(true);
     try {
       // Rogner les 200m au départ et à l'arrivée avant enregistrement
-      const croppedGpxContent = await processAndCropGpxString(gpxFile);
+      const croppedGpxContent = await processAndCropGpx(gpxFile);
       const croppedBlob = new Blob([croppedGpxContent], { type: "application/gpx+xml" });
       const fileName = `proposed_${user.id}_${Date.now()}_${crypto.randomUUID()}.gpx`;
 

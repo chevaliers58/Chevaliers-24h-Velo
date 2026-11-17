@@ -1,7 +1,9 @@
-const CACHE_NAME = "chevaliers58-app-shell-v1";
+const CACHE_NAME = "chevaliers58-app-shell-v2";
 const scopePath = new URL("./", self.location.href).pathname;
 const BASE_PATH = scopePath.endsWith("/") ? scopePath.slice(0, -1) : scopePath;
 const pathFor = (path) => BASE_PATH + (path === "/" ? "/" : path);
+const inScope = (pathname) =>
+  !BASE_PATH || pathname === BASE_PATH || pathname.startsWith(BASE_PATH + "/");
 const APP_SHELL = [
   pathFor("/"),
   pathFor("/manifest.webmanifest"),
@@ -73,13 +75,16 @@ self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const targetUrl = new URL(event.notification.data?.url || pathFor("/app"), self.location.origin);
   const target =
-    targetUrl.origin === self.location.origin
+    targetUrl.origin === self.location.origin && inScope(targetUrl.pathname)
       ? targetUrl.href
       : new URL(pathFor("/app"), self.location.origin).href;
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (windows) => {
       const appWindow = windows.find(
-        (client) => new URL(client.url).origin === self.location.origin,
+        (client) => {
+          const url = new URL(client.url);
+          return url.origin === self.location.origin && inScope(url.pathname);
+        },
       );
       if (appWindow) {
         await appWindow.navigate(target);
@@ -93,7 +98,9 @@ self.addEventListener("notificationclick", (event) => {
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   const url = new URL(request.url);
-  if (request.method !== "GET" || url.origin !== self.location.origin) return;
+  if (request.method !== "GET" || url.origin !== self.location.origin || !inScope(url.pathname)) {
+    return;
+  }
 
   // Cache uniquement le shell public de l’application. Les données de compte,
   // les appels Supabase, les cartes et les fichiers de preuve restent réseau.
@@ -103,7 +110,8 @@ self.addEventListener("fetch", (event) => {
     request.mode === "navigate" &&
     (url.pathname === pathFor("/") ||
       url.pathname === BASE_PATH ||
-      url.pathname.startsWith(appPath));
+      url.pathname === appPath ||
+      url.pathname.startsWith(appPath + "/"));
   const isStaticAsset = /\.(?:css|js|png|jpe?g|svg|ico|woff2?)$/i.test(url.pathname);
   if (!isAppShell && !isStaticAsset) return;
 
