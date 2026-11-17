@@ -14,7 +14,7 @@ export function PrivateProofButton({
   path,
   label = "Télécharger la preuve",
 }: {
-  path?: string | null;
+  path?: string | null | undefined;
   label?: string;
 }) {
   const { isAdmin, user } = useAuth();
