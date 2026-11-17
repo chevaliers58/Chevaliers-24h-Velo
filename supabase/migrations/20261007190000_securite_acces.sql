@@ -227,13 +227,19 @@ returns void language plpgsql security definer set search_path = public as $$
 declare uid uuid;
 begin
   if not public.has_role(auth.uid(), 'admin') then raise exception 'Interdit'; end if;
-  select id into uid from public.profiles where lower(email) = lower(_email);
+  select id into uid
+    from auth.users
+   where lower(email) = lower(btrim(_email))
+     and email_confirmed_at is not null;
   if uid is null then
     raise exception 'Aucun compte avec cet email (la personne doit d''abord se connecter une fois)';
   end if;
   if _make_admin then
     insert into public.user_roles(user_id, role) values (uid, 'admin') on conflict do nothing;
   else
+    if uid = auth.uid() then
+      raise exception 'Impossible de retirer ses propres droits administrateur';
+    end if;
     delete from public.user_roles where user_id = uid and role = 'admin';
   end if;
 end; $$;

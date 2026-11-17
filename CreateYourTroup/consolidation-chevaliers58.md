@@ -23,3 +23,12 @@ Cette branche part du dernier commit de la PR #1 (dc18029). La PR #2 (641b89a) c
 - Demander l'accord avant d'appliquer le schéma nouveau projet, et avant fusion dans main.
 
 Ce document est un suivi de travail, pas une validation de la migration.
+
+## Deuxième étape — corrections et installation à blanc
+
+- Lint sur le commit cbf97af : 0 erreur, 11 avertissements ; compilation et smoke test /velo réussis. Lint désormais bloquant pour les erreurs.
+- Inventaire structurel des 57 migrations : les migrations de l'ancien vote doivent ignorer les tables absentes (fonctionnalité supprimée ensuite). Les migrations sont encore à tester réellement.
+- Attribution d'admin par email : rechercher auth.users avec adresse vérifiée plutôt que profiles.email, modifiable par l'utilisateur. Protection de la révocation de son propre rôle dans la base, pas seulement dans l'interface.
+- Nouveau workflow de test isolé avec une instance PostgreSQL 17 locale, sans jeton distant, et réécriture des trois URL cron dans la copie de test. Le smoke test couvre les tables/RLS, Storage, Auth et droits admin. Aucun accès au projet Supabase distant.
+- Le choix de patrouille Staff à l'inscription est hérité du site original. Ce choix ne doit jamais conférer un rôle admin. Il reste à vérifier les autres droits accordés par les fonctionnalités Staff et à documenter les implications.
+- npm audit signale 10 vulnérabilités (8 modérées, 2 élevées), à qualifier séparément.

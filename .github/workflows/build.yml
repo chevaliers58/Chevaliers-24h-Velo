@@ -23,8 +23,7 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Lint (advisory during consolidation)
-        continue-on-error: true
+      - name: Lint
         run: npm run lint
       - name: Validate SQL dollar-quote delimiters
         run: |

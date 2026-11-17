@@ -11,11 +11,11 @@ declare
 begin
   select id into admin_user_id
   from auth.users
-  where lower(email) = lower(admin_email)
-  limit 1;
+  where lower(email) = lower(btrim(admin_email))
+    and email_confirmed_at is not null;
 
   if admin_user_id is null then
-    raise exception 'No Supabase Auth account found for %. Create the account first.', admin_email;
+    raise exception 'No Supabase Auth account found for %. Create and confirm the account first.', admin_email;
   end if;
 
   insert into public.user_roles (user_id, role)

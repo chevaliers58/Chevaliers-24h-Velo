@@ -1,0 +1,65 @@
+name: Validate clean database installation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "supabase/**"
+      - ".github/workflows/database-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  fresh-database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Supabase CLI (pinned v2)
+        uses: supabase/setup-cli@v3
+        with:
+          version: 2.122.1
+      - name: Prepare isolated local project
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/chevaliers-db"
+          cd "$RUNNER_TEMP/chevaliers-db"
+          supabase init
+          mkdir -p supabase/migrations
+          cp "$GITHUB_WORKSPACE"/supabase/migrations/*.sql supabase/migrations/
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          # Never call any live Supabase project from a local database test.
+          count = 0
+          for p in Path("supabase/migrations").glob("*.sql"):
+              data = p.read_text(encoding="utf-8")
+              data, n = re.subn(r"https?://[A-Za-z0-9-]+\.supabase\.co/functions/v1/", "http://127.0.0.1:1/functions/v1/", data)
+              count += n
+              p.write_text(data, encoding="utf-8")
+          if count != 3:
+              raise SystemExit(f"Unexpected scheduled Edge endpoints: {count}; review before proceeding")
+          config = Path("supabase/config.toml")
+          data, n = re.subn(r"(?m)^major_version\s*=\s*\d+", "major_version = 17", config.read_text())
+          if n != 1:
+              raise SystemExit("Check local PostgreSQL version configuration")
+          config.write_text(data)
+          PY
+      - name: Start local database and replay migrations
+        working-directory: ${{ runner.temp }}/chevaliers-db
+        run: |
+          supabase db start
+          supabase db reset --local --no-seed
+          supabase migration list --local
+      - name: Verify clean application schema and permissions
+        working-directory: ${{ runner.temp }}/chevaliers-db
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
+            -f "$GITHUB_WORKSPACE/supabase/tests/fresh_install_smoke.sql"
+      - name: Stop local stack
+        if: always()
+        working-directory: ${{ runner.temp }}/chevaliers-db
+        run: supabase stop --no-backup
