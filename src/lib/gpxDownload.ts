@@ -16,7 +16,10 @@ export function gpxFileName(title: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 60);
-  const troopSlug = TROOP_NAME.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "troupe";
+  const troopSlug =
+    TROOP_NAME.toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "troupe";
   return `${troopSlug}-${slug || "parcours"}.gpx`;
 }
 

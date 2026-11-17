@@ -12,7 +12,6 @@ import mascotSaintValentin from "@/assets/Perso/Alezan_St_Valentin.png";
 import mascotAnniversaire from "@/assets/Perso/Alezan_Anniversaire.png";
 import mascotEte from "@/assets/Perso/Alezan_Ete.png";
 
-
 interface Birthday {
   user_id: string;
   display_name: string;
@@ -84,12 +83,17 @@ export function AlezanMascot({ context }: AlezanMascotProps) {
         ? "Joyeux anniversaire au staff de la troupe ! 🎉"
         : quote;
 
-  const mascotImage =
-    birthdayMode ? mascotAnniversaire :
-    currentTheme === "ete" ? mascotEte :
-    currentTheme === "halloween" ? mascotHalloween :
-    currentTheme === "noel" ? mascotNoel :
-    currentTheme === "valentin" ? mascotSaintValentin : mascotClassique;
+  const mascotImage = birthdayMode
+    ? mascotAnniversaire
+    : currentTheme === "ete"
+      ? mascotEte
+      : currentTheme === "halloween"
+        ? mascotHalloween
+        : currentTheme === "noel"
+          ? mascotNoel
+          : currentTheme === "valentin"
+            ? mascotSaintValentin
+            : mascotClassique;
 
   return (
     <aside

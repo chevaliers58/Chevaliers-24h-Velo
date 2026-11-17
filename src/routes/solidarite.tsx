@@ -64,8 +64,7 @@ export const Route = createFileRoute("/solidarite")({
       { title: `ASBL Profitivisme & Solidarité — ${TROOP_NAME}` },
       {
         name: "description",
-        content:
-          `Objectifs solidaires, 24h et marche parrainée de la troupe ${TROOP_NAME} au profit de l'ASBL Profitivisme.`,
+        content: `Objectifs solidaires, 24h et marche parrainée de la troupe ${TROOP_NAME} au profit de l'ASBL Profitivisme.`,
       },
       { property: "og:title", content: `ASBL Profitivisme & Solidarité — ${TROOP_NAME}` },
       {
@@ -475,8 +474,8 @@ function SolidarityPage() {
             Prêt à porter les couleurs du Profitivisme ?
           </h2>
           <p className="text-xs sm:text-sm text-muted-foreground max-w-xl mx-auto">
-            Enfilez vos casques, cumulez vos kilomètres sur la plateforme de la troupe {TROOP_NAME} et
-            portons ensemble ce magnifique projet solidaire !
+            Enfilez vos casques, cumulez vos kilomètres sur la plateforme de la troupe {TROOP_NAME}{" "}
+            et portons ensemble ce magnifique projet solidaire !
           </p>
           <div className="pt-2">
             <Button asChild className="rounded-xl font-bold shadow-md">

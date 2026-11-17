@@ -4,7 +4,8 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const clientId = Deno.env.get("STRAVA_CLIENT_ID");
 const clientSecret = Deno.env.get("STRAVA_CLIENT_SECRET");
-const redirectUri = Deno.env.get("STRAVA_REDIRECT_URI") ?? `${supabaseUrl}/functions/v1/strava-oauth`;
+const redirectUri =
+  Deno.env.get("STRAVA_REDIRECT_URI") ?? `${supabaseUrl}/functions/v1/strava-oauth`;
 const siteUrl = (Deno.env.get("SITE_URL") ?? "http://localhost:3000").replace(/\/+$/, "");
 const siteOrigin = new URL(siteUrl).origin;
 const cors = {
@@ -13,7 +14,10 @@ const cors = {
   "Access-Control-Allow-Methods": "POST, OPTIONS, GET",
 };
 const json = (data: unknown, status = 200) =>
-  new Response(JSON.stringify(data), { status, headers: { ...cors, "Content-Type": "application/json" } });
+  new Response(JSON.stringify(data), {
+    status,
+    headers: { ...cors, "Content-Type": "application/json" },
+  });
 
 async function hashState(value: string) {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
@@ -25,7 +29,8 @@ Deno.serve(async (request) => {
   const admin = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
 
   if (request.method === "POST") {
-    if (!clientId || !clientSecret || !Deno.env.get("SITE_URL")) return json({ error: "Intégration Strava ou SITE_URL pas encore configurée" }, 503);
+    if (!clientId || !clientSecret || !Deno.env.get("SITE_URL"))
+      return json({ error: "Intégration Strava ou SITE_URL pas encore configurée" }, 503);
     const token = (request.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
     const { data, error } = await admin.auth.getUser(token);
     if (error || !data.user) return json({ error: "Connexion requise" }, 401);
@@ -73,21 +78,30 @@ Deno.serve(async (request) => {
   const exchange = await fetch("https://www.strava.com/api/v3/oauth/token", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ client_id: clientId, client_secret: clientSecret, code, grant_type: "authorization_code" }),
+    body: JSON.stringify({
+      client_id: clientId,
+      client_secret: clientSecret,
+      code,
+      grant_type: "authorization_code",
+    }),
   });
   if (!exchange.ok) return finish("error");
   const tokens = await exchange.json();
   const athleteId = Number(tokens.athlete?.id);
-  if (!athleteId || !tokens.access_token || !tokens.refresh_token || !tokens.expires_at) return finish("error");
+  if (!athleteId || !tokens.access_token || !tokens.refresh_token || !tokens.expires_at)
+    return finish("error");
 
-  const { error: saveError } = await admin.from("strava_connections").upsert({
-    user_id: oauthState.user_id,
-    athlete_id: athleteId,
-    access_token: tokens.access_token,
-    refresh_token: tokens.refresh_token,
-    expires_at: tokens.expires_at,
-    scope: tokens.token_type ? "activity:read" : "activity:read",
-    updated_at: new Date().toISOString(),
-  }, { onConflict: "user_id" });
+  const { error: saveError } = await admin.from("strava_connections").upsert(
+    {
+      user_id: oauthState.user_id,
+      athlete_id: athleteId,
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      expires_at: tokens.expires_at,
+      scope: tokens.token_type ? "activity:read" : "activity:read",
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" },
+  );
   return finish(saveError ? "error" : "connected");
 });

@@ -23,9 +23,7 @@ export function storagePathFromUrl(value: string | null | undefined): string | n
   // d'un bucket privé. Les paramètres de signature ne font pas partie du chemin.
   const marker = new RegExp(`/object/(?:public|sign|authenticated)/${BUCKET}/`);
   const match = trimmed.match(marker);
-  let path = match?.index !== undefined
-    ? trimmed.slice(match.index + match[0].length)
-    : trimmed;
+  let path = match?.index !== undefined ? trimmed.slice(match.index + match[0].length) : trimmed;
 
   // Retirer paramètres et ancre éventuels (?token=..., #...)
   path = path.split("?")[0]?.split("#")[0] ?? "";

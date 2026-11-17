@@ -166,7 +166,9 @@ function MoreScreen() {
       )}
 
       <div className="space-y-1 pb-2 text-center text-[12px] text-muted-foreground/80">
-        <p>{TROOP_NAME} · version {__APP_VERSION__}</p>
+        <p>
+          {TROOP_NAME} · version {__APP_VERSION__}
+        </p>
         <AnimationToggle />
       </div>
     </AppPageShell>

@@ -18,7 +18,8 @@ type StravaEvent = {
 };
 
 function sportTag(sport: string): string | null | undefined {
-  if (["Ride", "MountainBikeRide", "GravelRide", "VirtualRide", "EBikeRide"].includes(sport)) return "";
+  if (["Ride", "MountainBikeRide", "GravelRide", "VirtualRide", "EBikeRide"].includes(sport))
+    return "";
   if (["Run", "TrailRun", "VirtualRun"].includes(sport)) return "[course]";
   if (["Walk", "Hike", "Snowshoe"].includes(sport)) return "[marche]";
   return null;
@@ -40,12 +41,15 @@ async function getFreshToken(connection: Record<string, unknown>) {
   });
   if (!refresh.ok) throw new Error("Impossible de renouveler l’autorisation Strava");
   const tokens = await refresh.json();
-  const { error } = await admin.from("strava_connections").update({
-    access_token: tokens.access_token,
-    refresh_token: tokens.refresh_token,
-    expires_at: tokens.expires_at,
-    updated_at: new Date().toISOString(),
-  }).eq("user_id", connection.user_id);
+  const { error } = await admin
+    .from("strava_connections")
+    .update({
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      expires_at: tokens.expires_at,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", connection.user_id);
   if (error) throw error;
   return String(tokens.access_token);
 }
@@ -82,30 +86,40 @@ async function handleEvent(event: StravaEvent) {
   if (event.aspect_type !== "create" && event.aspect_type !== "update") return;
 
   const token = await getFreshToken(connection as unknown as Record<string, unknown>);
-  const activityResponse = await fetch(`https://www.strava.com/api/v3/activities/${event.object_id}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const activityResponse = await fetch(
+    `https://www.strava.com/api/v3/activities/${event.object_id}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    },
+  );
   if (!activityResponse.ok) return;
   const activity = await activityResponse.json();
   if (Number(activity.athlete?.id) !== Number(connection.athlete_id)) return;
   const note = sportTag(activity.sport_type ?? activity.type);
   if (note === undefined || note === null) {
     if (prior.data?.id && prior.data.user_id === connection.user_id) {
-      await admin.from("activities").delete().eq("id", prior.data.id).eq("user_id", connection.user_id);
+      await admin
+        .from("activities")
+        .delete()
+        .eq("id", prior.data.id)
+        .eq("user_id", connection.user_id);
     }
     return;
   }
-  const { error } = await admin.from("activities").upsert({
-    user_id: connection.user_id,
-    ride_date: String(activity.start_date_local).slice(0, 10),
-    km: Number(activity.distance) / 1000,
-    elevation_m: Math.round(Number(activity.total_elevation_gain ?? 0)),
-    strava_link: `https://www.strava.com/activities/${event.object_id}`,
-    strava_activity_id: event.object_id,
-    source: "strava",
-    status: "approved",
-    note: note || null,
-  }, { onConflict: "strava_activity_id" });
+  const { error } = await admin.from("activities").upsert(
+    {
+      user_id: connection.user_id,
+      ride_date: String(activity.start_date_local).slice(0, 10),
+      km: Number(activity.distance) / 1000,
+      elevation_m: Math.round(Number(activity.total_elevation_gain ?? 0)),
+      strava_link: `https://www.strava.com/activities/${event.object_id}`,
+      strava_activity_id: event.object_id,
+      source: "strava",
+      status: "approved",
+      note: note || null,
+    },
+    { onConflict: "strava_activity_id" },
+  );
   if (error) throw error;
 }
 
@@ -116,7 +130,8 @@ Deno.serve(async (request) => {
       !verifyToken ||
       url.searchParams.get("hub.mode") !== "subscribe" ||
       url.searchParams.get("hub.verify_token") !== verifyToken
-    ) return new Response("Forbidden", { status: 403 });
+    )
+      return new Response("Forbidden", { status: 403 });
     return Response.json({ "hub.challenge": url.searchParams.get("hub.challenge") });
   }
 
@@ -130,10 +145,14 @@ Deno.serve(async (request) => {
   if (
     !expectedSubscriptionId ||
     Number(event.subscription_id) !== Number(expectedSubscriptionId) ||
-    !event.object_type || !event.aspect_type
-  ) return new Response("Unauthorized", { status: 401 });
+    !event.object_type ||
+    !event.aspect_type
+  )
+    return new Response("Unauthorized", { status: 401 });
 
   // Strava expects an acknowledgement within two seconds; process data asynchronously.
-  EdgeRuntime.waitUntil(handleEvent(event).catch((error) => console.error("Strava webhook:", error)));
+  EdgeRuntime.waitUntil(
+    handleEvent(event).catch((error) => console.error("Strava webhook:", error)),
+  );
   return new Response("ok", { status: 200 });
 });

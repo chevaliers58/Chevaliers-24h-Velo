@@ -118,7 +118,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const metaPatrol = (meta["patrol_id"] as string) || null;
         const metaPhone = (meta["phone"] as string) || null;
 
-
         let profileLoaded = false;
         try {
           const { data: createdProf, error: createErr } = await supabase

@@ -91,10 +91,7 @@ export function AdminUserList({
   }, [patrols]);
 
   // Check if a profile is an admin
-  const isUserAdmin = useCallback(
-    (p: Profile): boolean => admins.includes(p.id),
-    [admins],
-  );
+  const isUserAdmin = useCallback((p: Profile): boolean => admins.includes(p.id), [admins]);
 
   // Toggle admin privilege via toggle switch
   // Mot de passe temporaire défini par un admin (fonction admin_set_password).
@@ -130,19 +127,27 @@ export function AdminUserList({
 
     try {
       if (newChecked) {
-        const { error } = await supabase.from("user_roles").upsert(
-          { user_id: target.id, role: "admin" },
-          { onConflict: "user_id,role", ignoreDuplicates: true },
-        );
+        const { error } = await supabase
+          .from("user_roles")
+          .upsert(
+            { user_id: target.id, role: "admin" },
+            { onConflict: "user_id,role", ignoreDuplicates: true },
+          );
         if (error) throw error;
         toast.success(
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-emerald-500" />
-            <span>Privilèges <strong>Admin</strong> accordés à {displayName} !</span>
+            <span>
+              Privilèges <strong>Admin</strong> accordés à {displayName} !
+            </span>
           </div>,
         );
       } else {
-        const { error } = await supabase.from("user_roles").delete().eq("user_id", target.id).eq("role", "admin");
+        const { error } = await supabase
+          .from("user_roles")
+          .delete()
+          .eq("user_id", target.id)
+          .eq("role", "admin");
         if (error) throw error;
         toast.info(
           <div className="flex items-center gap-2">
@@ -476,7 +481,12 @@ export function AdminUserList({
                       <td className="col-span-2 block md:table-cell md:py-3.5 md:px-4">
                         <div className="flex items-center gap-3">
                           <div
-                            className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-black text-sm", isAdm ? "bg-amber-500/10 text-amber-700" : "bg-primary/10 text-primary")}
+                            className={cn(
+                              "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-black text-sm",
+                              isAdm
+                                ? "bg-amber-500/10 text-amber-700"
+                                : "bg-primary/10 text-primary",
+                            )}
                           >
                             {p.totem ? (
                               p.totem.charAt(0).toUpperCase()

@@ -25,7 +25,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { gpxDownloadUrl, gpxFileName } from "@/lib/gpxDownload";
 import { deleteActivity as deleteActivityWithFiles } from "@/lib/proofStorage";
 import type { Profile } from "@/lib/database";
-import { getActivitySport, cleanActivityNote, type ActivitySport, SPORT_INFO } from "@/lib/activity";
+import {
+  getActivitySport,
+  cleanActivityNote,
+  type ActivitySport,
+  SPORT_INFO,
+} from "@/lib/activity";
 import { cn } from "@/lib/utils";
 import { SportBadge, SPORT_COLORS } from "@/components/SportIcon";
 import { CorrectionNotice } from "@/components/CorrectionNotice";
@@ -94,7 +99,6 @@ function MesKm() {
       // ignore
     }
 
-
     setProfile(p);
 
     // 2. Load patrols map
@@ -143,7 +147,6 @@ function MesKm() {
 
   useEffect(() => {
     load();
-
   }, [load]);
 
   const remove = async (a: Act) => {
@@ -152,7 +155,6 @@ function MesKm() {
       if (error) {
         toast.error("Erreur : " + error);
       } else {
-
         toast.success("Sortie supprimée");
       }
       load();

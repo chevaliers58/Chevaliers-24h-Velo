@@ -673,9 +673,7 @@ function Index() {
                 </span>
                 <span className="text-left">
                   <span className="block text-sm font-bold">Retrouve-nous sur Strava</span>
-                  <span className="block text-xs text-white/80">
-                    Rejoins le club {TROOP_NAME}
-                  </span>
+                  <span className="block text-xs text-white/80">Rejoins le club {TROOP_NAME}</span>
                 </span>
                 <ExternalLink className="ml-1 h-4 w-4 shrink-0 text-white/80" />
               </a>

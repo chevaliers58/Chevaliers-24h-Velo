@@ -112,7 +112,6 @@ function Admin() {
     const ptList = ptData ?? [];
     setPatrols(ptList);
 
-
     // 2. Profiles
     const { data: prData } = (await supabase.from("profiles").select("*")) as {
       data: Profile[] | null;
@@ -176,7 +175,6 @@ function Admin() {
 
   useEffect(() => {
     load();
-
   }, [load]);
 
   if (loading) {
@@ -220,7 +218,6 @@ function Admin() {
     if (error) {
       toast.error("Erreur : " + error);
     } else {
-
       toast.success("Sortie validée. La photo de preuve sera conservée 30 jours.");
     }
     load();
@@ -231,7 +228,6 @@ function Admin() {
     if (error) {
       toast.error("Erreur : " + error);
     } else {
-
       toast.error("Sortie refusée.");
     }
     load();

@@ -65,7 +65,10 @@ async function loadAllRows<T>(
     rows.push(...(data ?? []));
     if (!data || data.length < pageSize) return { data: rows, error: null };
   }
-  return { data: null, error: { message: `Plus de ${maxRows} lignes : nettoyage interrompu par sécurité` } };
+  return {
+    data: null,
+    error: { message: `Plus de ${maxRows} lignes : nettoyage interrompu par sécurité` },
+  };
 }
 
 Deno.serve(async (req) => {

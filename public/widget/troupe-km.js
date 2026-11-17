@@ -18,7 +18,10 @@
 (function () {
   "use strict";
   var script = document.currentScript;
-  var SUPABASE_URL = ((script && script.getAttribute("data-supabase-url")) || "").replace(/\/+$/, "");
+  var SUPABASE_URL = ((script && script.getAttribute("data-supabase-url")) || "").replace(
+    /\/+$/,
+    "",
+  );
   var KEY = (script && script.getAttribute("data-supabase-key")) || "";
   var SITE = (script && script.getAttribute("data-site-url")) || "";
   var CACHE_MS = 5 * 60 * 1000;
@@ -250,7 +253,9 @@
     }
     box('<p class="e">Chargement du classement…</p>');
     if (!SUPABASE_URL || !KEY || !SITE) {
-      box('<p class="e">Configuration du widget manquante : ajoutez data-supabase-url, data-supabase-key et data-site-url au script.</p>');
+      box(
+        '<p class="e">Configuration du widget manquante : ajoutez data-supabase-url, data-supabase-key et data-site-url au script.</p>',
+      );
       return;
     }
 
@@ -274,7 +279,9 @@
             '<div class="tot"><b>' +
             nf.format(c.total) +
             " km</b><span>parcourus par " +
-            esc(troopName) + " · " + c.label +
+            esc(troopName) +
+            " · " +
+            c.label +
             "</span></div>";
         }
         html +=

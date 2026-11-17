@@ -414,7 +414,10 @@ export function DailyDistanceForm({
           full_name: profile?.full_name || realUser.email?.split("@")[0] || "Scout",
           totem: profile?.totem || null,
           quali: profile?.quali || null,
-          patrol_id: selectedPatrolId && isUUID(selectedPatrolId) ? selectedPatrolId : profile?.patrol_id || null,
+          patrol_id:
+            selectedPatrolId && isUUID(selectedPatrolId)
+              ? selectedPatrolId
+              : profile?.patrol_id || null,
           onboarded: true,
         },
         { onConflict: "id" },
@@ -562,7 +565,6 @@ export function DailyDistanceForm({
         createdData?.status === "approved" || createdData?.status === "pending"
           ? createdData.status
           : activityStatus;
-
 
       const sportLabel = SPORT_INFO[sport].label;
 

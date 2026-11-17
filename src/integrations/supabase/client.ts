@@ -41,12 +41,15 @@ function isLegacyAnonKey(value: string): boolean {
 }
 
 function createSupabaseClient() {
-  const SUPABASE_URL = import.meta.env?.["VITE_SUPABASE_URL"]?.trim().replace(/\/rest\/v1\/?$/, "").replace(/\/+$/, "");
+  const SUPABASE_URL = import.meta.env?.["VITE_SUPABASE_URL"]
+    ?.trim()
+    .replace(/\/rest\/v1\/?$/, "")
+    .replace(/\/+$/, "");
   const SUPABASE_PUBLISHABLE_KEY = import.meta.env?.["VITE_SUPABASE_PUBLISHABLE_KEY"]?.trim();
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     throw new Error(
-      "[Supabase] Configuration manquante. Définis VITE_SUPABASE_URL et VITE_SUPABASE_PUBLISHABLE_KEY pour ton propre projet."
+      "[Supabase] Configuration manquante. Définis VITE_SUPABASE_URL et VITE_SUPABASE_PUBLISHABLE_KEY pour ton propre projet.",
     );
   }
 

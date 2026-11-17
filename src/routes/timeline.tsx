@@ -129,8 +129,7 @@ export const Route = createFileRoute("/timeline")({
       { title: `Timeline & Rétrospectives — ${TROOP_NAME}` },
       {
         name: "description",
-        content:
-          `Retrace l'histoire, les camps d'été et les défis vélo des années précédentes de la troupe ${TROOP_NAME}.`,
+        content: `Retrace l'histoire, les camps d'été et les défis vélo des années précédentes de la troupe ${TROOP_NAME}.`,
       },
       { property: "og:title", content: `Timeline & Rétrospectives — ${TROOP_NAME}` },
       {

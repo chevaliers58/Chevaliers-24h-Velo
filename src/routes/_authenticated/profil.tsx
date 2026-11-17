@@ -223,7 +223,6 @@ function Profil() {
         throw new Error(error.message);
       }
 
-
       await refreshProfile();
       toast.success("Profil scout enregistré avec succès !");
       window.location.href = import.meta.env.BASE_URL;

@@ -239,7 +239,6 @@ function AuthPage() {
         }
       }
 
-
       await refreshProfile();
       setBusy(false);
       toast.success("Bon retour parmi nous !");
@@ -340,13 +339,13 @@ function AuthPage() {
         }
       }
 
-
-
       await refreshProfile();
       setBusy(false);
 
       if (authData.session) {
-        toast.success(`Compte scout créé avec succès dans Supabase ! Bienvenue chez ${TROOP_NAME}.`);
+        toast.success(
+          `Compte scout créé avec succès dans Supabase ! Bienvenue chez ${TROOP_NAME}.`,
+        );
       } else {
         toast.success(
           "Compte créé dans Supabase ! Si la confirmation par e-mail est active, vérifie ta boîte de réception.",
