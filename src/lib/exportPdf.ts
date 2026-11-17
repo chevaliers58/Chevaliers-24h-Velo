@@ -126,10 +126,10 @@ const AUTOTABLE_URL =
 function loadScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const existing = document.querySelector(`script[src="${src}"]`) as HTMLScriptElement | null;
-    if (existing?.dataset.loaded === "1") return resolve();
+    if (existing?.dataset["loaded"] === "1") return resolve();
     const s = existing ?? document.createElement("script");
     s.addEventListener("load", () => {
-      s.dataset.loaded = "1";
+      s.dataset["loaded"] = "1";
       resolve();
     });
     s.addEventListener("error", () => reject(new Error(`Impossible de charger ${src}`)));

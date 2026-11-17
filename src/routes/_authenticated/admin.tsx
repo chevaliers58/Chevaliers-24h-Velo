@@ -166,7 +166,7 @@ function Admin() {
         .select("*")
         .order("target_date", { ascending: true });
       if (cdData) {
-        setCountdowns(cdData);
+        setCountdowns(cdData.map((item) => ({ ...item, is_active: !!item.is_active })));
       }
     } catch (err) {
       console.warn("Erreur chargement countdowns :", err);

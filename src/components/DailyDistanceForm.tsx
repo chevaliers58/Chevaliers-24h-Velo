@@ -55,7 +55,7 @@ export interface DailyDistanceFormProps {
     sport?: ActivitySport;
   }) => void;
   /** Optional preselected patrol ID */
-  defaultPatrolId?: string;
+  defaultPatrolId?: string | undefined;
   /** Custom title for the form card */
   title?: string;
   /** Custom description */
@@ -119,28 +119,26 @@ async function processAndCropGpx(file: File): Promise<string> {
 
   let distFromStart = 0;
   const distancesFromStart: number[] = [0];
-  for (let i = 1; i < points.length; i++) {
-    distFromStart += getDistanceFromLatLonInMeters(
-      points[i - 1].lat,
-      points[i - 1].lon,
-      points[i].lat,
-      points[i].lon,
-    );
+  points.forEach((point, index) => {
+    const previous = points[index - 1];
+    if (!previous) return;
+    distFromStart += getDistanceFromLatLonInMeters(previous.lat, previous.lon, point.lat, point.lon);
     distancesFromStart.push(distFromStart);
-  }
+  });
 
-  const totalDist = distancesFromStart[distancesFromStart.length - 1];
+  const totalDist = distFromStart;
 
   // Filtre pour masquer 200m au début et 200m à la fin
   const filteredTrkpts = points.filter((_, index) => {
     const dStart = distancesFromStart[index];
+    if (dStart === undefined) return false;
     const dEnd = totalDist - dStart;
     return dStart >= 200 && dEnd >= 200;
   });
 
   if (filteredTrkpts.length < 2) return text;
 
-  const parentTrkseg = filteredTrkpts[0].node.parentElement;
+  const parentTrkseg = filteredTrkpts[0]?.node.parentElement;
   if (parentTrkseg) {
     parentTrkseg.innerHTML = "";
     filteredTrkpts.forEach((p) => parentTrkseg.appendChild(p.node));

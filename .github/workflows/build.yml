@@ -31,6 +31,15 @@ jobs:
         run: npm audit --omit=dev
       - name: Lint
         run: npm run lint
+      - name: TypeScript diagnostic (strict)
+        continue-on-error: true
+        run: npx tsc --noEmit --pretty false
+      - name: Confirm obsolete mock client has no references
+        run: |
+          if git grep -n -E 'mock-client|createMockSupabaseClient' -- src; then
+            echo "Obsolete mock client is still referenced"
+            exit 1
+          fi
       - name: Validate SQL dollar-quote delimiters
         run: |
           python - <<'PY'

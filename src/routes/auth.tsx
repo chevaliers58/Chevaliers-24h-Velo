@@ -215,7 +215,7 @@ function AuthPage() {
             await supabase.from("profiles").upsert(
               {
                 id: authData.user.id,
-                email: authData.user.email,
+                email: authData.user.email ?? null,
                 full_name:
                   (meta["full_name"] as string) ||
                   (meta["name"] as string) ||

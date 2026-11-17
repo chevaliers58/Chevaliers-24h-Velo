@@ -67,7 +67,7 @@ function getPatrolColor(name: string, index: number): string {
     "#eab308",
     "#6366f1",
   ];
-  return defaultColors[index % defaultColors.length];
+  return defaultColors[index % defaultColors.length] ?? "#f59e0b";
 }
 
 interface RawActivity {
@@ -576,7 +576,7 @@ export function PatrolDailyContributionChart({
                       dataKey={patrol.id}
                       name={patrol.name}
                       fill={color}
-                      stackId={chartMode === "stacked" ? "patrolStack" : undefined}
+                      {...(chartMode === "stacked" ? { stackId: "patrolStack" } : {})}
                       radius={
                         chartMode === "stacked"
                           ? isLastPatrol

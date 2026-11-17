@@ -381,9 +381,9 @@ function Index() {
             return {
               user_id: p.id,
               display_name: displayName,
-              totem: p.totem,
-              quali: p.quali,
-              full_name: p.full_name,
+              totem: p.totem ?? null,
+              quali: p.quali ?? null,
+              full_name: p.full_name ?? null,
               patrol_id: p.patrol_id || "",
               patrol_name:
                 pt?.name || (isStaffOrChef ? TROOP_STAFF_PATROL_NAME : "Sans patrouille"),
@@ -391,7 +391,7 @@ function Index() {
               km: Number(totalKm.toFixed(1)),
               dplus: Math.round(totalDplus),
               distanceTotals,
-              scout_year: p.scout_year ?? undefined,
+              scout_year: p.scout_year ?? null,
               is_chef: isStaffOrChef,
               peloton: peloton.get(p.id),
             };
@@ -592,7 +592,8 @@ function Index() {
     });
   }, [scoutRows]);
 
-  const openScoutProfile = (scout: LeaderboardItem) => {
+  const openScoutProfile = (scout: LeaderboardItem | undefined) => {
+    if (!scout) return;
     void navigate({ to: "/scout/$scoutId", params: { scoutId: scout.user_id } });
   };
 
@@ -1419,7 +1420,7 @@ function Index() {
                     displayName={s.display_name}
                     patrolName={s.patrol_name}
                     scoutYear={s.scout_year ?? null}
-                    isChef={s.is_chef}
+                    isChef={s.is_chef ?? false}
                     km={s.km}
                     dplus={s.dplus}
                     distanceTotals={s.distanceTotals}
@@ -1456,7 +1457,7 @@ function Index() {
               </p>
             ) : (
               entryActivities.map((activity, index) => {
-                const member = leaderboardData.find((scout) => scout.user_id === activity.user_id);
+                const member = leaderboardData?.find((scout) => scout.user_id === activity.user_id);
                 const sport = getActivitySport(activity);
                 return (
                   <div
@@ -1464,7 +1465,7 @@ function Index() {
                     className="flex items-center justify-between gap-3 rounded-xl border bg-card p-3"
                   >
                     <div className="min-w-0">
-                      {selectedEntry.userIds.length > 1 && (
+                      {(selectedEntry?.userIds.length ?? 0) > 1 && (
                         <p className="truncate text-xs font-semibold text-foreground">
                           {member?.display_name ?? "Membre"}
                         </p>

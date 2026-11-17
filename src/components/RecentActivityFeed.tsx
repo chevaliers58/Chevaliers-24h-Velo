@@ -229,9 +229,9 @@ export function RecentActivityFeed({
             rideDate: act.ride_date || new Date().toISOString().slice(0, 10),
             createdAt: timestampToUse,
             relativeTime: formatRelativeTime(timestampToUse),
-            stravaLink: act.strava_link,
-            proofPath: act.proof_path,
-            note: act.note,
+            stravaLink: act.strava_link ?? null,
+            proofPath: act.proof_path ?? null,
+            note: act.note ?? null,
             status: act.status || "approved",
           };
         });

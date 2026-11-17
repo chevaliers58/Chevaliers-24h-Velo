@@ -229,7 +229,7 @@ function drawStory(
   ctx.shadowOffsetY = 4;
   ctx.fillStyle = "#fffaf1";
   ctx.font = "italic 900 75px Georgia, 'Times New Roman', serif";
-  const title =
+  const title: [string, string] =
     period === "week"
       ? ["CLASSEMENT DE LA", "SEMAINE"]
       : period === "month"
@@ -264,11 +264,12 @@ function drawStory(
   const visibleHolders = rankings.holders.filter((holder) => sections.includes(holder.type));
   if (visibleHolders.length) {
     y = sectionTitle(ctx, "individuel", y);
-    const jerseyGroups: Array<{ type: JerseyType; holders: typeof visibleHolders }> = [
+    const groups: Array<{ type: JerseyType; holders: typeof visibleHolders }> = [
       { type: "yellow", holders: visibleHolders.filter((holder) => holder.type === "yellow") },
       { type: "polka", holders: visibleHolders.filter((holder) => holder.type === "polka") },
       { type: "white", holders: visibleHolders.filter((holder) => holder.type === "white") },
-    ].filter((group) => group.holders.length);
+    ];
+    const jerseyGroups = groups.filter((group) => group.holders.length);
     const groupHeight = Math.min(210, Math.floor((height - y - 175) / jerseyGroups.length));
     for (const group of jerseyGroups) {
       const centerY = y + groupHeight / 2;
@@ -357,7 +358,7 @@ function drawJersey(ctx: CanvasRenderingContext2D, x: number, y: number, type: J
       [43, 57],
       [66, 76],
       [34, 84],
-    ]) {
+    ] as const) {
       ctx.beginPath();
       ctx.arc(dotX, dotY, 5, 0, Math.PI * 2);
       ctx.fill();

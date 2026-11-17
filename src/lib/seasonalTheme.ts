@@ -228,6 +228,7 @@ export function defaultThemeCalendar(year: number): ThemeCalendar {
 function validAnnualDate(value: unknown): value is string {
   if (typeof value !== "string" || !/^\d{2}-\d{2}$/.test(value)) return false;
   const [month, day] = value.split("-").map(Number);
+  if (month === undefined || day === undefined) return false;
   const date = new Date(2000, month - 1, day);
   return date.getMonth() === month - 1 && date.getDate() === day;
 }

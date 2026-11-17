@@ -156,8 +156,9 @@ export function CollectiveRouteMap({ className, overrideKm }: CollectiveRouteMap
       nextIdx = waypoints.length - 1;
     }
 
-    const next = waypoints[nextIdx];
-    const prev = waypoints[Math.max(0, nextIdx - 1)];
+    // The empty case is handled above; both indices are bounded by the array.
+    const next = waypoints[nextIdx]!;
+    const prev = waypoints[Math.max(0, nextIdx - 1)]!;
 
     const kmRemaining = Math.max(0, next.target_km - totalKm);
     const segmentSpan = next.target_km - prev.target_km;
@@ -165,7 +166,7 @@ export function CollectiveRouteMap({ className, overrideKm }: CollectiveRouteMap
     const stagePercent =
       segmentSpan > 0 ? Math.min(100, Math.max(0, (segmentProgress / segmentSpan) * 100)) : 100;
 
-    const maxExpeditionKm = waypoints[waypoints.length - 1].target_km || 1;
+    const maxExpeditionKm = waypoints.at(-1)?.target_km || 1;
     const overallPercent = Math.min(100, Math.max(0, (totalKm / maxExpeditionKm) * 100));
     // Tracé coloré : avance d'étape en étape (les étapes sont régulièrement espacées)
     const prevIdx = Math.max(0, nextIdx - 1);
@@ -208,6 +209,7 @@ export function CollectiveRouteMap({ className, overrideKm }: CollectiveRouteMap
     return waypoints.reduce((acc, pt, idx) => {
       if (idx === 0) return `M ${pt.x} ${pt.y}`;
       const prev = waypoints[idx - 1];
+      if (!prev) return acc;
       const cx1 = prev.x + (pt.x - prev.x) * 0.5;
       const cy1 = prev.y;
       const cx2 = prev.x + (pt.x - prev.x) * 0.5;

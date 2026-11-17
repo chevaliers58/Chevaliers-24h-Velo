@@ -79,27 +79,26 @@ function cropGpxCoordinates(rawCoords: [number, number][]): [number, number][] {
 
   let cumDist = 0;
   const distances: number[] = [0];
-  for (let i = 1; i < rawCoords.length; i++) {
-    cumDist += getDistanceFromLatLonInMeters(
-      rawCoords[i - 1][0],
-      rawCoords[i - 1][1],
-      rawCoords[i][0],
-      rawCoords[i][1],
-    );
+  rawCoords.forEach((point, index) => {
+    const previous = rawCoords[index - 1];
+    if (!previous) return;
+    cumDist += getDistanceFromLatLonInMeters(previous[0], previous[1], point[0], point[1]);
     distances.push(cumDist);
-  }
+  });
 
-  const totalDist = distances[distances.length - 1];
+  const totalDist = cumDist;
 
   // Si le tracé fait moins de 450m au total, retourner le point médian pour préserver la confidentialité
   if (totalDist < 450) {
     const midIdx = Math.floor(rawCoords.length / 2);
-    return [rawCoords[midIdx]];
+    const midpoint = rawCoords[midIdx];
+    return midpoint ? [midpoint] : [];
   }
 
   // Filtrer les coordonnées à moins de 200m du départ ou à moins de 200m de l'arrivée
   const filtered = rawCoords.filter((_, idx) => {
     const fromStart = distances[idx];
+    if (fromStart === undefined) return false;
     const fromEnd = totalDist - fromStart;
     return fromStart >= 200 && fromEnd >= 200;
   });
@@ -140,27 +139,25 @@ async function processAndCropGpxString(file: File): Promise<string> {
 
   let distFromStart = 0;
   const distancesFromStart: number[] = [0];
-  for (let i = 1; i < points.length; i++) {
-    distFromStart += getDistanceFromLatLonInMeters(
-      points[i - 1].lat,
-      points[i - 1].lon,
-      points[i].lat,
-      points[i].lon,
-    );
+  points.forEach((point, index) => {
+    const previous = points[index - 1];
+    if (!previous) return;
+    distFromStart += getDistanceFromLatLonInMeters(previous.lat, previous.lon, point.lat, point.lon);
     distancesFromStart.push(distFromStart);
-  }
+  });
 
-  const totalDist = distancesFromStart[distancesFromStart.length - 1];
+  const totalDist = distFromStart;
 
   const filteredTrkpts = points.filter((_, index) => {
     const dStart = distancesFromStart[index];
+    if (dStart === undefined) return false;
     const dEnd = totalDist - dStart;
     return dStart >= 200 && dEnd >= 200;
   });
 
   if (filteredTrkpts.length < 2) return text;
 
-  const parentTrkseg = filteredTrkpts[0].node.parentElement;
+  const parentTrkseg = filteredTrkpts[0]?.node.parentElement;
   if (parentTrkseg) {
     parentTrkseg.innerHTML = "";
     filteredTrkpts.forEach((p) => parentTrkseg.appendChild(p.node));

@@ -23,9 +23,8 @@ export function getPatrolEmblem(patrolName?: string | null, patrolId?: string | 
   if (!patrolName) return "⚜️";
 
   const customMap = getCustomPatrolEmojis();
-  if (patrolId && customMap[patrolId.toLowerCase().trim()]) {
-    return customMap[patrolId.toLowerCase().trim()];
-  }
+  const customById = patrolId ? customMap[patrolId.toLowerCase().trim()] : undefined;
+  if (customById) return customById;
 
   const nameKey = patrolName.toLowerCase().trim();
   if (customMap[nameKey]) return customMap[nameKey];
@@ -33,7 +32,7 @@ export function getPatrolEmblem(patrolName?: string | null, patrolId?: string | 
   const emojiPrefixMatch = patrolName.match(
     /^([\p{Emoji_Presentation}\p{Extended_Pictographic}])/u,
   );
-  if (emojiPrefixMatch) return emojiPrefixMatch[1];
+  if (emojiPrefixMatch?.[1]) return emojiPrefixMatch[1];
 
   const n = nameKey;
   if (n.includes("baladin") || n.includes("castor") || n.includes("nuton")) return "🧸";
