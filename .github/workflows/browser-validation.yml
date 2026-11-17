@@ -1,0 +1,98 @@
+name: Browser validation on isolated Supabase
+on:
+  push:
+    branches: [test/chevaliers58-browser-validation]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 2.122.1
+      - name: Prepare disposable Supabase project
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/chevaliers-e2e"
+          cd "$RUNNER_TEMP/chevaliers-e2e"
+          supabase init
+          mkdir -p supabase/migrations
+          cp "$GITHUB_WORKSPACE"/supabase/migrations/*.sql supabase/migrations/
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          count = 0
+          for p in Path("supabase/migrations").glob("*.sql"):
+              data,n = re.subn(r"https?://[A-Za-z0-9-]+\.supabase\.co/functions/v1/", "http://127.0.0.1:1/functions/v1/", p.read_text())
+              count += n
+              p.write_text(data)
+          assert count == 3
+          p = Path("supabase/config.toml")
+          s = p.read_text()
+          s,n = re.subn(r"(?m)^major_version\s*=\s*\d+", "major_version = 17", s)
+          assert n == 1
+          p.write_text(s)
+          PY
+      - name: Start completely local stack
+        working-directory: ${{ runner.temp }}/chevaliers-e2e
+        run: |
+          supabase start
+          supabase db reset --local --no-seed
+          supabase status -o json > "$RUNNER_TEMP/local-supabase.json"
+      - name: Install app and pinned browser test runner
+        run: |
+          npm ci
+          npm install --prefix "$RUNNER_TEMP/browser-tools" --no-audit --no-fund --save-exact playwright@1.65.1
+          "$RUNNER_TEMP/browser-tools/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Compile isolated build and exercise browser workflows
+        shell: bash
+        run: |
+          set -euo pipefail
+          export VITE_SUPABASE_URL="$(jq -r '.API_URL' "$RUNNER_TEMP/local-supabase.json")"
+          export VITE_SUPABASE_PUBLISHABLE_KEY="$(jq -r '.ANON_KEY' "$RUNNER_TEMP/local-supabase.json")"
+          export LOCAL_SERVICE_ROLE_KEY="$(jq -r '.SERVICE_ROLE_KEY' "$RUNNER_TEMP/local-supabase.json")"
+          test "$VITE_SUPABASE_URL" = "http://127.0.0.1:54321"
+          test -n "$VITE_SUPABASE_PUBLISHABLE_KEY"
+          test -n "$LOCAL_SERVICE_ROLE_KEY"
+          test "$LOCAL_SERVICE_ROLE_KEY" != null
+          echo "::add-mask::$LOCAL_SERVICE_ROLE_KEY"
+          export VITE_SUPABASE_PROJECT_ID=ci-local
+          export VITE_TROOP_NAME="Chevaliers 58"
+          export VITE_SITE_URL=http://127.0.0.1:3000/velo
+          export VITE_BASE_PATH=/velo/
+          export VITE_TROOP_STRAVA_CLUB_URL=https://www.strava.com/clubs/Chevaliers58
+          export E2E_PLAYWRIGHT="$RUNNER_TEMP/browser-tools/node_modules/playwright/index.mjs"
+          # Only the disposable checkout permits the exact local API endpoint;
+          # production requires HTTPS and is not modified in Git.
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('src/integrations/supabase/client.ts')
+          s = p.read_text()
+          before = r'if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(SUPABASE_URL)) {'
+          after = r'if (SUPABASE_URL !== "http://127.0.0.1:54321" && !/^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(SUPABASE_URL)) {'
+          assert s.count(before) == 1
+          p.write_text(s.replace(before, after))
+          PY
+          # The privileged key is never available to Vite or the server build.
+          env -u LOCAL_SERVICE_ROLE_KEY npm run build
+          env -u LOCAL_SERVICE_ROLE_KEY node .output/server/index.mjs > "$RUNNER_TEMP/e2e-server.log" 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3000/velo/ >/dev/null; then break; fi
+            sleep 1
+          done
+          node scripts/browser-smoke.mjs
+      - name: Stop disposable stack
+        if: always()
+        working-directory: ${{ runner.temp }}/chevaliers-e2e
+        run: supabase stop --no-backup
