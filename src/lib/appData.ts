@@ -71,7 +71,7 @@ export function useTroopData() {
   const { user, loading } = useAuth();
   return useQuery<TroopData>({
     queryKey: ["app-troop-data", user?.id ?? null],
-    enabled: !loading,
+    enabled: !!user || !loading,
     gcTime: 0,
     staleTime: 30_000,
     refetchOnWindowFocus: true,

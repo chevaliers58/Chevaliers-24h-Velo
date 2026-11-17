@@ -280,7 +280,7 @@ function IndexForViewer() {
     isError: isLeaderboardError,
   } = useQuery<LeaderboardItem[]>({
     queryKey: ["leaderboard", period, sportMode, user?.id ?? null],
-    enabled: !authLoading,
+    enabled: !!user || !authLoading,
     gcTime: 0,
     refetchInterval: 30_000,
     refetchOnWindowFocus: true,
