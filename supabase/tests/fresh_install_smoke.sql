@@ -101,6 +101,15 @@ begin
     raise exception 'Activity accepted without proof';
   exception when check_violation then null;
   end;
+  -- Clients cannot force premature cleanup or reset its retention clocks.
+  update public.activities set created_at = now() - interval '90 days', validated_at = now()
+    where id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2';
+  if exists (
+    select 1 from public.activities where id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2'
+      and (created_at < now() - interval '1 minute' or validated_at is not null)
+  ) then
+    raise exception 'User can manipulate pending retention timestamps';
+  end if;
   -- A manual Strava link keeps the original auto-approval behavior.
   insert into public.activities(id,user_id,ride_date,km,strava_link)
   values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1',auth.uid(),
@@ -111,6 +120,15 @@ begin
       and source = 'manual' and strava_activity_id is null and status = 'approved'
   ) then
     raise exception 'Manual Strava link no longer works';
+  end if;
+  update public.activities set created_at = now() - interval '90 days',
+    validated_at = now() - interval '90 days'
+    where id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1';
+  if exists (
+    select 1 from public.activities where id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1'
+      and (created_at < now() - interval '1 minute' or validated_at < now() - interval '1 minute')
+  ) then
+    raise exception 'User can manipulate approved retention timestamps';
   end if;
   begin
     insert into public.activities(user_id,ride_date,km,strava_link,source,strava_activity_id)

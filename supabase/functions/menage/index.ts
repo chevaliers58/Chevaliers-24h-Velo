@@ -36,14 +36,39 @@ const json = (body: unknown, status = 200) =>
     headers: { ...cors, "Content-Type": "application/json" },
   });
 
-/** Nom du fichier dans un bucket à partir de son URL publique (ou null). */
-function fileName(url: string | null | undefined, bucket: string): string | null {
-  if (!url) return null;
-  const marker = `/object/public/${bucket}/`;
-  const i = url.indexOf(marker);
-  if (i < 0) return null;
-  return decodeURIComponent(url.slice(i + marker.length).split("?")[0] ?? "") || null;
+/** Only flat object names in this project's buckets may be removed. */
+function fileName(value: string | null | undefined, bucket: string): string | null {
+  if (!value) return null;
+  try {
+    let name = value.trim();
+    if (name.includes("://")) {
+      const url = new URL(name);
+      if (url.origin !== new URL(SUPABASE_URL).origin) return null;
+      const prefix = ["public", "sign", "authenticated"]
+        .map((kind) => `/storage/v1/object/${kind}/${bucket}/`)
+        .find((candidate) => url.pathname.startsWith(candidate));
+      if (!prefix) return null;
+      name = decodeURIComponent(url.pathname.slice(prefix.length));
+    }
+    return /^[^/\\:?%\x00-\x1f]+$/.test(name) && !name.startsWith(".") ? name : null;
+  } catch {
+    return null;
+  }
 }
+
+function ownedName(value: string | null, userId: string): string | null {
+  const name = fileName(value, "proofs");
+  return name && (name.startsWith(userId + "_") || name.startsWith("proposed_" + userId + "_"))
+    ? name
+    : null;
+}
+
+type ProofRow = {
+  id: string;
+  user_id: string;
+  proof_path: string | null;
+  gpx_path: string | null;
+};
 
 const daysAgo = (n: number) => new Date(Date.now() - n * 24 * 3600 * 1000).toISOString();
 
@@ -100,14 +125,40 @@ Deno.serve(async (req) => {
 
   let dryRun = false;
   try {
-    const body = await req.json();
-    dryRun = body?.dry_run === true;
+    const rawBody = await req.text();
+    if (rawBody.trim()) {
+      const body = JSON.parse(rawBody);
+      if (
+        !body ||
+        typeof body !== "object" ||
+        Array.isArray(body) ||
+        ("dry_run" in body && typeof body.dry_run !== "boolean")
+      ) {
+        return json({ error: "Corps JSON invalide" }, 400);
+      }
+      dryRun = body.dry_run === true;
+    }
   } catch {
-    // pas de corps : vrai ménage
+    return json({ error: "Corps JSON invalide" }, 400);
   }
 
   const report: Record<string, unknown> = { source, aperçu: dryRun };
   const errors: string[] = [];
+
+  // Snapshot expired pending rows before SQL deletes them, including their owners.
+  // A browser-supplied path must not let a privileged cleanup delete another file.
+  const pending = await loadAllRows((from, to) =>
+    admin
+      .from("activities")
+      .select("id, user_id, proof_path, gpx_path")
+      .eq("status", "pending")
+      .lt("created_at", daysAgo(60))
+      .order("id")
+      .range(from, to),
+  );
+  if (pending.error) return json({ ...report, erreurs: [pending.error.message] }, 500);
+  const pendingRows = (pending.data ?? []) as ProofRow[];
+  const expiredPendingIds = new Set(pendingRows.map((r) => r.id));
 
   // ---------- 1. Base de données ----------
   const { data: db, error: dbError } = await admin.rpc("cleanup_database", { _dry: dryRun });
@@ -117,31 +168,44 @@ Deno.serve(async (req) => {
   report.comptes_a_rebours_desactives = dbReport.comptes_a_rebours_desactives ?? 0;
   report.sorties_en_attente_supprimees = dbReport.sorties_en_attente_supprimees ?? 0;
   report.sorties_validees_nettoyees = dbReport.sorties_validees_nettoyees ?? 0;
-  const pendingFiles = ((dbReport.fichiers_a_effacer as string[] | undefined) ?? [])
-    .map((u) => fileName(u, "proofs"))
-    .filter((n): n is string => !!n);
+  const returnedPaths = new Set((dbReport.fichiers_a_effacer as string[] | undefined) ?? []);
+  const pendingFiles = pendingRows.flatMap((r) =>
+    [r.proof_path, r.gpx_path].flatMap((path) => {
+      const name = path && returnedPaths.has(path) ? ownedName(path, r.user_id) : null;
+      return name ? [name] : [];
+    }),
+  );
 
   // ---------- 2. Photos de preuve validées depuis plus de 30 jours ----------
   const { data: oldProofs, error: proofError } = await admin
     .from("activities")
-    .select("id, proof_path")
+    .select("id, user_id, proof_path, gpx_path")
     .eq("status", "approved")
     .not("proof_path", "is", null)
     .lt("validated_at", daysAgo(PHOTO_DAYS))
+    .order("validated_at")
+    .order("id")
     .limit(MAX_FILES_PER_RUN);
   if (proofError) errors.push("photos : " + proofError.message);
-  const photoRows = (oldProofs ?? []) as { id: string; proof_path: string }[];
-  const photoFiles = photoRows
-    .map((r) => fileName(r.proof_path, "proofs"))
-    .filter(Boolean) as string[];
+  const photoRows = (oldProofs ?? []) as ProofRow[];
+  const expiringPhotos = new Map(
+    photoRows
+      .filter((r) => ownedName(r.proof_path, r.user_id))
+      .map((r) => [r.id, r.proof_path]),
+  );
+  const used = new Set<string>();
 
   // ---------- 3. Fichiers orphelins ----------
-  const orphanFiles: Record<string, string[]> = { proofs: [], backgrounds: [] };
+  const orphanFiles = { proofs: [] as string[], backgrounds: [] as string[] };
   if (!errors.length) {
     // Tout ce qui est encore référencé quelque part
     const [acts, challenges, routes, timeline, settings] = await Promise.all([
       loadAllRows((from, to) =>
-        admin.from("activities").select("proof_path, gpx_path").order("id").range(from, to),
+        admin
+          .from("activities")
+          .select("id, status, proof_path, gpx_path")
+          .order("id")
+          .range(from, to),
       ),
       loadAllRows((from, to) =>
         admin.from("scout_challenges").select("gpx_template_path").order("id").range(from, to),
@@ -160,15 +224,15 @@ Deno.serve(async (req) => {
     if (queryErrors.length) {
       errors.push("références : " + queryErrors.map((r) => r.error!.message).join(", "));
     } else {
-      const used = new Set<string>();
-      for (const a of (acts.data ?? []) as {
-        proof_path: string | null;
-        gpx_path: string | null;
-      }[]) {
-        for (const u of [a.proof_path, a.gpx_path]) {
-          const n = fileName(u, "proofs");
-          if (n) used.add("proofs/" + n);
+      for (const a of (acts.data ?? []) as Array<ProofRow & { status: string }>) {
+        if (dryRun && a.status === "pending" && expiredPendingIds.has(a.id)) continue;
+        // Exclude only the proof reference that is about to expire, never a GPX.
+        if (expiringPhotos.get(a.id) !== a.proof_path) {
+          const photo = fileName(a.proof_path, "proofs");
+          if (photo) used.add("proofs/" + photo);
         }
+        const gpx = fileName(a.gpx_path, "proofs");
+        if (gpx) used.add("proofs/" + gpx);
       }
       for (const c of (challenges.data ?? []) as { gpx_template_path: string | null }[]) {
         const n = fileName(c.gpx_template_path, "proofs");
@@ -211,40 +275,76 @@ Deno.serve(async (req) => {
     }
   }
 
+  // Never remove a file still referenced elsewhere. Only remove expired proof
+  // files whose names belong to the activity owner. Clear stale/foreign/shared
+  // references without deleting the other file.
+  const photoFiles = photoRows
+    .map((row) => ownedName(row.proof_path, row.user_id))
+    .filter((name): name is string => !!name && !used.has("proofs/" + name));
+  const expiredNames = new Set([...photoFiles, ...pendingFiles]);
+  const orphanProofs = orphanFiles.proofs.filter((name) => !expiredNames.has(name));
   const toDelete = {
-    proofs: [...new Set([...pendingFiles, ...photoFiles, ...orphanFiles.proofs])].slice(
-      0,
-      MAX_FILES_PER_RUN,
-    ),
+    proofs: [
+      ...new Set([
+        ...photoFiles,
+        ...pendingFiles.filter((name) => !used.has("proofs/" + name)),
+        ...orphanProofs,
+      ]),
+    ].slice(0, MAX_FILES_PER_RUN),
     backgrounds: orphanFiles.backgrounds.slice(0, MAX_FILES_PER_RUN),
   };
-  report.photos_de_preuve_effacees = photoRows.length;
-  report.fichiers_orphelins_effaces = orphanFiles.proofs.length + orphanFiles.backgrounds.length;
-  report.fichiers_effaces = toDelete.proofs.length + toDelete.backgrounds.length;
+  const successful = new Set<string>();
+  let detachedPhotos = 0;
 
-  // ---------- Suppression des fichiers ----------
-  if (!dryRun) {
+  // If reference enumeration failed, do not issue privileged Storage deletes.
+  if (!errors.length) {
     for (const bucket of ["proofs", "backgrounds"] as const) {
       const names = toDelete[bucket];
       for (let i = 0; i < names.length; i += 100) {
-        const { error } = await admin.storage.from(bucket).remove(names.slice(i, i + 100));
-        if (error) errors.push(`suppression ${bucket} : ${error.message}`);
+        const batch = names.slice(i, i + 100);
+        if (!dryRun) {
+          const { error } = await admin.storage.from(bucket).remove(batch);
+          if (error) {
+            errors.push(`suppression ${bucket} : ${error.message}`);
+            continue;
+          }
+        }
+        for (const name of batch) successful.add(`${bucket}/${name}`);
       }
     }
-    if (photoRows.length) {
-      const { error } = await admin
+    for (const row of photoRows) {
+      const name = ownedName(row.proof_path, row.user_id);
+      if (name && !used.has("proofs/" + name) && !successful.has("proofs/" + name)) {
+        continue; // Failed or deferred: keep the reference for a later run.
+      }
+      if (dryRun) {
+        detachedPhotos++;
+        continue;
+      }
+      const { data, error } = await admin
         .from("activities")
         .update({ proof_path: null })
-        .in(
-          "id",
-          photoRows.map((r) => r.id),
-        );
+        .eq("id", row.id)
+        .eq("proof_path", row.proof_path ?? "")
+        .eq("status", "approved")
+        .lt("validated_at", daysAgo(PHOTO_DAYS))
+        .select("id");
       if (error) errors.push("mise à jour des sorties : " + error.message);
+      else detachedPhotos += data?.length ?? 0;
     }
-    await admin.from("cleanup_runs").insert({
+  }
+  report.photos_de_preuve_effacees = detachedPhotos;
+  report.fichiers_orphelins_effaces =
+    orphanProofs.filter((n) => successful.has("proofs/" + n)).length +
+    orphanFiles.backgrounds.filter((n) => successful.has("backgrounds/" + n)).length;
+  report.fichiers_effaces = successful.size;
+
+  if (!dryRun) {
+    const { error } = await admin.from("cleanup_runs").insert({
       trigger_source: source,
       details: { ...report, erreurs: errors },
     });
+    if (error) errors.push("journal : " + error.message);
   }
 
   return json({ ...report, erreurs: errors }, errors.length ? 207 : 200);
