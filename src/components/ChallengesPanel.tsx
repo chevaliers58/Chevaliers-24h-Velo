@@ -625,17 +625,7 @@ export function ChallengesBanner() {
                   {status === "submitted" ? "sortie en vérification" : "à réaliser"}
                 </p>
                 {challenge.gpx_template_path && (
-                  <a
-                    className="mt-1 inline-block text-xs text-primary underline"
-                    href={
-                      supabase.storage.from("proofs").getPublicUrl(challenge.gpx_template_path).data
-                        .publicUrl
-                    }
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Télécharger le tracé demandé
-                  </a>
+                  <p className="mt-1 text-xs text-muted-foreground">Consigne à demander au staff.</p>
                 )}
               </div>
             ))}

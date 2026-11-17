@@ -1,9 +1,9 @@
+import { PrivateProofButton } from "@/components/PrivateProofButton";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ChevronDown,
   ExternalLink,
   History,
-  ImageIcon,
   ListChecks,
   Loader2,
   Pencil,
@@ -310,19 +310,9 @@ export function AdminActivitiesManager({
                           <span className="ml-1">Strava</span>
                         </a>
                       </Button>
-                    ) : a.proof_path ? (
-                      <Button asChild variant="outline" size="sm" className="h-10 sm:h-8">
-                        <a
-                          href={a.proof_path}
-                          target="_blank"
-                          rel="noreferrer"
-                          title="Voir la photo"
-                        >
-                          <ImageIcon className="h-4 w-4" />
-                          <span className="ml-1">Photo</span>
-                        </a>
-                      </Button>
                     ) : null}
+                    <PrivateProofButton path={a.proof_path} label="Photo" />
+                    <PrivateProofButton path={a.gpx_path} label="GPX" />
                     <Button
                       variant="outline"
                       size="sm"
@@ -509,14 +499,7 @@ function EditDialog({
                 Ouvrir le Strava <ExternalLink className="h-3 w-3" />
               </a>
             ) : act.proof_path ? (
-              <a
-                href={act.proof_path}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1 font-semibold text-primary underline"
-              >
-                Voir la photo <ExternalLink className="h-3 w-3" />
-              </a>
+              <PrivateProofButton path={act.proof_path} label="Voir la photo" />
             ) : (
               "Pas de preuve jointe."
             )}{" "}

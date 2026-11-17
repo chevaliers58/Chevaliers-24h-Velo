@@ -14,7 +14,6 @@ import {
   Award,
   Footprints,
   PersonStanding,
-  MapPin,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,7 +21,6 @@ import { Badge } from "@/components/ui/badge";
 import { DailyDistanceForm } from "@/components/DailyDistanceForm";
 import { groupSizes, pelotonMultiplier, type PelotonActivity } from "@/lib/peloton";
 import { supabase } from "@/integrations/supabase/client";
-import { gpxDownloadUrl, gpxFileName } from "@/lib/gpxDownload";
 import { deleteActivity as deleteActivityWithFiles } from "@/lib/proofStorage";
 import type { Profile } from "@/lib/database";
 import {
@@ -452,13 +450,9 @@ function MesKm() {
                               </Badge>
                             )}
 
-                            {/* GPX badge if attached */}
                             {a.gpx_path && (
-                              <a
-                                href={gpxDownloadUrl(
-                                  a.gpx_path,
-                                  `sortie ${a.ride_date} ${a.km} km`,
-                                )}
+                              <Badge variant="outline">GPX transmis au staff</Badge>
+                            )}
                                 download={gpxFileName(`sortie ${a.ride_date} ${a.km} km`)}
                                 title="Télécharger le tracé GPX"
                               >

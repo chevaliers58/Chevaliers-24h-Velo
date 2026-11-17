@@ -1,3 +1,4 @@
+import { PrivateProofButton } from "@/components/PrivateProofButton";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { TROOP_NAME } from "@/lib/troop-config";
 import { useCallback, useEffect, useState } from "react";
@@ -453,19 +454,8 @@ function Admin() {
                                 ).toLocaleDateString("fr-BE")}
                               </p>
                             )}
-                          {act.proof_path && (
-                            <div className="mt-2 hidden sm:block">
-                              <a
-                                href={act.proof_path}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1.5 text-xs text-primary font-semibold hover:underline"
-                              >
-                                Voir la photo de preuve
-                                <ExternalLink className="h-3 w-3" />
-                              </a>
-                            </div>
-                          )}
+                          <PrivateProofButton path={act.proof_path} label="Photo de preuve" />
+                          <PrivateProofButton path={act.gpx_path} label="Tracé GPX" />
                           {act.strava_link && (
                             <a
                               href={act.strava_link}
@@ -479,23 +469,6 @@ function Admin() {
                           )}
                         </div>
                       </div>
-
-                      {act.proof_path && (
-                        <a
-                          href={act.proof_path}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="block overflow-hidden rounded-xl border sm:hidden"
-                          aria-label="Agrandir la photo de preuve"
-                        >
-                          <img
-                            src={act.proof_path}
-                            alt="Photo de preuve"
-                            loading="lazy"
-                            className="max-h-44 w-full bg-muted object-contain"
-                          />
-                        </a>
-                      )}
 
                       <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:self-center">
                         <Button

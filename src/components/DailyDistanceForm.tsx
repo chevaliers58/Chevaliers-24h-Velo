@@ -366,7 +366,7 @@ export function DailyDistanceForm({
       await refreshProfile();
 
       // 5. Envoi de l'image de preuve vers Supabase Storage
-      let proofPublicUrl: string | null = null;
+      let proofObjectPath: string | null = null;
       if (proofFile && activeTab === "photo") {
         const fileExt =
           (proofFile.name.split(".").pop() || "")
@@ -377,7 +377,7 @@ export function DailyDistanceForm({
 
         const { error: uploadError } = await supabase.storage
           .from("proofs")
-          .upload(fileName, proofFile, { upsert: true });
+          .upload(fileName, proofFile, { upsert: false });
 
         if (uploadError) {
           toast.error("Erreur lors de l'envoi de la preuve : " + uploadError.message);
@@ -385,23 +385,22 @@ export function DailyDistanceForm({
           return;
         }
 
-        const { data: urlData } = supabase.storage.from("proofs").getPublicUrl(fileName);
-        proofPublicUrl = urlData.publicUrl;
+        proofObjectPath = fileName;
       }
 
       // 6. Upload only the already-redacted track. Never silently omit it.
-      let gpxPublicUrl: string | null = null;
+      let gpxObjectPath: string | null = null;
       if (croppedGpx) {
         const gpxBlob = new Blob([croppedGpx], { type: "application/gpx+xml" });
         const gpxFileName = `${targetUserId}_${Date.now()}_${crypto.randomUUID()}.gpx`;
         const { error: gpxUploadError } = await supabase.storage
           .from("proofs")
-          .upload(gpxFileName, gpxBlob, { upsert: true });
+          .upload(gpxFileName, gpxBlob, { upsert: false });
         if (gpxUploadError) {
-          await removeStorageFiles([proofPublicUrl]);
+          await removeStorageFiles([proofObjectPath]);
           throw new Error("Impossible d’envoyer le GPX : " + gpxUploadError.message);
         }
-        gpxPublicUrl = supabase.storage.from("proofs").getPublicUrl(gpxFileName).data.publicUrl;
+        gpxObjectPath = gpxFileName;
       }
 
       const isAutoApproved = isAdmin;
@@ -454,8 +453,8 @@ export function DailyDistanceForm({
         elevation_m: elevation,
         ride_date: rideDate,
         strava_link: trimmedStrava || null,
-        proof_path: proofPublicUrl,
-        gpx_path: gpxPublicUrl, // <-- Enregistre le lien du GPX épuré pour la carte interactive
+        proof_path: proofObjectPath,
+        gpx_path: gpxObjectPath,
         note: finalNote,
         status: activityStatus,
         group_ride_id: groupRideId,
@@ -470,7 +469,7 @@ export function DailyDistanceForm({
 
       if (insertError) {
         // La sortie n'a pas été créée : ne pas laisser de fichiers orphelins
-        await removeStorageFiles([proofPublicUrl, gpxPublicUrl]);
+        await removeStorageFiles([proofObjectPath, gpxObjectPath]);
         if (createdGroupId) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           await (supabase as any).from("group_rides").delete().eq("id", createdGroupId);
@@ -624,7 +623,7 @@ export function DailyDistanceForm({
           <MapPin className="h-3.5 w-3.5 text-primary" />
           {selectedChallengeForForm?.route_validation || selectedChallengeForForm?.gpx_template_path
             ? "Fichier GPX requis pour ce défi"
-            : "Fichier GPX du parcours (optionnel pour la carte de la troupe)"}
+            : "Fichier GPX du parcours (optionnel, réservé au staff)"}
         </Label>
         <div className="flex items-center gap-3">
           <label className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-border p-3 text-xs font-semibold text-muted-foreground hover:border-primary hover:text-foreground transition-all">
