@@ -434,7 +434,10 @@ try {
     await eventually(() => held, "captured genuine admin role response");
     await switchingPage.getByRole("button", { name: /Classement Individuel/ }).click();
     await switchingPage.getByText("Membre Test Navigateur", { exact: true }).first().waitFor();
-    assert.equal(await switchingPage.getByText("Admin Test Navigateur", { exact: true }).count(), 0);
+    assert.equal(
+      await switchingPage.getByText("Admin Test Navigateur", { exact: true }).count(),
+      0,
+    );
     const detailObserver = await switching.newPage();
     await detailObserver.goto(base + "/scout/" + created.user.id);
     await detailObserver
