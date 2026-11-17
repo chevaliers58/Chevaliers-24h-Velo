@@ -58,6 +58,11 @@ insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values
 insert into public.user_roles(user_id,role)
 values ('11111111-1111-4111-8111-111111111111','admin');
 
+-- Synthetic public-display cases: one profile with a totem, one without.
+update public.profiles
+set totem = 'Renard Test', strava_url = 'https://www.strava.com/athletes/123456'
+where id = '22222222-2222-4222-8222-222222222222';
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub','22222222-2222-4222-8222-222222222222',true);
 select set_config('request.jwt.claims','{"sub":"22222222-2222-4222-8222-222222222222","role":"authenticated"}',true);
@@ -78,6 +83,23 @@ begin
     insert into public.user_roles(user_id,role) values (auth.uid(),'admin');
     raise exception 'Scout can self-assign admin role';
   exception when insufficient_privilege then null;
+  end;
+  if (select full_name from public.profiles_public where id = '11111111-1111-4111-8111-111111111111')
+       is distinct from 'Admin Local' then
+    raise exception 'Signed-in viewer cannot read the permitted full name';
+  end if;
+  if not exists (
+    select 1 from public.profiles_public
+    where id = auth.uid() and full_name is null and totem = 'Renard Test'
+      and strava_url = 'https://www.strava.com/athletes/123456'
+  ) then
+    raise exception 'Signed-in viewer: totem/name or manual profile link rule changed';
+  end if;
+  begin
+    perform public.admin_set_password('11111111-1111-4111-8111-111111111111','NotAllowed-test-123');
+    raise exception 'Scout can change another password';
+  exception when raise_exception then
+    if sqlerrm <> 'Interdit' then raise; end if;
   end;
   -- A photo submitted by a scout always waits for approval.
   insert into public.activities(id,user_id,ride_date,km,proof_path,status)
@@ -203,7 +225,27 @@ begin
   if not exists(select 1 from public.user_roles where user_id = '22222222-2222-4222-8222-222222222222' and role = 'admin') then
     raise exception 'Admin assignment did not use verified Auth email';
   end if;
+  -- An administrator may not change another administrator's password.
+  begin
+    perform public.admin_set_password('22222222-2222-4222-8222-222222222222','NotAllowed-test-456');
+    raise exception 'Administrator can change another admin password';
+  exception when raise_exception then
+    if sqlerrm <> 'Impossible de modifier le mot de passe d''un autre admin' then raise; end if;
+  end;
   perform public.set_admin_by_email('scout@local-test.invalid',false);
+  begin
+    perform public.admin_set_password('22222222-2222-4222-8222-222222222222','123');
+    raise exception 'Short password accepted';
+  exception when raise_exception then
+    if sqlerrm <> 'Le mot de passe doit faire entre 6 et 72 caractères' then raise; end if;
+  end;
+  begin
+    perform public.admin_set_password('22222222-2222-4222-8222-222222222222',repeat('x',73));
+    raise exception 'Long password accepted';
+  exception when raise_exception then
+    if sqlerrm <> 'Le mot de passe doit faire entre 6 et 72 caractères' then raise; end if;
+  end;
+  perform public.admin_set_password('22222222-2222-4222-8222-222222222222','Synthetic-password-test-123');
   delete from public.user_roles where user_id = auth.uid() and role = 'admin';
   if not public.has_role(auth.uid(),'admin') then
     raise exception 'Administrator can accidentally remove own admin role';
@@ -212,6 +254,22 @@ end;
 $test$;
 
 reset role;
+-- Check the actual bcrypt hash as the local test owner, never emit it to logs.
+do $test$
+declare
+  stored_hash text;
+begin
+  select encrypted_password into stored_hash from auth.users
+  where id = '22222222-2222-4222-8222-222222222222';
+  if stored_hash is null or stored_hash = ''
+     or stored_hash is distinct from extensions.crypt('Synthetic-password-test-123',stored_hash) then
+    raise exception 'Admin password update did not persist a correct bcrypt hash';
+  end if;
+  if has_function_privilege('anon','public.admin_set_password(uuid,text)','EXECUTE') then
+    raise exception 'Anonymous admin password reset RPC available';
+  end if;
+end;
+$test$;
 select set_config('request.jwt.claim.sub','',true);
 select set_config('request.jwt.claims','{}',true);
 set local role anon;
@@ -229,6 +287,25 @@ begin
   end;
   if exists(select 1 from public.profiles_public where strava_url is not null) then
     raise exception 'Public profile view exposes Strava profile links';
+  end if;
+  if (select full_name from public.profiles_public where id = '11111111-1111-4111-8111-111111111111')
+       is distinct from 'Admin L.' then
+    raise exception 'Anonymous viewer received an unmasked or incorrect name';
+  end if;
+  if not exists (
+    select 1 from public.profiles_public
+    where id = '22222222-2222-4222-8222-222222222222'
+      and full_name is null and totem = 'Renard Test'
+  ) then
+    raise exception 'Anonymous viewer: totem/name masking rule changed';
+  end if;
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public'
+      and ((table_name = 'profiles_public' and column_name in ('email','phone','birth_day','birth_month'))
+        or (table_name = 'activities_public' and column_name in ('gpx_path','proof_path','strava_link')))
+  ) then
+    raise exception 'A public view exposes private columns';
   end if;
 end;
 $test$;
