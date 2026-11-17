@@ -403,10 +403,7 @@ try {
     await switchingPage.waitForTimeout(700);
     assert.equal(await switchingPage.getByRole("link", { name: "Admin", exact: true }).count(), 0);
     assert.equal(await switchingPage.locator("#totem").inputValue(), totem);
-    assert.equal(
-      await switchingPage.locator("html").getAttribute("data-e2e-session"),
-      "retained",
-    );
+    assert.equal(await switchingPage.locator("html").getAttribute("data-e2e-session"), "retained");
   } finally {
     releaseAdminResponse?.();
     await switching.close();
