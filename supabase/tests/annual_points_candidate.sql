@@ -35,13 +35,32 @@ begin
   if not exists(select 1 from public.annual_patrol_points() where patrol_id='a1000000-0000-4000-8000-000000000002' and km=10 and points=30) then raise exception 'senior/period failed'; end if;
 end;
 $test$;
+-- A real group with two scouts and one staff member. Approved distinct
+-- participants multiply the scouts' scores; the staff earns no points.
+insert into public.group_rides(id,created_by,ride_date,sport) values
+('d1000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001','2026-11-09','velo');
+insert into public.group_ride_members(group_id,user_id) values
+('d1000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000001'),
+('d1000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000002'),
+('d1000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000003');
+insert into public.activities(user_id,ride_date,km,strava_link,group_ride_id) values
+('b1000000-0000-4000-8000-000000000001','2026-11-09',10,'https://www.strava.com/activities/910006','d1000000-0000-4000-8000-000000000001'),
+('b1000000-0000-4000-8000-000000000002','2026-11-09',10,'https://www.strava.com/activities/910007','d1000000-0000-4000-8000-000000000001'),
+('b1000000-0000-4000-8000-000000000003','2026-11-09',10,'https://www.strava.com/activities/910008','d1000000-0000-4000-8000-000000000001');
+do $test$
+begin
+  if (select count(*) from public.activities where group_ride_id='d1000000-0000-4000-8000-000000000001' and status='approved') <> 3 then raise exception 'group fixture failed'; end if;
+  if not exists(select 1 from public.annual_patrol_points() where patrol_id='a1000000-0000-4000-8000-000000000001' and km=30 and points=152) then raise exception 'young group x challenge failed'; end if;
+  if not exists(select 1 from public.annual_patrol_points() where patrol_id='a1000000-0000-4000-8000-000000000002' and km=20 and points=66) then raise exception 'senior group x challenge failed'; end if;
+end;
+$test$;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000001',true);
 select set_config('request.jwt.claims','{"sub":"b1000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
 do $test$
 begin
-  if not exists(select 1 from public.annual_my_points() where km=20 and points=80) then raise exception 'own points failed'; end if;
-  if (select count(*) from public.annual_my_patrol_ranking()) <> 1 or not exists(select 1 from public.annual_my_patrol_ranking() where user_id=auth.uid() and km=20) then raise exception 'private patrol isolation failed'; end if;
+  if not exists(select 1 from public.annual_my_points() where km=30 and points=152) then raise exception 'own points failed'; end if;
+  if (select count(*) from public.annual_my_patrol_ranking()) <> 1 or not exists(select 1 from public.annual_my_patrol_ranking() where user_id=auth.uid() and km=30) then raise exception 'private patrol isolation failed'; end if;
   update public.annual_points_roster set scout_year=4 where user_id=auth.uid();
   if not exists(select 1 from public.annual_points_roster where user_id=auth.uid() and scout_year=1) then raise exception 'self modification of roster'; end if;
   begin
@@ -57,7 +76,7 @@ select set_config('request.jwt.claim.sub','b1000000-0000-4000-8000-000000000003'
 select set_config('request.jwt.claims','{"sub":"b1000000-0000-4000-8000-000000000003","role":"authenticated"}',true);
 do $test$
 begin
-  if not exists(select 1 from public.annual_my_patrol_ranking() where user_id=auth.uid() and km=100) then raise exception 'staff private ranking missing'; end if;
+  if not exists(select 1 from public.annual_my_patrol_ranking() where user_id=auth.uid() and km=110) then raise exception 'staff private ranking missing'; end if;
   if exists(select 1 from public.annual_my_patrol_ranking() where user_id in ('b1000000-0000-4000-8000-000000000001','b1000000-0000-4000-8000-000000000002')) then raise exception 'staff private ranking includes scouts'; end if;
 end;
 $test$;
