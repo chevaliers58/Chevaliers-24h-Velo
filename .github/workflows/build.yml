@@ -65,9 +65,10 @@ jobs:
         run: |
           deno check supabase/functions/strava-webhook/index.ts
           deno test supabase/functions/strava-webhook/signature_test.ts
-      - name: Type-check remaining Edge Functions (report only)
-        continue-on-error: true
-        run: deno check supabase/functions/strava-oauth/index.ts supabase/functions/app-notifications/index.ts supabase/functions/pending-activity-alert/index.ts
+      - name: Type-check remaining Edge Functions
+        run: |
+          deno check --node-modules-dir=none supabase/functions/strava-oauth/index.ts supabase/functions/app-notifications/index.ts supabase/functions/pending-activity-alert/index.ts
+          deno test supabase/functions/app-notifications/endpoint_test.ts
       - name: Build
         run: npm run build
         env:

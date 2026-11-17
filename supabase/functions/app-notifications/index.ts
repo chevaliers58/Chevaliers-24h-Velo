@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
+import { isTrustedPushEndpoint } from "./endpoint.ts";
 
 const url = Deno.env.get("SUPABASE_URL")!;
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -96,6 +97,10 @@ async function dispatchPending() {
       .eq("user_id", notification.user_id);
     let deliveryError = subscriptionError?.message ?? "";
     for (const row of subscriptions ?? []) {
+      if (!isTrustedPushEndpoint(row.endpoint) || row.subscription?.endpoint !== row.endpoint) {
+        deliveryError = "Adresse push non autorisée";
+        continue;
+      }
       try {
         await webpush.sendNotification(
           row.subscription,
@@ -238,7 +243,7 @@ Deno.serve(async (request) => {
       !subscription?.endpoint ||
       !subscription.keys?.p256dh ||
       !subscription.keys.auth ||
-      !subscription.endpoint.startsWith("https://")
+      !isTrustedPushEndpoint(subscription.endpoint)
     ) {
       return json({ error: "Abonnement push invalide" }, 400);
     }
