@@ -154,3 +154,7 @@ SHA de code testé : `81e5110f2bbef526569f4c4cebcff6f95177d669`. Tous les workfl
 ## Initialisation distante autorisée — 17 novembre 2026
 
 57/57 migrations, 3 fonctions Edge actives, 28 tables RLS, 2 buckets et 0 utilisateur/activité. Trois cron en pause. Contrôles et historique complet dans `CreateYourTroup/initialisation-supabase-2026-11-17.md` ; lire impérativement l'avertissement sur les versions de migrations générées par le connecteur avant tout db push. Les avis de sécurité persistent ; révision et tests réels avant ouverture. Aucun site publié ni compte réel créé.
+
+## Prévisualisation protégée
+
+Configuration Vercel distincte préparée dans `preview/chevaliers58-vercel` : script limité à Preview, routage /velo et en-têtes, aucune clé réelle en Git. Voir `CreateYourTroup/previsualisation-protegee.md`. L'hébergeur n'est pas connecté ; aucun déploiement ni URL réelle. Attendre accès hébergeur et vérifier protection d'accès avant toute utilisation du Supabase réel.
