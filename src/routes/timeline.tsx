@@ -87,7 +87,9 @@ function buildDistanceMilestones(
 ): TimelineEvent[] {
   const events: TimelineEvent[] = [];
   const overrideByKm = new Map(overrides.map((override) => [override.milestone_km, override]));
-  const milestones = stages.filter((s) => s.target_km > 0).sort((a, b) => a.target_km - b.target_km);
+  const milestones = stages
+    .filter((s) => s.target_km > 0)
+    .sort((a, b) => a.target_km - b.target_km);
   let total = 0;
 
   for (const activity of activities) {
@@ -107,9 +109,7 @@ function buildDistanceMilestones(
         year,
         date_str: dateStr,
         title: override?.title ?? `${milestone.name} — ${reachedKm.toLocaleString("fr-FR")} km !`,
-        description:
-          override?.description ??
-          milestone.description,
+        description: override?.description ?? milestone.description,
         image_url: null,
         drive_url: null,
         tag: "Palier de la troupe",
