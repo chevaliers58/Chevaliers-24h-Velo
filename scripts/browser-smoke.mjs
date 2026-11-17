@@ -435,7 +435,10 @@ try {
     await switchingPage.getByRole("button", { name: /Classement Individuel/ }).click();
     await switchingPage.getByText("Membre Test Navigateur", { exact: true }).first().waitFor();
     assert.equal(
-      await switchingPage.getByText("Admin Test Navigateur", { exact: true }).count(),
+      await switchingPage
+        .getByTestId("individual-rankings")
+        .getByText("Admin Test Navigateur", { exact: true })
+        .count(),
       0,
     );
     const detailObserver = await switching.newPage();

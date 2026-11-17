@@ -31,6 +31,7 @@ create table public.annual_double_points_challenges (
   starts_on date not null,
   ends_on date not null,
   enabled boolean not null default true,
+  multiplier numeric(4,2) not null default 2 check (multiplier between 1 and 10),
   check (starts_on <= ends_on)
 );
 
@@ -63,9 +64,12 @@ select a.id as activity_id,a.user_id,r.patrol_id,a.ride_date,a.km,
        case when r.group_kind='scout' and r.scout_year in (1,2) then 2
             when r.group_kind='scout' then 1
             else s.other_rate end as base_rate,
-       case when exists(select 1 from public.annual_double_points_challenges c
-                        where c.enabled and a.ride_date between c.starts_on and c.ends_on)
-            then 2 else 1 end as multiplier
+       coalesce((select max(c.multiplier) from public.annual_double_points_challenges c
+                 where c.enabled and a.ride_date between c.starts_on and c.ends_on),1) as multiplier,
+       case when a.group_ride_id is null then 1 else
+         least(2::numeric, greatest(1::numeric, 1 + 0.2 * ((select count(distinct g.user_id)
+           from public.activities g where g.group_ride_id=a.group_ride_id and g.status='approved') - 2)))
+       end as group_multiplier
 from public.activities a
 join public.annual_points_settings s on s.singleton and s.enabled
   and a.ride_date between s.starts_on and s.ends_on
@@ -81,7 +85,7 @@ where a.status='approved' and r.group_kind <> 'staff';
 create function public.annual_patrol_points(_from date default null,_to date default null)
 returns table(patrol_id uuid, patrol_name text, km numeric, points numeric)
 language sql stable security definer set search_path='' as $$
-  select p.id,p.name, coalesce(sum(a.km),0),coalesce(sum(a.km*a.base_rate*a.multiplier),0)
+  select p.id,p.name, coalesce(sum(a.km),0),coalesce(sum(a.km*a.base_rate*a.multiplier*a.group_multiplier),0)
   from public.patrols p left join chevaliers_private.annual_activity_points a
     on a.patrol_id=p.id and (_from is null or a.ride_date>=_from) and (_to is null or a.ride_date<=_to)
   where p.category <> 'staff'
@@ -93,9 +97,41 @@ grant execute on function public.annual_patrol_points(date,date) to anon,authent
 create function public.annual_my_points(_from date default null,_to date default null)
 returns table(km numeric,points numeric)
 language sql stable security definer set search_path='' as $$
-  select coalesce(sum(a.km),0),coalesce(sum(a.km*a.base_rate*a.multiplier),0)
+  select coalesce(sum(a.km),0),coalesce(sum(a.km*a.base_rate*a.multiplier*a.group_multiplier),0)
   from chevaliers_private.annual_activity_points a
   where a.user_id=auth.uid() and (_from is null or a.ride_date>=_from) and (_to is null or a.ride_date<=_to);
 $$;
 revoke all on function public.annual_my_points(date,date) from public,anon,authenticated;
 grant execute on function public.annual_my_points(date,date) to authenticated,service_role;
+
+-- Confirmed roster, not self-selected profile membership. No caller-supplied
+-- patrol id: staff see verified administrators only, scouts their current patrol.
+create function public.annual_my_patrol_ranking()
+returns table(user_id uuid, display_name text, km numeric)
+language sql stable security definer set search_path='' as $$
+  with caller as (
+    select auth.uid() as uid, public.has_role(auth.uid(),'admin') as staff,
+      (select r.patrol_id from public.annual_points_roster r
+       where r.user_id=auth.uid() and r.group_kind <> 'staff'
+         and r.valid_from <= (now() at time zone 'Europe/Brussels')::date
+       order by r.valid_from desc limit 1) as patrol
+    where auth.uid() is not null
+  ), current_roster as (
+    select distinct on (r.user_id) r.user_id,r.patrol_id,r.group_kind
+    from public.annual_points_roster r
+    where r.valid_from <= (now() at time zone 'Europe/Brussels')::date
+    order by r.user_id,r.valid_from desc
+  )
+  select p.id,coalesce(nullif(btrim(concat_ws(' ',p.totem,p.quali)),''),nullif(p.full_name,''),'Scout'),
+    coalesce(sum(a.km),0)
+  from caller c
+  join public.profiles p on (c.staff and public.has_role(p.id,'admin'))
+    or (not c.staff and c.patrol is not null and not public.has_role(p.id,'admin')
+      and exists(select 1 from current_roster r where r.user_id=p.id
+         and r.patrol_id=c.patrol and r.group_kind <> 'staff'))
+  left join public.activities a on a.user_id=p.id and a.status='approved'
+  group by p.id,p.totem,p.quali,p.full_name
+  order by 3 desc,2,p.id;
+$$;
+revoke all on function public.annual_my_patrol_ranking() from public,anon,authenticated;
+grant execute on function public.annual_my_patrol_ranking() to authenticated;

@@ -1276,7 +1276,7 @@ function IndexForViewer() {
             )}
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-6" data-testid="individual-rankings">
             {/* Search bar & count */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card p-3 rounded-2xl border border-border/80 shadow-sm">
               <div className="relative flex-1">
