@@ -97,14 +97,13 @@ function RankingScreen() {
             value={group}
             onChange={setGroup}
             options={[
-              { value: "all", label: "Tout le monde" },
+              { value: "all", label: "Général (hors staff)" },
               { value: "young", label: "Jeunes (1re et 2e)" },
               { value: "scouts", label: "Scouts (1re à 4e)" },
               { value: "1", label: "1re" },
               { value: "2", label: "2e" },
               { value: "3", label: "3e" },
               { value: "4", label: "4e" },
-              { value: "staff", label: "Staff" },
             ]}
           />
         )}

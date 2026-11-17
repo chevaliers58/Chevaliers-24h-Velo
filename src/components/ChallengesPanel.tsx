@@ -108,14 +108,26 @@ export function ChallengesPanel() {
         .order("created_at", { ascending: false }),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (supabase as any).rpc("scout_challenge_leaderboard"),
-      supabase.from("profiles_public").select("id,full_name,totem").order("full_name"),
+      supabase
+        .from("profiles_public")
+        .select("id,full_name,totem,is_admin,patrols(category)")
+        .order("full_name"),
     ]);
     const list = (challengeRows || []) as Challenge[];
     setChallenges(list);
-    setRanking((ranks || []) as Rank[]);
+    const eligible = new Set(
+      (profiles || [])
+        .filter((p) => !p.is_admin && p.patrols?.category !== "staff")
+        .map((p) => p.id),
+    );
+    setRanking(((ranks || []) as Rank[]).filter((r) => eligible.has(r.user_id)));
     if (!list.length) {
       setParticipants([]);
-      setScouts((profiles || []).filter((p): p is Scout => !!p.id));
+      setScouts(
+        (profiles || []).flatMap((p) =>
+          p.id ? [{ id: p.id, full_name: p.full_name, totem: p.totem }] : [],
+        ),
+      );
       return;
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -128,7 +140,11 @@ export function ChallengesPanel() {
       );
     const participantRows = (entries || []) as Participant[];
     setParticipants(participantRows);
-    setScouts((profiles || []).filter((p): p is Scout => !!p.id));
+    setScouts(
+      (profiles || []).flatMap((p) =>
+        p.id ? [{ id: p.id, full_name: p.full_name, totem: p.totem }] : [],
+      ),
+    );
   }, []);
   useEffect(() => {
     void load();

@@ -3,13 +3,16 @@
 begin;
 insert into public.patrols(id,name,category) values
 ('a1000000-0000-4000-8000-000000000001','Points test A','homme'),
-('a1000000-0000-4000-8000-000000000002','Points test B','homme');
+('a1000000-0000-4000-8000-000000000002','Points test B','homme'),
+('a1000000-0000-4000-8000-000000000003','Points test Staff','staff');
 insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values
 ('b1000000-0000-4000-8000-000000000001','young-points@local-test.invalid',now(),'{"full_name":"Young Test"}'),
-('b1000000-0000-4000-8000-000000000002','senior-points@local-test.invalid',now(),'{"full_name":"Senior Test"}');
+('b1000000-0000-4000-8000-000000000002','senior-points@local-test.invalid',now(),'{"full_name":"Senior Test"}'),
+('b1000000-0000-4000-8000-000000000003','staff-points@local-test.invalid',now(),'{"full_name":"Staff Test"}');
 insert into public.annual_points_roster(user_id,valid_from,patrol_id,group_kind,scout_year) values
 ('b1000000-0000-4000-8000-000000000001','2026-11-01','a1000000-0000-4000-8000-000000000001','scout',1),
-('b1000000-0000-4000-8000-000000000002','2026-11-01','a1000000-0000-4000-8000-000000000002','scout',4);
+('b1000000-0000-4000-8000-000000000002','2026-11-01','a1000000-0000-4000-8000-000000000002','scout',4),
+('b1000000-0000-4000-8000-000000000003','2026-11-01','a1000000-0000-4000-8000-000000000003','staff',null);
 update public.annual_points_settings set enabled=true,starts_on='2026-11-01';
 insert into public.annual_double_points_challenges(title,starts_on,ends_on) values
 ('Week-end double','2026-11-07','2026-11-08'),
@@ -19,11 +22,14 @@ insert into public.activities(user_id,ride_date,km,strava_link) values
 ('b1000000-0000-4000-8000-000000000001','2026-11-04',10,'https://www.strava.com/activities/910001'),
 ('b1000000-0000-4000-8000-000000000001','2026-11-08',10,'https://www.strava.com/activities/910002'),
 ('b1000000-0000-4000-8000-000000000002','2026-11-08',10,'https://www.strava.com/activities/910003'),
-('b1000000-0000-4000-8000-000000000002','2026-10-28',10,'https://www.strava.com/activities/910004');
+('b1000000-0000-4000-8000-000000000002','2026-10-28',10,'https://www.strava.com/activities/910004'),
+('b1000000-0000-4000-8000-000000000003','2026-11-08',100,'https://www.strava.com/activities/910005');
 insert into public.activities(user_id,ride_date,km,proof_path,status) values
 ('b1000000-0000-4000-8000-000000000001','2026-11-08',99,'synthetic-points-only.jpg','pending');
 do $test$
 begin
+  if exists(select 1 from public.annual_patrol_points() where patrol_id='a1000000-0000-4000-8000-000000000003') then raise exception 'staff patrol in annual points'; end if;
+  if exists(select 1 from chevaliers_private.annual_activity_points where user_id='b1000000-0000-4000-8000-000000000003') then raise exception 'staff activity yields points'; end if;
   if not exists(select 1 from public.annual_patrol_points() where patrol_id='a1000000-0000-4000-8000-000000000001' and km=20 and points=60) then raise exception 'young rate/overlap failed'; end if;
   if not exists(select 1 from public.annual_patrol_points() where patrol_id='a1000000-0000-4000-8000-000000000002' and km=10 and points=20) then raise exception 'senior/period failed'; end if;
 end;

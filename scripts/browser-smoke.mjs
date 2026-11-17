@@ -385,6 +385,16 @@ try {
   console.log("PASS administrative timeline creation and anonymous read");
 
   stage = "late admin role response after account switch";
+  // A separate non-staff member keeps the privacy regression meaningful now
+  // that verified staff are excluded from the individual rankings.
+  good(
+    await admin.auth.admin.createUser({
+      email: "masked-member-e2e@example.com",
+      password,
+      email_confirm: true,
+      user_metadata: { full_name: "Membre Test Navigateur", patrol_id: patrol.id, scout_year: "3" },
+    }),
+  );
   const switching = await context();
   const switchingPage = await switching.newPage();
   const controllingPage = await switching.newPage();
@@ -423,7 +433,8 @@ try {
     await switchingPage.goto(base + "/");
     await eventually(() => held, "captured genuine admin role response");
     await switchingPage.getByRole("button", { name: /Classement Individuel/ }).click();
-    await switchingPage.getByText("Admin Test Navigateur", { exact: true }).first().waitFor();
+    await switchingPage.getByText("Membre Test Navigateur", { exact: true }).first().waitFor();
+    assert.equal(await switchingPage.getByText("Admin Test Navigateur", { exact: true }).count(), 0);
     const detailObserver = await switching.newPage();
     await detailObserver.goto(base + "/scout/" + created.user.id);
     await detailObserver
@@ -438,7 +449,7 @@ try {
     await controllingPage.getByRole("button", { name: "Déconnexion", exact: true }).click();
     await switchingPage.getByRole("link", { name: "Connexion", exact: true }).first().waitFor();
     await switchingPage.getByRole("button", { name: /Classement Individuel/ }).click();
-    await switchingPage.getByText("Admin T.", { exact: true }).first().waitFor();
+    await switchingPage.getByText("Membre T.", { exact: true }).first().waitFor();
     await detailObserver.getByRole("heading", { name: "Admin T.", exact: true }).waitFor();
     assert.equal(
       await detailObserver
@@ -447,7 +458,7 @@ try {
       0,
     );
     assert.equal(
-      await switchingPage.getByText("Admin Test Navigateur", { exact: true }).count(),
+      await switchingPage.getByText("Membre Test Navigateur", { exact: true }).count(),
       0,
     );
     await login(controllingPage, email);

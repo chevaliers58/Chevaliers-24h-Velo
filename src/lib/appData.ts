@@ -124,7 +124,7 @@ export function rankScouts(data: TroopData | undefined, period: AppPeriod, sport
   }
   return data.profiles
     .map((p) => {
-      const staff = isStaffPatrol(p.patrols) || (!p.patrols && !!p.is_admin);
+      const staff = isStaffPatrol(p.patrols) || !!p.is_admin;
       const t = totals.get(p.id) ?? { km: 0, rides: 0 };
       return {
         user_id: p.id,
@@ -237,13 +237,12 @@ export function daysUntil(iso: string) {
   return Math.max(0, Math.ceil((Date.parse(iso) - Date.now()) / 864e5));
 }
 
-/** Groupe de comparaison : tout le monde, les scouts (1re à 4e, sans le staff), une année, ou le staff. */
-export type AppGroup = "all" | "young" | "scouts" | "1" | "2" | "3" | "4" | "staff";
+/** Comparaisons individuelles : les chefs ne sont jamais classés. */
+export type AppGroup = "all" | "young" | "scouts" | "1" | "2" | "3" | "4";
 
 export function inGroup(row: Pick<ScoutRow, "is_staff" | "scout_year">, group: AppGroup) {
-  if (group === "all") return true;
-  if (group === "staff") return row.is_staff;
   if (row.is_staff) return false;
+  if (group === "all") return true;
   if (group === "young") return row.scout_year === 1 || row.scout_year === 2;
   return group === "scouts" || row.scout_year === Number(group);
 }

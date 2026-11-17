@@ -5,7 +5,6 @@ create table public.annual_points_settings (
   starts_on date,
   ends_on date not null default date '2027-03-21',
   enabled boolean not null default false,
-  staff_rate smallint not null default 1 check (staff_rate in (0,1,2)),
   other_rate smallint not null default 1 check (other_rate in (0,1,2)),
   check (starts_on is null or starts_on <= ends_on),
   check (not enabled or starts_on is not null)
@@ -63,7 +62,6 @@ create view chevaliers_private.annual_activity_points as
 select a.id as activity_id,a.user_id,r.patrol_id,a.ride_date,a.km,
        case when r.group_kind='scout' and r.scout_year in (1,2) then 2
             when r.group_kind='scout' then 1
-            when r.group_kind='staff' then s.staff_rate
             else s.other_rate end as base_rate,
        case when exists(select 1 from public.annual_double_points_challenges c
                         where c.enabled and a.ride_date between c.starts_on and c.ends_on)
@@ -77,7 +75,7 @@ cross join lateral (
   where x.user_id=a.user_id and x.valid_from<=a.ride_date
   order by x.valid_from desc limit 1
 ) r
-where a.status='approved';
+where a.status='approved' and r.group_kind <> 'staff';
 
 -- Numeric arithmetic: no per-activity rounding; only presentation rounds.
 create function public.annual_patrol_points(_from date default null,_to date default null)
@@ -86,6 +84,7 @@ language sql stable security definer set search_path='' as $$
   select p.id,p.name, coalesce(sum(a.km),0),coalesce(sum(a.km*a.base_rate*a.multiplier),0)
   from public.patrols p left join chevaliers_private.annual_activity_points a
     on a.patrol_id=p.id and (_from is null or a.ride_date>=_from) and (_to is null or a.ride_date<=_to)
+  where p.category <> 'staff'
   group by p.id,p.name order by 4 desc,p.name;
 $$;
 revoke all on function public.annual_patrol_points(date,date) from public,anon,authenticated;

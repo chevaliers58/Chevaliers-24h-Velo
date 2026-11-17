@@ -117,7 +117,7 @@ const PERIOD_LABELS: Record<Period, string> = {
   lastMonth: "Mois passé",
   all: "Depuis le début",
 };
-type ScoutYearFilter = "all" | "scouts" | "1" | "2" | "3" | "4" | "chef";
+type ScoutYearFilter = "all" | "scouts" | "young" | "1" | "2" | "3" | "4";
 type SportMode = "velo" | "course" | "marche" | "all";
 
 /** Icône du mode de classement (Tous = vélo). */
@@ -342,9 +342,8 @@ function IndexForViewer() {
         const items: LeaderboardItem[] = profs
           .map((p) => {
             const pt = p.patrols;
-            // Staff = membre d'une patrouille staff. Être admin ou ne pas avoir
-            // d'année scout ne suffit pas (un admin sans patrouille compte comme staff).
-            const isStaffOrChef = isStaffPatrol(pt) || (!pt && !!p.is_admin);
+            // Le staff et les admins ne participent pas aux classements individuels.
+            const isStaffOrChef = isStaffPatrol(pt) || !!p.is_admin;
 
             const userActs = acts.filter((a) => {
               if (a.user_id !== p.id) return false;
@@ -451,8 +450,8 @@ function IndexForViewer() {
 
       // 2. Scout year filter:
       if (scoutYear !== "all") {
-        if (scoutYear === "chef") {
-          if (!isStaffOrChef) return false;
+        if (scoutYear === "young") {
+          if (isStaffOrChef || (r.scout_year !== 1 && r.scout_year !== 2)) return false;
         } else if (scoutYear === "scouts") {
           // Scouts de 1re à 4e année ensemble, sans le staff
           if (isStaffOrChef) return false;
@@ -490,10 +489,8 @@ function IndexForViewer() {
       .filter((p) => {
         if (!p) return false;
         const staff = isStaffPatrol(p);
-        // Filtre « Staff » : uniquement les patrouilles staff ;
-        // filtre par année : pas de patrouilles staff (elles n'ont pas d'année)
-        if (scoutYear === "chef" && !staff) return false;
-        if (scoutYear !== "all" && scoutYear !== "chef" && staff) return false;
+        // Le staff compte en kilomètres lorsque toutes les années sont affichées.
+        if (scoutYear !== "all" && staff) return false;
         return true;
       })
       .map((p) => {
@@ -510,7 +507,9 @@ function IndexForViewer() {
             })
           : [];
         const km = members.reduce((s, r) => s + Number(r?.km || 0), 0);
-        const pelotonPoints = members.reduce((s, r) => s + (r?.peloton?.points || 0), 0);
+        const pelotonPoints = members
+          .filter((r) => !r.is_chef && r.category !== "staff")
+          .reduce((s, r) => s + (r?.peloton?.points || 0), 0);
         return {
           id: p.id,
           name: p.name,
@@ -525,7 +524,9 @@ function IndexForViewer() {
   }, [patrols, filteredScouts, scoutYear]);
 
   const scoutRows = useMemo(() => {
-    let list = [...filteredScouts].sort((a, b) => Number(b.km) - Number(a.km));
+    let list = filteredScouts
+      .filter((s) => !s.is_chef && s.category !== "staff")
+      .sort((a, b) => Number(b.km) - Number(a.km));
     if (scoutSearch.trim()) {
       const q = scoutSearch.toLowerCase().trim();
       list = list.filter(
@@ -551,7 +552,9 @@ function IndexForViewer() {
   }, [scoutRows]);
 
   const activeScoutsCount = useMemo(() => {
-    return filteredScouts.filter((s) => Number(s.km || 0) > 0).length;
+    return filteredScouts.filter(
+      (s) => !s.is_chef && s.category !== "staff" && Number(s.km || 0) > 0,
+    ).length;
   }, [filteredScouts]);
 
   const rankedPatrols = useMemo(() => {
@@ -1112,8 +1115,8 @@ function IndexForViewer() {
             <FilterPill active={scoutYear === "4"} onClick={() => setScoutYear("4")}>
               4ème année
             </FilterPill>
-            <FilterPill active={scoutYear === "chef"} onClick={() => setScoutYear("chef")}>
-              👑 Staff
+            <FilterPill active={scoutYear === "young"} onClick={() => setScoutYear("young")}>
+              Jeunes (1re et 2e)
             </FilterPill>
           </div>
         </div>
@@ -1245,7 +1248,11 @@ function IndexForViewer() {
             Impossible de synchroniser le classement. Réessaie dans quelques instants.
           </div>
         ) : view === "peloton" ? (
-          <PelotonPanel scouts={filteredScouts} patrols={patrolRows} sportMode={sportMode} />
+          <PelotonPanel
+            scouts={filteredScouts.filter((s) => !s.is_chef && s.category !== "staff")}
+            patrols={patrolRows.filter((p) => !p.isChef)}
+            sportMode={sportMode}
+          />
         ) : view === "patrols" ? (
           <div className="space-y-3">
             {rankedPatrols.length === 0 ? (

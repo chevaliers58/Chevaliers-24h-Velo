@@ -1,5 +1,5 @@
 /**
- * Maillots du défi, calculés pour toute la troupe, staff inclus :
+ * Maillots du défi, calculés pour les scouts uniquement (hors staff) :
  * - maillot jaune : le plus de kilomètres ;
  * - maillot à pois (grimpeur) : le plus de dénivelé positif (D+) ;
  * - maillot blanc (meilleur jeune) : le plus de kilomètres parmi les scouts de
@@ -38,7 +38,7 @@ export const isWhiteJerseyEligible = (
   c: Pick<JerseyCandidate, "scout_year" | "category" | "is_chef">,
 ) => !c.is_chef && c.category !== "staff" && WHITE_JERSEY_YEARS.includes(Number(c.scout_year));
 
-/** Tous les participants concourent ensemble pour les maillots jaune et à pois. */
+/** Les scouts concourent ensemble pour les maillots jaune et à pois. */
 export function jerseyCategoryOf(): JerseyCategory {
   return "general";
 }
@@ -75,7 +75,7 @@ export function computeJerseys(
 ): Record<JerseyCategory, JerseyHolders> {
   const result = {} as Record<JerseyCategory, JerseyHolders>;
   for (const cat of JERSEY_CATEGORIES) {
-    const inCat = candidates;
+    const inCat = candidates.filter((c) => !c.is_chef && c.category !== "staff");
     result[cat] = {
       yellow: best(
         inCat,

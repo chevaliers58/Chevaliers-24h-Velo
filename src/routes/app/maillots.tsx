@@ -31,7 +31,7 @@ function JerseysScreen() {
     const candidates: JerseyCandidate[] = data.profiles.flatMap((p) => {
       const t = totals.get(p.id);
       if (!t) return [];
-      const staff = isStaffPatrol(p.patrols) || (!p.patrols && !!p.is_admin);
+      const staff = isStaffPatrol(p.patrols) || !!p.is_admin;
       return [
         {
           user_id: p.id,

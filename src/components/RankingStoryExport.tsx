@@ -60,7 +60,7 @@ export function RankingStoryExport() {
     }
     const candidates: JerseyCandidate[] = profiles.map((profile) => {
       const patrol = profile.patrols;
-      const staff = isStaffPatrol(patrol) || (!patrol && !!profile.is_admin);
+      const staff = isStaffPatrol(patrol) || !!profile.is_admin;
       const total = totals.get(profile.id) ?? { km: 0, dplus: 0 };
       return {
         user_id: profile.id,
