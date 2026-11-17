@@ -312,16 +312,20 @@ try {
   await mobilePage.waitForURL((url) => url.pathname === "/velo/app");
   await mobilePage.locator("html.app-standalone").waitFor({ state: "attached" });
   await mobilePage.getByText("Le défi kilomètres des patrouilles").waitFor();
-  await mobilePage.waitForFunction(async () => {
-    const registration = await navigator.serviceWorker.getRegistration();
-    return registration?.active?.state === "activated";
-  });
-  const registration = await mobilePage.evaluate(async () => {
-    const reg = await navigator.serviceWorker.getRegistration();
-    return { scope: reg?.scope, script: reg?.active?.scriptURL };
-  });
-  assert.equal(registration.scope, base + "/");
-  assert.equal(registration.script, base + "/sw.js");
+  // Check activation, scope and script URL together. A second getRegistration
+  // call can observe a transient registration while the app redirects/loads.
+  await mobilePage.waitForFunction(
+    async ({ scope, script }) => {
+      const registration = await navigator.serviceWorker.getRegistration();
+      return (
+        registration?.scope === scope &&
+        registration.active?.state === "activated" &&
+        registration.active.scriptURL === script
+      );
+    },
+    { scope: base + "/", script: base + "/sw.js" },
+    { timeout: 30000 },
+  );
   await mobilePage.reload();
   await mobilePage.waitForFunction(() => !!navigator.serviceWorker.controller);
   const manifest = await (await fetch(base + "/manifest.webmanifest")).json();
