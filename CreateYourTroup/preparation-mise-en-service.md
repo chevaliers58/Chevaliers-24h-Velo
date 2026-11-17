@@ -32,7 +32,7 @@ Cette procédure ne lance aucune action sur les services hébergés. Elle distin
 - Le lien manuel Strava et le club ne nécessitent pas de webhook.
 - Ne pas activer l'import automatique Strava avant la vérification de l'autorisation de partage des données dans le classement et la configuration de la nouvelle application API. Les secrets sont fournis dans le tableau de bord du projet, pas dans le code.
 - Notifications : les clés VAPID propres au nouveau projet et Resend sont à configurer si les services sont utilisés. L'inscription et l'envoi réels, le mail de vérification et les réinitialisations de mot de passe doivent être essayés sur l'environnement cible avant ouverture.
-- Tester le ménage d'abord en aperçu, puis sur des données de test désignées ; ne pas supprimer de données réelles lors de la préparation.
+- Le test du ménage a réussi dans une instance locale isolée (44096972619, seuils de 30/60/7 jours et protection des références). Sur le projet distant, vérifier d'abord l'aperçu, puis uniquement des données de test désignées ; ne pas supprimer de données réelles lors de la préparation.
 
 ## Point de contrôle
 
