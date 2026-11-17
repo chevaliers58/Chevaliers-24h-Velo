@@ -19,11 +19,15 @@ export function storagePathFromUrl(value: string | null | undefined): string | n
   const trimmed = value.trim();
   if (!trimmed) return null;
 
-  const marker = `/object/public/${BUCKET}/`;
-  const idx = trimmed.indexOf(marker);
-  let path = idx >= 0 ? trimmed.slice(idx + marker.length) : trimmed;
+  // Accepte les URL publiques historiques et les URL signées/authentifiées
+  // d'un bucket privé. Les paramètres de signature ne font pas partie du chemin.
+  const marker = new RegExp(`/object/(?:public|sign|authenticated)/${BUCKET}/`);
+  const match = trimmed.match(marker);
+  let path = match?.index !== undefined
+    ? trimmed.slice(match.index + match[0].length)
+    : trimmed;
 
-  // Retirer paramètres et ancre éventuels (?t=..., #...)
+  // Retirer paramètres et ancre éventuels (?token=..., #...)
   path = path.split("?")[0]?.split("#")[0] ?? "";
   try {
     path = decodeURIComponent(path);

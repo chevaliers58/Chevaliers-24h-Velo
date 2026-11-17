@@ -22,12 +22,13 @@ import {
   Filter,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { db, type Patrol, getPatrolEmblem } from "@/lib/database";
+import type { Patrol } from "@/lib/database";
+import { getPatrolEmblem } from "@/lib/patrolEmblem";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { isStaffPatrol, matchesCategory, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
+import { isStaffPatrol, matchesCategory } from "@/lib/categories";
 
 export interface PatrolDailyContributionChartProps {
   className?: string;
@@ -188,26 +189,7 @@ export function PatrolDailyContributionChart({
         .select("id, name, category, created_at")
         .order("name", { ascending: true });
 
-      let loadedPatrols = (patrolsData as Patrol[]) || [];
-      if (loadedPatrols.length === 0) {
-        loadedPatrols = db.getPatrols();
-      }
-
-      // S'assurer que le Staff est présent
-      const hasStaff = loadedPatrols.some(
-        (p) => p.name.toLowerCase().includes("staff") || p.name.toLowerCase().includes("chef"),
-      );
-      if (!hasStaff) {
-        loadedPatrols = [
-          ...loadedPatrols,
-          {
-            id: "staff",
-            name: TROOP_STAFF_PATROL_NAME,
-            category: "staff",
-            created_at: new Date().toISOString(),
-          },
-        ];
-      }
+      const loadedPatrols = (patrolsData as Patrol[]) || [];
       setPatrols(loadedPatrols);
 
       // 2. Définir la plage des 7 derniers jours
@@ -251,7 +233,7 @@ export function PatrolDailyContributionChart({
 
   useEffect(() => {
     loadData();
-    return db.subscribe(() => loadData(false));
+    return undefined;
   }, [loadData]);
 
   // Map des patrouilles

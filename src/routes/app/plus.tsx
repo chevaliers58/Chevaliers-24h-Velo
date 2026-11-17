@@ -21,7 +21,7 @@ import { AppCard, AppList, AppListRow, AppSection } from "@/components/app/AppUi
 import { AnimationToggle } from "@/components/AnimationToggle";
 import { TROOP_NAME } from "@/lib/troop-config";
 import { useAuth } from "@/lib/useAuth";
-import { getPatrolEmblem } from "@/lib/database";
+import { getPatrolEmblem } from "@/lib/patrolEmblem";
 
 export const Route = createFileRoute("/app/plus")({ ssr: false, component: MoreScreen });
 

@@ -23,7 +23,7 @@ import {
   type AppSport,
   type MyActivity,
 } from "@/lib/appData";
-import { cleanActivityNote, getActivitySport, SPORT_INFO } from "@/lib/database";
+import { cleanActivityNote, getActivitySport, SPORT_INFO } from "@/lib/activity";
 import { deleteActivity } from "@/lib/proofStorage";
 import { cn } from "@/lib/utils";
 

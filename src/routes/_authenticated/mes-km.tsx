@@ -24,14 +24,8 @@ import { groupSizes, pelotonMultiplier, type PelotonActivity } from "@/lib/pelot
 import { supabase } from "@/integrations/supabase/client";
 import { gpxDownloadUrl, gpxFileName } from "@/lib/gpxDownload";
 import { deleteActivity as deleteActivityWithFiles } from "@/lib/proofStorage";
-import {
-  db,
-  type Profile,
-  getActivitySport,
-  cleanActivityNote,
-  type ActivitySport,
-  SPORT_INFO,
-} from "@/lib/database";
+import type { Profile } from "@/lib/database";
+import { getActivitySport, cleanActivityNote, type ActivitySport, SPORT_INFO } from "@/lib/activity";
 import { cn } from "@/lib/utils";
 import { SportBadge, SPORT_COLORS } from "@/components/SportIcon";
 import { CorrectionNotice } from "@/components/CorrectionNotice";
@@ -100,12 +94,7 @@ function MesKm() {
       // ignore
     }
 
-    if (!p) {
-      p =
-        db.getProfile(user.id) ||
-        db.getProfiles().find((pr) => pr.email?.toLowerCase() === user.email?.toLowerCase()) ||
-        null;
-    }
+
     setProfile(p);
 
     // 2. Load patrols map
@@ -154,7 +143,7 @@ function MesKm() {
 
   useEffect(() => {
     load();
-    return db.subscribe(load);
+
   }, [load]);
 
   const remove = async (a: Act) => {
@@ -163,7 +152,7 @@ function MesKm() {
       if (error) {
         toast.error("Erreur : " + error);
       } else {
-        db.deleteActivity(a.id);
+
         toast.success("Sortie supprimée");
       }
       load();
@@ -239,7 +228,7 @@ function MesKm() {
               </div>
               <p className="mt-1 text-xs text-bark-foreground/80">
                 {profile?.patrol_id
-                  ? `Patrouille : ${patrolMap[profile.patrol_id] || db.getPatrols().find((p) => p.id === profile.patrol_id)?.name || "Non assignée"}`
+                  ? `Patrouille : ${patrolMap[profile.patrol_id] || "Non assignée"}`
                   : "Aucune patrouille sélectionnée"}
               </p>
             </div>

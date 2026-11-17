@@ -15,7 +15,8 @@ import {
   type AppPeriod,
   type AppSport,
 } from "@/lib/appData";
-import { getPatrolEmblem, SPORT_INFO } from "@/lib/database";
+import { SPORT_INFO } from "@/lib/activity";
+import { getPatrolEmblem } from "@/lib/patrolEmblem";
 import { cn } from "@/lib/utils";
 import { RankingStoryExport } from "@/components/RankingStoryExport";
 

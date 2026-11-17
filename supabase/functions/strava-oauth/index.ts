@@ -25,7 +25,7 @@ Deno.serve(async (request) => {
   const admin = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
 
   if (request.method === "POST") {
-    if (!clientId || !clientSecret) return json({ error: "Intégration Strava pas encore configurée" }, 503);
+    if (!clientId || !clientSecret || !Deno.env.get("SITE_URL")) return json({ error: "Intégration Strava ou SITE_URL pas encore configurée" }, 503);
     const token = (request.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
     const { data, error } = await admin.auth.getUser(token);
     if (error || !data.user) return json({ error: "Connexion requise" }, 401);

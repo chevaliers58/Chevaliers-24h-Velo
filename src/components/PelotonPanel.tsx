@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Users, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getPatrolEmblem } from "@/lib/database";
+import { getPatrolEmblem } from "@/lib/patrolEmblem";
 import type { PelotonUserScore } from "@/lib/peloton";
 
 type ScoutRow = {

@@ -1,6 +1,6 @@
 import { Bike, Footprints, PersonStanding, type LucideProps } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { SPORT_INFO, type ActivitySport } from "@/lib/database";
+import { SPORT_INFO, type ActivitySport } from "@/lib/activity";
 import { cn } from "@/lib/utils";
 
 /** Icône du sport : vélo, course à pied (empreintes) ou marche (silhouette). */

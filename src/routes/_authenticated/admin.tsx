@@ -35,18 +35,11 @@ import {
 import { useAuth } from "@/lib/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { approveActivity, rejectActivity } from "@/lib/proofStorage";
-import {
-  db,
-  type Patrol,
-  type Profile,
-  type Activity,
-  type TimelineEvent,
-  getActivitySport,
-  cleanActivityNote,
-} from "@/lib/database";
+import type { Patrol, Profile, Activity, TimelineEvent } from "@/lib/database";
+import { getActivitySport, cleanActivityNote } from "@/lib/activity";
 import { AdminUserList } from "@/components/AdminUserList";
 import { ExportDialog } from "@/components/ExportDialog";
-import { CATEGORY_LABELS, type PatrolCategory, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
+import { CATEGORY_LABELS, type PatrolCategory } from "@/lib/categories";
 import { SeasonalThemeAdmin } from "@/components/SeasonalThemeAdmin";
 import { CleanupAdmin } from "@/components/CleanupAdmin";
 import { ScoutSportifAdmin, type SportifBadge } from "@/components/ScoutSportifAdmin";
@@ -116,29 +109,9 @@ function Admin() {
     const { data: ptData } = (await supabase.from("patrols").select("*").order("name")) as {
       data: Patrol[] | null;
     };
-    const ptList = ptData && ptData.length > 0 ? ptData : db.getPatrols();
+    const ptList = ptData ?? [];
     setPatrols(ptList);
 
-    const hasStaffInDb = ptData?.some(
-      (p) => p.name.toLowerCase().includes("staff") || p.name.toLowerCase().includes("chef"),
-    );
-    if (!hasStaffInDb && ptData && ptData.length > 0) {
-      supabase
-        .from("patrols")
-        .insert({ name: TROOP_STAFF_PATROL_NAME, category: "staff" })
-        .then((res) => {
-          if (!res.error) {
-            supabase
-              .from("patrols")
-              .select("*")
-              .order("name")
-              .then((fresh) => {
-                const fData = (fresh as { data: Patrol[] | null }).data;
-                if (fData) setPatrols(fData);
-              });
-          }
-        });
-    }
 
     // 2. Profiles
     const { data: prData } = (await supabase.from("profiles").select("*")) as {
@@ -170,7 +143,7 @@ function Admin() {
     if (rolesData && rolesData.length > 0) {
       setAdmins(rolesData.map((r: { user_id: string }) => r.user_id));
     } else {
-      setAdmins(db.getAdmins());
+      setAdmins([]);
     }
 
     try {
@@ -181,10 +154,10 @@ function Admin() {
       if (tlData && tlData.length > 0) {
         setTimeline(tlData as unknown as TimelineEvent[]);
       } else {
-        setTimeline(db.getTimeline());
+        setTimeline([]);
       }
     } catch {
-      setTimeline(db.getTimeline());
+      setTimeline([]);
     }
 
     // 6. Countdowns from Supabase
@@ -203,7 +176,7 @@ function Admin() {
 
   useEffect(() => {
     load();
-    return db.subscribe(load);
+
   }, [load]);
 
   if (loading) {
@@ -247,8 +220,8 @@ function Admin() {
     if (error) {
       toast.error("Erreur : " + error);
     } else {
-      db.updateActivityStatus(act.id, "approved");
-      toast.success("Sortie validée et photo de preuve supprimée.");
+
+      toast.success("Sortie validée. La photo de preuve sera conservée 30 jours.");
     }
     load();
   };
@@ -258,7 +231,7 @@ function Admin() {
     if (error) {
       toast.error("Erreur : " + error);
     } else {
-      db.updateActivityStatus(act.id, "rejected");
+
       toast.error("Sortie refusée.");
     }
     load();
@@ -273,7 +246,7 @@ function Admin() {
       name: newPatrol.name.trim(),
       category: cat,
     })) as { error: { message: string } | null };
-    db.addPatrol(newPatrol.name.trim(), newPatrol.category);
+
     if (res?.error) {
       toast.error("Erreur : " + res.error.message);
     } else {
@@ -288,7 +261,7 @@ function Admin() {
       const res = (await supabase.from("patrols").delete().eq("id", id)) as {
         error: { message: string } | null;
       };
-      db.deletePatrol(id);
+
       if (res?.error) {
         toast.error("Erreur : " + res.error.message);
       } else {

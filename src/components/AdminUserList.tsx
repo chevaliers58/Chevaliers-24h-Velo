@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { db, type Profile, type Patrol } from "@/lib/database";
+import type { Profile, Patrol } from "@/lib/database";
 import { cn } from "@/lib/utils";
 import { isStaffPatrol } from "@/lib/categories";
 
@@ -92,9 +92,7 @@ export function AdminUserList({
 
   // Check if a profile is an admin
   const isUserAdmin = useCallback(
-    (p: Profile): boolean => {
-      return !!p.is_admin || admins.includes(p.id);
-    },
+    (p: Profile): boolean => admins.includes(p.id),
     [admins],
   );
 
@@ -127,49 +125,25 @@ export function AdminUserList({
       toast.error("Tu ne peux pas retirer tes propres droits administrateur.");
       return;
     }
-
     setTogglingUserId(target.id);
     const displayName = target.full_name || target.totem || target.email || "Ce membre";
 
     try {
-      // 1. Update profiles table is_admin column in Supabase
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error: profErr } = (await (supabase.from("profiles") as any)
-        .update({ is_admin: newChecked })
-        .eq("id", target.id)) as { error: { message: string } | null };
-
-      if (profErr) {
-        console.warn("Mise à jour profiles.is_admin :", profErr);
-      }
-
-      // 2. Update user_roles table
       if (newChecked) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error: roleErr } = (await (supabase.from("user_roles") as any).upsert(
+        const { error } = await supabase.from("user_roles").upsert(
           { user_id: target.id, role: "admin" },
-          { onConflict: "user_id,role" },
-        )) as { error: { message: string } | null };
-
-        if (roleErr) {
-          console.warn("Mise à jour user_roles :", roleErr);
-        }
-        db.setAdmin(target.id);
+          { onConflict: "user_id,role", ignoreDuplicates: true },
+        );
+        if (error) throw error;
         toast.success(
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-emerald-500" />
-            <span>
-              Privilèges <strong>Admin</strong> accordés à {displayName} !
-            </span>
+            <span>Privilèges <strong>Admin</strong> accordés à {displayName} !</span>
           </div>,
         );
       } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.from("user_roles") as any)
-          .delete()
-          .eq("user_id", target.id)
-          .eq("role", "admin");
-
-        db.removeAdmin(target.id);
+        const { error } = await supabase.from("user_roles").delete().eq("user_id", target.id).eq("role", "admin");
+        if (error) throw error;
         toast.info(
           <div className="flex items-center gap-2">
             <ShieldAlert className="h-4 w-4 text-amber-500" />
@@ -177,7 +151,6 @@ export function AdminUserList({
           </div>,
         );
       }
-
       await onRefresh();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -198,7 +171,6 @@ export function AdminUserList({
       if (res?.error) {
         toast.error("Erreur mise à jour patrouille : " + res.error.message);
       } else {
-        db.updateProfile(userId, { patrol_id: newPatrolId || undefined });
         toast.success("Patrouille mise à jour dans Supabase !");
         await onRefresh();
       }
@@ -219,21 +191,14 @@ export function AdminUserList({
         _email: mail,
         _make_admin: true,
       });
-
-      const target = profiles.find((p) => p.email?.toLowerCase() === mail);
-      if (target) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.from("profiles") as any).update({ is_admin: true }).eq("id", target.id);
-        db.setAdmin(target.id);
-      }
-
-      if (error && !target) {
+      if (error) {
         toast.error(error.message);
-      } else {
-        toast.success(`${mail} est désormais administrateur !`);
-        setAdminEmailInput("");
-        await onRefresh();
+        return;
       }
+
+      toast.success(`${mail} est désormais administrateur !`);
+      setAdminEmailInput("");
+      await onRefresh();
     } catch (err) {
       toast.error("Erreur d'attribution par email.");
     } finally {
@@ -475,7 +440,7 @@ export function AdminUserList({
                 <th className="py-3 px-4 text-center">
                   <div className="inline-flex items-center gap-1.5 justify-center">
                     <Shield className="h-3.5 w-3.5 text-amber-600" />
-                    <span>Statut Admin (is_admin)</span>
+                    <span>Statut administrateur</span>
                   </div>
                 </th>
               </tr>
@@ -511,12 +476,7 @@ export function AdminUserList({
                       <td className="col-span-2 block md:table-cell md:py-3.5 md:px-4">
                         <div className="flex items-center gap-3">
                           <div
-                            className={cn(
-                              "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-black text-sm",
-                              isAdm
-                                ? "bg-amber-500/10 text-amber-700"
-                                : "bg-primary/10 text-primary",
-                            )}
+                            className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-black text-sm", isAdm ? "bg-amber-500/10 text-amber-700" : "bg-primary/10 text-primary")}
                           >
                             {p.totem ? (
                               p.totem.charAt(0).toUpperCase()
@@ -589,7 +549,7 @@ export function AdminUserList({
 
                       {/* Scout Year / Role status */}
                       <td className="block self-center text-right md:table-cell md:py-3.5 md:px-4 md:text-left">
-                        {p.is_chef || isStaffPatrol(currentPatrol) ? (
+                        {isStaffPatrol(currentPatrol) ? (
                           <Badge className="bg-amber-500/15 text-amber-700 text-[10px] font-bold">
                             Staff
                           </Badge>

@@ -29,7 +29,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/useAuth";
-import { db } from "@/lib/database";
+
 import { ForgotPassword } from "@/components/ForgotPassword";
 import { isStaffPatrol, isTroopStaffPatrol, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
 
@@ -239,12 +239,6 @@ function AuthPage() {
         }
       }
 
-      // Also keep local DB in sync
-      try {
-        db.signIn(email);
-      } catch {
-        // ignore
-      }
 
       await refreshProfile();
       setBusy(false);
@@ -346,22 +340,7 @@ function AuthPage() {
         }
       }
 
-      // 3. Keep local DB synchronized
-      try {
-        db.signUp(email, {
-          full_name: d.full_name.trim(),
-          totem: d.totem?.trim() || null,
-          quali: d.quali?.trim() || null,
-          scout_year: scoutYearNum,
-          patrol_id: targetPatrolId,
-          phone: d.phone?.trim() || null,
-          birth_day: d.birth_day ? Number(d.birth_day) : null,
-          birth_month: d.birth_month ? Number(d.birth_month) : null,
-          is_chef: isStaff,
-        });
-      } catch {
-        // ignore
-      }
+
 
       await refreshProfile();
       setBusy(false);
