@@ -178,3 +178,7 @@ cp -a "$src/.output/pages/." .output/pages/
 ```
 
 Ne pas réutiliser ce script pour une publication officielle ; avant ouverture les risques de sécurité Supabase, règles de confidentialité et d'inscription, dates, SMTP, URL Auth et SITE_URL restent à traiter.
+
+### Résultat du déploiement
+
+- Staging dpl_6TDyJZUMa7zwWLMmFUSfQKG9aKd6 : READY ; compilation 36 s, commit exact 982b3c819d22f1592b2ba753e878be262230a7a6. URL : https://chevaliers58-velo-preview-nakqgpf4k-chevaliers58-6014.vercel.app/velo/ (connexion Vercel). Protection all confirmée dans le projet, X-Robots-Tag noindex observé. Requêtes HTTP **authentifiées** : 200 accueil, /auth, /app/classement, /nouveau-mot-de-passe, manifeste, service worker, JS, CSS. Le module client-COTbkEF2.js contient l'URL du Supabase cible (aucune clé imprimée). Aucun essai en navigateur non connecté ni inscription réelle effectué. La prévisualisation est disponible pour le responsable, pas une validation de l'ensemble de la production. Il faudra configurer les redirections Supabase Auth et SITE_URL, confirmer l'accès sur appareil réel, puis tester comptes fictifs, confidentialité et dates avant ouverture. Le domaine 19-58.net reste intact. Aucun cron réactivé.
