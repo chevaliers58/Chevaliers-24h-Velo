@@ -297,3 +297,237 @@ export function AnnualChallenges({ manage = false }: { manage?: boolean }) {
     </section>
   );
 }
+
+type AnnualSettings = {
+  starts_on: string | null;
+  ends_on: string;
+  enabled: boolean;
+};
+type RosterMember = {
+  id: string;
+  full_name: string | null;
+  totem: string | null;
+  scout_year: number | null;
+  patrol_id: string | null;
+  is_admin: boolean;
+};
+type RosterPatrol = { id: string; name: string; category: string };
+type RosterEntry = {
+  user_id: string;
+  patrol_id: string;
+  group_kind: "scout" | "staff" | "other";
+  scout_year: number | null;
+  valid_from: string;
+};
+
+export function MyAnnualPoints() {
+  const { user, isAdmin } = useAuth();
+  const q = useQuery<{ points: number; km: number }[]>({
+    queryKey: ["my-annual-points", user?.id],
+    enabled: !!user && !isAdmin,
+    gcTime: 0,
+    retry: false,
+    queryFn: async () => {
+      const { data, error } = await db.rpc("annual_my_points");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  if (!user || isAdmin) return null;
+  return (
+    <div className={panel}>
+      <h2 className="font-display font-bold">Mes points pour la patrouille</h2>
+      {q.isError ? (
+        <p className="text-sm text-muted-foreground">Barème en attente d’activation.</p>
+      ) : (
+        <p className="text-2xl font-bold tabular-nums">
+          {q.isPending ? "…" : formatPoints(q.data?.[0]?.points ?? 0)} pts
+        </p>
+      )}
+      <p className="text-xs text-muted-foreground">
+        Année confirmée par le staff, sorties validées et bonus applicables.
+      </p>
+    </div>
+  );
+}
+
+export function AnnualSeasonAdmin() {
+  const { user, isAdmin } = useAuth();
+  const qc = useQueryClient();
+  const q = useQuery<{
+    settings: AnnualSettings;
+    members: RosterMember[];
+    patrols: RosterPatrol[];
+    entries: RosterEntry[];
+  }>({
+    queryKey: ["annual-season-admin", user?.id],
+    enabled: !!user && isAdmin,
+    gcTime: 0,
+    retry: false,
+    queryFn: async () => {
+      const [s, m, p, r] = await Promise.all([
+        db.from("annual_points_settings").select("starts_on,ends_on,enabled").single(),
+        db.from("profiles").select("id,full_name,totem,scout_year,patrol_id,is_admin"),
+        db.from("patrols").select("id,name,category").order("name"),
+        db.from("annual_points_roster").select("*").order("valid_from", { ascending: false }),
+      ]);
+      for (const res of [s, m, p, r]) {
+        if (res.error) throw res.error;
+      }
+      return {
+        settings: s.data as AnnualSettings,
+        members: (m.data ?? []) as RosterMember[],
+        patrols: (p.data ?? []) as RosterPatrol[],
+        entries: (r.data ?? []) as RosterEntry[],
+      };
+    },
+  });
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [member, setMember] = useState("");
+  const [patrol, setPatrol] = useState("");
+  const [year, setYear] = useState("1");
+  const [from, setFrom] = useState("");
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  if (!isAdmin) return null;
+  const data = q.data;
+  if (!data) {
+    return (
+      <section className={panel}>
+        <h2 className="font-display font-bold">Saison et affectations confirmées</h2>
+        <p className="text-sm text-muted-foreground">
+          {q.isError ? "En attente de l'installation des nouvelles fonctions." : "Chargement…"}
+        </p>
+      </section>
+    );
+  }
+  const selected = data.members.find((m) => m.id === member);
+  const chosenPatrol = data.patrols.find((p) => p.id === patrol);
+  const seasonStart = start || data.settings.starts_on || "";
+  const seasonEnd = end || data.settings.ends_on;
+  async function refresh() {
+    await qc.invalidateQueries({ queryKey: ["annual-season-admin"] });
+    await qc.invalidateQueries({ queryKey: ["annual-patrol-points"] });
+    await qc.invalidateQueries({ queryKey: ["private-patrol-ranking"] });
+    await qc.invalidateQueries({ queryKey: ["my-annual-points"] });
+  }
+  async function saveSeason() {
+    if (!seasonStart || seasonStart > seasonEnd || !data || busy) return;
+    if (!window.confirm("Enregistrer ces dates et activer le décompte des points ?")) return;
+    setBusy(true);
+    try {
+      const { error } = await db
+        .from("annual_points_settings")
+        .update({ starts_on: seasonStart, ends_on: seasonEnd, enabled: true })
+        .eq("singleton", true);
+      if (error) throw error;
+      setMessage("Saison enregistrée.");
+      await refresh();
+    } catch {
+      setMessage("Échec de l’enregistrement de la saison.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function confirmMember() {
+    if (!selected || !chosenPatrol || busy || !(from || seasonStart)) return;
+    if (selected.is_admin && chosenPatrol.category !== "staff") {
+      setMessage("Sélectionne la patrouille Staff pour un chef.");
+      return;
+    }
+    if (!selected.is_admin && chosenPatrol.category === "staff") {
+      setMessage("Un compte staff doit d’abord être autorisé comme administrateur.");
+      return;
+    }
+    const kind = selected.is_admin ? "staff" : year === "other" ? "other" : "scout";
+    if (!window.confirm("Confirmer l’affectation et le barème à partir de cette date ?")) return;
+    setBusy(true);
+    try {
+      const { error } = await db.from("annual_points_roster").upsert(
+        {
+          user_id: selected.id,
+          patrol_id: chosenPatrol.id,
+          group_kind: kind,
+          scout_year: kind === "scout" ? Number(year) : null,
+          valid_from: from || seasonStart,
+        },
+        { onConflict: "user_id,valid_from" },
+      );
+      if (error) throw error;
+      setMessage("Affectation confirmée.");
+      await refresh();
+    } catch {
+      setMessage("Impossible de confirmer l’affectation.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <section className={panel}>
+      <h2 className="font-display text-lg font-bold">Saison et affectations confirmées</h2>
+      <p className="text-sm text-muted-foreground">
+        {data.settings.enabled ? "Saison active" : "Décompte non activé"}
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="text-sm font-semibold">
+          Date de début
+          <input className={field} type="date" value={seasonStart} onChange={(e) => setStart(e.target.value)} />
+        </label>
+        <label className="text-sm font-semibold">
+          Date de fin
+          <input className={field} type="date" value={seasonEnd} onChange={(e) => setEnd(e.target.value)} />
+        </label>
+      </div>
+      <button type="button" disabled={busy || !seasonStart} className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground" onClick={saveSeason}>
+        Enregistrer et activer la saison
+      </button>
+      <hr />
+      <h3 className="font-semibold">Confirmer une affectation</h3>
+      <p className="text-sm text-muted-foreground">
+        Les choix faits à l’inscription ne donnent pas de droits staff ni de points avant confirmation.
+      </p>
+      <label className="block text-sm font-semibold">
+        Membre
+        <select className={field} value={member} onChange={(e) => {
+          const id = e.target.value;
+          const m = data.members.find((item) => item.id === id);
+          setMember(id);
+          setPatrol(m?.patrol_id ?? "");
+          setYear(m?.scout_year ? String(m.scout_year) : "other");
+        }}>
+          <option value="">Choisir un membre</option>
+          {data.members.map((m) => (
+            <option key={m.id} value={m.id}>{m.totem || m.full_name || "Membre"}</option>
+          ))}
+        </select>
+      </label>
+      <label className="block text-sm font-semibold">
+        Patrouille
+        <select className={field} value={patrol} onChange={(e) => setPatrol(e.target.value)}>
+          <option value="">Choisir une patrouille</option>
+          {data.patrols.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+        </select>
+      </label>
+      {!selected?.is_admin && (
+        <label className="block text-sm font-semibold">
+          Année scoute
+          <select className={field} value={year} onChange={(e) => setYear(e.target.value)}>
+            {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}
+            <option value="other">Autre membre de l’unité (hors points)</option>
+          </select>
+        </label>
+      )}
+      <label className="block text-sm font-semibold">
+        Date d’effet
+        <input className={field} type="date" value={from || seasonStart} onChange={(e) => setFrom(e.target.value)} />
+      </label>
+      <button type="button" disabled={busy || !member || !patrol || !(from || seasonStart)} className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground" onClick={confirmMember}>
+        Confirmer le membre
+      </button>
+      {message && <p className="text-sm" role="status">{message}</p>}
+      <p className="text-xs text-muted-foreground">{data.entries.length} affectation(s) datée(s).</p>
+    </section>
+  );
+}

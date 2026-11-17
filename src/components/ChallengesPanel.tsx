@@ -625,7 +625,9 @@ export function ChallengesBanner() {
                   {status === "submitted" ? "sortie en vérification" : "à réaliser"}
                 </p>
                 {challenge.gpx_template_path && (
-                  <p className="mt-1 text-xs text-muted-foreground">Consigne à demander au staff.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Consigne à demander au staff.
+                  </p>
                 )}
               </div>
             ))}

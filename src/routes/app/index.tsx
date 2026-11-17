@@ -13,7 +13,7 @@ import {
 import { AppPageShell } from "@/components/AppPageShell";
 import { TROOP_NAME } from "@/lib/troop-config";
 import { AppCard, AppSection } from "@/components/app/AppUi";
-import { MyPatrolRanking } from "@/components/AnnualCompetition";
+import { MyAnnualPoints, MyPatrolRanking } from "@/components/AnnualCompetition";
 import { SportIcon, SPORT_COLORS } from "@/components/SportIcon";
 import { useAuth } from "@/lib/useAuth";
 import {
@@ -220,6 +220,7 @@ function AppHome() {
         </AppCard>
       )}
 
+      <MyAnnualPoints />
       <MyPatrolRanking />
 
       {/* Patrouilles de la semaine */}

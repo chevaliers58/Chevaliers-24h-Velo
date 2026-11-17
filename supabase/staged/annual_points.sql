@@ -5,7 +5,7 @@ create table public.annual_points_settings (
   starts_on date,
   ends_on date not null default date '2027-03-21',
   enabled boolean not null default false,
-  other_rate smallint not null default 1 check (other_rate in (0,1,2)),
+  other_rate smallint not null default 0 check (other_rate in (0,1,2)),
   check (starts_on is null or starts_on <= ends_on),
   check (not enabled or starts_on is not null)
 );

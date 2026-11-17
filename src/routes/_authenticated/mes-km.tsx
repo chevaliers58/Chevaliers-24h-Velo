@@ -450,9 +450,7 @@ function MesKm() {
                               </Badge>
                             )}
 
-                            {a.gpx_path && (
-                              <Badge variant="outline">GPX transmis au staff</Badge>
-                            )}
+                            {a.gpx_path && <Badge variant="outline">GPX transmis au staff</Badge>}
                           </div>
 
                           <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
