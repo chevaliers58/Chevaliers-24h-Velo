@@ -178,11 +178,14 @@ try {
   assert.ok(csvContent.includes(patrolName));
   console.log("PASS admin CSV download with activity data");
   stage = "admin PDF export from bundled libraries";
-  if (!(await dialog.isVisible())) {
-    await staffPage.getByRole("button", { name: "Exporter en PDF" }).click();
+  await dialog.waitFor({ state: "hidden", timeout: 10000 });
+  await staffPage.getByRole("button", { name: "Exporter en PDF" }).click();
+  await dialog.waitFor({ state: "visible" });
+  const formatSelect = dialog.getByRole("combobox").nth(1);
+  if (!(await formatSelect.innerText()).includes("PDF")) {
+    await formatSelect.click();
+    await staffPage.getByRole("option", { name: "PDF", exact: true }).click();
   }
-  await dialog.getByRole("combobox").filter({ hasText: "CSV" }).click();
-  await staffPage.getByRole("option", { name: "PDF", exact: true }).click();
   const pdfDownload = staffPage.waitForEvent("download", { timeout: 30000 });
   await dialog.getByRole("button", { name: "Télécharger PDF" }).click();
   const pdf = await pdfDownload;
