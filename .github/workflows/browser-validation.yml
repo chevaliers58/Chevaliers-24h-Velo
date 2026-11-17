@@ -51,6 +51,11 @@ jobs:
       - name: Install app and pinned browser test runner
         run: |
           npm ci
+          npx prettier --write scripts/browser-smoke.mjs
+          git hash-object scripts/browser-smoke.mjs
+          echo 'BROWSER_SCRIPT_START'
+          cat scripts/browser-smoke.mjs
+          echo 'BROWSER_SCRIPT_END'
           npm install --prefix "$RUNNER_TEMP/browser-tools" --no-audit --no-fund --save-exact playwright@1.65.1
           "$RUNNER_TEMP/browser-tools/node_modules/.bin/playwright" install --with-deps chromium
       - name: Compile isolated build and exercise browser workflows

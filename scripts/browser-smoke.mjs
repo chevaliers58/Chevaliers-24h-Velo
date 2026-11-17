@@ -2,6 +2,7 @@
 // Runs only against a disposable Supabase stack in GitHub CI.
 // No production accounts, credentials or external activity requests.
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import { createClient } from "@supabase/supabase-js";
 
 const base = "http://127.0.0.1:3000/velo";
@@ -167,8 +168,26 @@ try {
   await staffPage.getByRole("option", { name: "CSV (tableur)" }).click();
   const download = staffPage.waitForEvent("download", { timeout: 30000 });
   await dialog.getByRole("button", { name: "Télécharger CSV" }).click();
-  assert.match((await download).suggestedFilename(), /\.csv$/i);
-  console.log("PASS admin CSV download");
+  const csv = await download;
+  assert.match(csv.suggestedFilename(), /\.csv$/i);
+  const csvContent = await readFile(await csv.path(), "utf8");
+  assert.ok(csvContent.includes(scoutName) || csvContent.includes(totem));
+  assert.ok(csvContent.includes(patrolName));
+  console.log("PASS admin CSV download with activity data");
+  stage = "admin PDF export from bundled libraries";
+  if (!(await dialog.isVisible())) {
+    await staffPage.getByRole("button", { name: "Exporter en PDF" }).click();
+  }
+  await dialog.getByRole("combobox").filter({ hasText: "CSV" }).click();
+  await staffPage.getByRole("option", { name: "PDF", exact: true }).click();
+  const pdfDownload = staffPage.waitForEvent("download", { timeout: 30000 });
+  await dialog.getByRole("button", { name: "Télécharger PDF" }).click();
+  const pdf = await pdfDownload;
+  assert.match(pdf.suggestedFilename(), /\.pdf$/i);
+  const contents = await readFile(await pdf.path());
+  assert.equal(contents.subarray(0, 5).toString(), "%PDF-");
+  assert.ok(contents.length > 1000);
+  console.log("PASS admin PDF download without external CDN");
   console.log("BROWSER_SMOKE_OK");
 } catch (error) {
   console.error("Browser smoke failed at:", stage);
