@@ -142,7 +142,12 @@ async function processAndCropGpxString(file: File): Promise<string> {
   points.forEach((point, index) => {
     const previous = points[index - 1];
     if (!previous) return;
-    distFromStart += getDistanceFromLatLonInMeters(previous.lat, previous.lon, point.lat, point.lon);
+    distFromStart += getDistanceFromLatLonInMeters(
+      previous.lat,
+      previous.lon,
+      point.lat,
+      point.lon,
+    );
     distancesFromStart.push(distFromStart);
   });
 
