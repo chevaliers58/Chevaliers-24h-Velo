@@ -48,13 +48,8 @@ async function file(owner, label, extension = "png") {
   );
   const bytes =
     extension === "gpx" ? Buffer.from('<?xml version="1.0"?><gpx version="1.1"></gpx>') : png;
-  good(
-    await service.storage
-      .from("proofs")
-      .upload(name, bytes, {
-        contentType: extension === "gpx" ? "application/gpx+xml" : "image/png",
-      }),
-  );
+  const contentType = extension === "gpx" ? "application/gpx+xml" : "image/png";
+  good(await service.storage.from("proofs").upload(name, bytes, { contentType }));
   return { name, url: service.storage.from("proofs").getPublicUrl(name).data.publicUrl };
 }
 async function alive(f) {
