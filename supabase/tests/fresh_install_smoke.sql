@@ -5,9 +5,9 @@ begin;
 
 do $test$
 declare
-  name text;
+  table_name text;
 begin
-  foreach name in array array[
+  foreach table_name in array array[
     'profiles','patrols','activities','user_roles','countdowns','timeline',
     'proposed_routes','group_rides','group_ride_members','planned_rides',
     'planned_ride_responses','member_links','weekly_badges','distance_awards',
@@ -19,10 +19,10 @@ begin
   ] loop
     if not exists (
       select 1 from pg_class c join pg_namespace n on n.oid = c.relnamespace
-       where n.nspname = 'public' and c.relname = name
+       where n.nspname = 'public' and c.relname = table_name
          and c.relkind = 'r' and c.relrowsecurity
     ) then
-      raise exception 'Missing table or disabled RLS: %', name;
+      raise exception 'Missing table or disabled RLS: %', table_name;
     end if;
   end loop;
   if exists (select 1 from auth.users) or exists (select 1 from public.profiles)
