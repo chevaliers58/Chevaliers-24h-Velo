@@ -1,0 +1,55 @@
+name: Test PDF dependency security update
+on:
+  push:
+    branches: [test/chevaliers58-pdf-security]
+permissions:
+  contents: read
+jobs:
+  trial:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VITE_SUPABASE_PROJECT_ID: ci-local
+      VITE_SUPABASE_URL: https://ci-placeholder.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
+      VITE_TROOP_NAME: Chevaliers 58
+      VITE_SITE_URL: https://19-58.net/velo
+      VITE_BASE_PATH: /velo/
+      VITE_TROOP_STRAVA_CLUB_URL: https://www.strava.com/clubs/Chevaliers58
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Resolve pinned PDF dependencies
+        run: |
+          npm install --save-exact jspdf@4.2.1 jspdf-autotable@5.0.9 --ignore-scripts --no-audit --no-fund
+          npm audit fix --package-lock-only --ignore-scripts --no-fund || true
+          npm ci
+      - name: Record candidate for verified transfer
+        run: |
+          npx prettier --write src/lib/exportPdf.ts
+          echo 'PDF_CANDIDATE_DIFF_START'
+          git diff -- package.json package-lock.json src/lib/exportPdf.ts
+          echo 'PDF_CANDIDATE_DIFF_END'
+      - name: Audit dependencies
+        run: npm audit
+      - run: npm run lint
+      - run: npx tsc --noEmit --pretty false
+      - run: npm run build
+      - name: Test generated PDF locally
+        run: |
+          node --input-type=module <<'JS'
+          import assert from "node:assert/strict";
+          import { jsPDF } from "jspdf";
+          import { autoTable } from "jspdf-autotable";
+          const doc = new jsPDF({ unit: "mm", format: "a4" });
+          autoTable(doc, {head:[["Scout", "Distance"]],body:[["Scout Test", "20 km"]]});
+          assert.ok(doc.lastAutoTable.finalY > 0);
+          const pdf = new Uint8Array(doc.output("arraybuffer"));
+          assert.equal(Buffer.from(pdf.slice(0, 5)).toString(), "%PDF-");
+          assert.ok(pdf.length > 1000);
+          console.log("PDF engine and table plugin passed.");
+          JS
