@@ -1,6 +1,6 @@
 import { verifyStravaSignature } from "./signature.ts";
 
-Deno.test("Strava signature authenticates raw bytes and rejects altered or stale events", async () => {
+Deno.test("Strava signature rejects altered or stale events", async () => {
   const timestamp = 1700000000;
   const secret = "local-test-signing-secret";
   const encoder = new TextEncoder();
