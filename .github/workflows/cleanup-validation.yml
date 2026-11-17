@@ -1,0 +1,116 @@
+name: Validate cleanup on disposable Supabase
+on:
+  push:
+    branches: [test/chevaliers58-cleanup-validation]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 2.122.1
+      - name: Prepare disposable Supabase project
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/chevaliers-cleanup"
+          cd "$RUNNER_TEMP/chevaliers-cleanup"
+          supabase init
+          mkdir -p supabase/migrations
+          cp "$GITHUB_WORKSPACE"/supabase/migrations/*.sql supabase/migrations/
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          import os
+          count = 0
+          for p in Path("supabase/migrations").glob("*.sql"):
+              data,n = re.subn(r"https?://[A-Za-z0-9-]+\.supabase\.co/functions/v1/", "http://127.0.0.1:1/functions/v1/", p.read_text())
+              count += n
+              p.write_text(data)
+          assert count == 3
+          p = Path("supabase/config.toml")
+          s = p.read_text()
+          s,n = re.subn(r"(?m)^major_version\s*=\s*\d+", "major_version = 17", s)
+          assert n == 1
+          run_id = int(os.environ["GITHUB_RUN_ID"])
+          attempt = int(os.environ["GITHUB_RUN_ATTEMPT"])
+          base_port = 20000 + ((run_id + attempt + 701) % 1500) * 20
+          s, n = re.subn(r'(?m)^project_id\s*=\s*"[^"]+"', f'project_id = "chevaliers-cleanup-{run_id}-{attempt}"', s)
+          assert n == 1
+          s = re.sub(r'\b5432([0-9])\b', lambda match: str(base_port + int(match.group(1))), s)
+          p.write_text(s)
+          with open(os.environ["GITHUB_ENV"], "a") as env:
+              print(f"E2E_EXPECTED_API_URL=http://127.0.0.1:{base_port+1}", file=env)
+              print(f"E2E_WEB_ORIGIN=http://127.0.0.1:{base_port+15}", file=env)
+              print(f"E2E_APP_PORT={base_port+15}", file=env)
+          PY
+      - name: Start completely local stack
+        working-directory: ${{ runner.temp }}/chevaliers-cleanup
+        run: |
+          supabase start
+          supabase db reset --local --no-seed
+          supabase status -o json > "$RUNNER_TEMP/local-supabase.json"
+      - name: Install app dependencies
+        run: npm ci
+      - name: Format and record tested script
+        run: |
+          npx prettier --write scripts/cleanup-smoke.mjs supabase/functions/menage/index.ts
+          git diff -- supabase/functions/menage/index.ts
+          git hash-object scripts/cleanup-smoke.mjs
+          echo 'CLEANUP_SCRIPT_START'
+          cat scripts/cleanup-smoke.mjs
+          echo 'CLEANUP_SCRIPT_END'
+      - name: Run real cleanup handler against isolated data
+        shell: bash
+        run: |
+          set -euo pipefail
+          export SUPABASE_URL="$(jq -r '.API_URL' "$RUNNER_TEMP/local-supabase.json")"
+          export SUPABASE_SERVICE_ROLE_KEY="$(jq -r '.SERVICE_ROLE_KEY' "$RUNNER_TEMP/local-supabase.json")"
+          export LOCAL_ANON_KEY="$(jq -r '.ANON_KEY' "$RUNNER_TEMP/local-supabase.json")"
+          export LOCAL_DB_URL="$(jq -r '.DB_URL' "$RUNNER_TEMP/local-supabase.json")"
+          test "$SUPABASE_URL" = "$E2E_EXPECTED_API_URL"
+          test "$SUPABASE_SERVICE_ROLE_KEY" != null
+          test "$LOCAL_ANON_KEY" != null
+          echo "::add-mask::$SUPABASE_SERVICE_ROLE_KEY"
+          echo "::add-mask::$LOCAL_DB_URL"
+          export SITE_URL="$E2E_WEB_ORIGIN/velo"
+          export CLEANUP_URL="$E2E_WEB_ORIGIN"
+          # Same handler, restricted test listener on a unique loopback port.
+          python - <<'PY'
+          from pathlib import Path
+          import os
+          p = Path('supabase/functions/menage/index.ts')
+          s = p.read_text()
+          src = 'Deno.serve(async (req) => {'
+          assert s.count(src) == 1
+          p.write_text(s.replace(src, 'Deno.serve({ hostname: "127.0.0.1", port: '+str(int(os.environ['E2E_APP_PORT']))+' }, async (req) => {'))
+          PY
+          deno check supabase/functions/menage/index.ts
+          deno run --allow-env --allow-net="127.0.0.1:$E2E_APP_PORT,${SUPABASE_URL#http://}" supabase/functions/menage/index.ts > "$RUNNER_TEMP/cleanup-server.log" 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl --fail --silent -X OPTIONS "$CLEANUP_URL" >/dev/null; then break; fi
+            sleep 1
+          done
+          if ! curl --fail --silent -X OPTIONS "$CLEANUP_URL" >/dev/null; then
+            cat "$RUNNER_TEMP/cleanup-server.log"
+            exit 1
+          fi
+          node scripts/cleanup-smoke.mjs
+      - name: Stop disposable stack
+        if: always()
+        working-directory: ${{ runner.temp }}/chevaliers-cleanup
+        run: supabase stop --no-backup
