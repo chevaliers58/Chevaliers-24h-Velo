@@ -78,7 +78,6 @@ export function AlezanMascot({ context }: AlezanMascotProps) {
         ? "Joyeux anniversaire au staff de la troupe ! 🎉"
         : quote;
 
-
   return (
     <aside
       ref={rootRef}
