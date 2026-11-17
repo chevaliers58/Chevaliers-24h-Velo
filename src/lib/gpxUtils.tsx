@@ -29,7 +29,12 @@ export async function processAndCropGpx(file: File): Promise<string> {
   const points = trkpts.map((pt) => {
     const lat = parseFloat(pt.getAttribute("lat") ?? "");
     const lon = parseFloat(pt.getAttribute("lon") ?? "");
-    if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+    if (
+      !Number.isFinite(lat) ||
+      !Number.isFinite(lon) ||
+      Math.abs(lat) > 90 ||
+      Math.abs(lon) > 180
+    ) {
       throw new Error("Coordonnées GPX invalides");
     }
     return { lat, lon, node: pt };

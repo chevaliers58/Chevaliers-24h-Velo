@@ -80,12 +80,10 @@ self.addEventListener("notificationclick", (event) => {
       : new URL(pathFor("/app"), self.location.origin).href;
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (windows) => {
-      const appWindow = windows.find(
-        (client) => {
-          const url = new URL(client.url);
-          return url.origin === self.location.origin && inScope(url.pathname);
-        },
-      );
+      const appWindow = windows.find((client) => {
+        const url = new URL(client.url);
+        return url.origin === self.location.origin && inScope(url.pathname);
+      });
       if (appWindow) {
         await appWindow.navigate(target);
         return appWindow.focus();

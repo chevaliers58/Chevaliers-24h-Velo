@@ -59,6 +59,12 @@ jobs:
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
             -f "$GITHUB_WORKSPACE/supabase/tests/fresh_install_smoke.sql"
+      - name: Test planned rides, private WhatsApp link and alert threshold
+        run: |
+          for test in test_sorties_prevues.sql test_lien_whatsapp.sql test_pending_activity_email_alert.sql; do
+            psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
+              -f "$GITHUB_WORKSPACE/supabase/tests/$test"
+          done
       - name: Stop local stack
         if: always()
         working-directory: ${{ runner.temp }}/chevaliers-db
