@@ -31,8 +31,7 @@ jobs:
         run: npm audit --omit=dev
       - name: Lint
         run: npm run lint
-      - name: TypeScript diagnostic (strict)
-        continue-on-error: true
+      - name: TypeScript strict check
         run: npx tsc --noEmit --pretty false
       - name: Confirm obsolete mock client has no references
         run: |
