@@ -137,7 +137,9 @@ try {
   await gpxInput.setInputFiles({
     name: "short.gpx",
     mimeType: "application/gpx+xml",
-    buffer: Buffer.from('<gpx creator="PRIVATE"><trk><trkseg><trkpt lat="0" lon="0"/><trkpt lat="0" lon="0.001"/></trkseg></trk></gpx>'),
+    buffer: Buffer.from(
+      '<gpx creator="PRIVATE"><trk><trkseg><trkpt lat="0" lon="0"/><trkpt lat="0" lon="0.001"/></trkseg></trk></gpx>',
+    ),
   });
   await form.locator('button[type="submit"]').click();
   await scoutPage.getByText(/tracé GPX est trop court ou trop peu détaillé/).waitFor();
@@ -145,7 +147,16 @@ try {
   await form.getByRole("button", { name: "Retirer", exact: true }).click();
   // Synthetic two-segment track (equator; not a real member location).
   const segment = (xs) =>
-    "<trkseg>" + xs.map((x) => '<trkpt lat="0" lon="' + x + '"><ele>12</ele><time>2026-10-01T00:00:00Z</time><extensions><private>PRIVATE_DATA</private></extensions></trkpt>').join("") + "</trkseg>";
+    "<trkseg>" +
+    xs
+      .map(
+        (x) =>
+          '<trkpt lat="0" lon="' +
+          x +
+          '"><ele>12</ele><time>2026-10-01T00:00:00Z</time><extensions><private>PRIVATE_DATA</private></extensions></trkpt>',
+      )
+      .join("") +
+    "</trkseg>";
   const track =
     '<gpx version="1.1" creator="PRIVATE_DEVICE"><metadata><name>PRIVATE_NAME</name><bounds minlat="0" minlon="0" maxlat="0" maxlon="0.039"/></metadata><wpt lat="0" lon="0"><name>PRIVATE_HOME</name></wpt><rte><rtept lat="0" lon="0"/></rte><trk><name>PRIVATE_TRACK</name>' +
     segment(["0", "0.003", "0.006", "0.009"]) +
@@ -179,7 +190,9 @@ try {
   assert.ok(storedGpx.includes("<ele>12</ele>"));
   assert.ok(!storedGpx.includes("PRIVATE_"));
   assert.ok(!/<(?:metadata|bounds|wpt|rte|time|extensions)(?:\s|>)/.test(storedGpx));
-  console.log("PASS GPX upload trims endpoints across segments and removes metadata; short track rejected");
+  console.log(
+    "PASS GPX upload trims endpoints across segments and removes metadata; short track rejected",
+  );
   stage = "submit photo and verify storage";
   await scoutPage.goto(base + "/mes-km");
   await form.locator("#distance-km").fill("8");

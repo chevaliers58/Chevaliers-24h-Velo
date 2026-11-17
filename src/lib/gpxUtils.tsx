@@ -16,7 +16,8 @@ function getDistanceFromLatLonInMeters(lat1: number, lon1: number, lat2: number,
 
 const GPX_NS = "http://www.topografix.com/GPX/1/1";
 const CROP_METERS = 200;
-const TOO_SHORT = "Le tracé GPX est trop court ou trop peu détaillé pour masquer le départ et l’arrivée.";
+const TOO_SHORT =
+  "Le tracé GPX est trop court ou trop peu détaillé pour masquer le départ et l’arrivée.";
 
 export async function processAndCropGpx(file: File): Promise<string> {
   if (file.size > 15 * 1024 * 1024) throw new Error("Fichier GPX trop volumineux (15 Mo maximum).");
@@ -33,7 +34,8 @@ export async function processAndCropGpx(file: File): Promise<string> {
 
   const children = (node: Element, name: string) =>
     Array.from(node.children).filter(
-      (child) => child.localName === name && child.namespaceURI === xmlDoc.documentElement.namespaceURI,
+      (child) =>
+        child.localName === name && child.namespaceURI === xmlDoc.documentElement.namespaceURI,
     );
   const segments = children(xmlDoc.documentElement, "trk").flatMap((track) =>
     children(track, "trkseg").map((segment) =>
@@ -42,7 +44,12 @@ export async function processAndCropGpx(file: File): Promise<string> {
         const rawLon = point.getAttribute("lon");
         const lat = rawLat?.trim() ? Number(rawLat) : NaN;
         const lon = rawLon?.trim() ? Number(rawLon) : NaN;
-        if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+        if (
+          !Number.isFinite(lat) ||
+          !Number.isFinite(lon) ||
+          Math.abs(lat) > 90 ||
+          Math.abs(lon) > 180
+        ) {
           throw new Error("Coordonnées GPX invalides");
         }
         const rawElevation = children(point, "ele")[0]?.textContent?.trim();
@@ -58,7 +65,12 @@ export async function processAndCropGpx(file: File): Promise<string> {
       const previous = points[index - 1];
       // Segment gaps are not traveled distance.
       if (previous) {
-        totalDistance += getDistanceFromLatLonInMeters(previous.lat, previous.lon, point.lat, point.lon);
+        totalDistance += getDistanceFromLatLonInMeters(
+          previous.lat,
+          previous.lon,
+          point.lat,
+          point.lon,
+        );
       }
       point.distance = totalDistance;
     });
@@ -66,13 +78,21 @@ export async function processAndCropGpx(file: File): Promise<string> {
 
   const retained = segments
     .map((points) =>
-      points.filter((point) => point.distance >= CROP_METERS && totalDistance - point.distance >= CROP_METERS),
+      points.filter(
+        (point) => point.distance >= CROP_METERS && totalDistance - point.distance >= CROP_METERS,
+      ),
     )
     .filter((points) => points.length >= 2);
   // Never fall back to the unredacted file, even for sparse or very short tracks.
-  if (!retained.some((points) => points.some((point, index) =>
-    index > 0 && (point.lat !== points[index - 1]?.lat || point.lon !== points[index - 1]?.lon),
-  ))) {
+  if (
+    !retained.some((points) =>
+      points.some(
+        (point, index) =>
+          index > 0 &&
+          (point.lat !== points[index - 1]?.lat || point.lon !== points[index - 1]?.lon),
+      ),
+    )
+  ) {
     throw new Error(TOO_SHORT);
   }
 

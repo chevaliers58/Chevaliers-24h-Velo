@@ -658,7 +658,8 @@ export function DailyDistanceForm({
         </div>
         <p className="text-[11px] text-muted-foreground">
           🔒 <strong>Vie privée :</strong> Les 200 premiers et derniers mètres de ton tracé GPX
-          seront rognés et les métadonnées supprimées. Un tracé trop court ou trop peu détaillé sera refusé ; un parcours en boucle peut toutefois repasser près du départ.
+          seront rognés et les métadonnées supprimées. Un tracé trop court ou trop peu détaillé sera
+          refusé ; un parcours en boucle peut toutefois repasser près du départ.
         </p>
       </div>
     </>
