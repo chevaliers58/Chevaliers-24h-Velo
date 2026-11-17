@@ -58,8 +58,8 @@ Pour travailler en local sur le projet :
    ```
    puis ouvrir http://localhost:3000/velo/.
 
-> Le dossier `data/` sert uniquement de cache local en développement. Il est ignoré par Git
-> pour éviter les conflits entre nos deux machines. Les vraies données sont dans Supabase.
+> Les données et les sessions proviennent exclusivement du projet Supabase configuré.
+> Le stockage local du navigateur n'est utilisé que pour certaines préférences, la session et le cache de l'application.
 
 ---
 
@@ -121,13 +121,13 @@ Configurer dans **Supabase → Edge Functions → Secrets** :
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Notifications push PWA |
 | `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET` | OAuth Strava |
 | `STRAVA_REDIRECT_URI` | Facultatif ; URL de la fonction `strava-oauth` par défaut |
-| `STRAVA_WEBHOOK_VERIFY_TOKEN`, `STRAVA_WEBHOOK_SUBSCRIPTION_ID` | Vérification et abonnement webhook Strava |
+| `STRAVA_WEBHOOK_VERIFY_TOKEN`, `STRAVA_WEBHOOK_SUBSCRIPTION_ID`, `STRAVA_WEBHOOK_SIGNING_SECRET` | Vérification, abonnement et authentification des événements webhook Strava |
 | `RESEND_API_KEY`, `PENDING_ACTIVITY_ALERT_FROM`, `PENDING_ACTIVITY_ALERT_TO` | E-mail d'alerte des sorties en attente |
 
 `VAPID_SUBJECT` doit être un contact `mailto:` valide. L'adresse
 `PENDING_ACTIVITY_ALERT_FROM` doit être autorisée dans Resend.
 
-Créer une nouvelle application API Strava pour Chevaliers 58. Son callback doit être
+Avant d'activer l'import automatique, confirmer auprès de Strava que le classement partagé est autorisé par ses conditions API en vigueur. Le lien manuel vers une activité et le lien du club sont indépendants de cet import. Si l'usage est autorisé, créer une nouvelle application API Strava pour Chevaliers 58. Son callback doit être
 `https://qxlsdauqoivqhoojlrwk.supabase.co/functions/v1/strava-oauth`. Enregistrer le webhook
 sur `https://qxlsdauqoivqhoojlrwk.supabase.co/functions/v1/strava-webhook`.
 
@@ -171,8 +171,8 @@ aux propriétaires ou aux administrateurs selon le bucket.
 
 Les migrations ne préchargent volontairement pas les patrouilles de l'ancien site. Après
 création du premier administrateur, celui-ci devra créer les patrouilles réelles des Chevaliers 58
-dans l'administration avant l'ouverture des inscriptions. Le mode démo local ne contient que
-la patrouille Staff. Deux dates de défi restent héritées du site source : début fixé au
+dans l'administration avant l'ouverture des inscriptions. La base neuve ne contient que
+la patrouille Staff par défaut. Deux dates de défi restent héritées du site source : début fixé au
 27 septembre 2026 (`CHALLENGE_START`) et fin par défaut au 15 novembre 2026
 (compte à rebours local et valeur initiale du formulaire admin). Aucune échéance n'est
 préchargée dans Supabase ; confirmer ces dates avant l'ouverture des inscriptions.
