@@ -254,12 +254,22 @@ try {
     const url = new URL(route.request().url());
     return url.origin === origin || url.origin === api ? route.continue() : route.abort();
   });
+  // Emulate the installed mode rather than just a narrow browser viewport.
+  await mobile.addInitScript(() => {
+    Object.defineProperty(navigator, "standalone", { value: true, configurable: true });
+  });
   const mobilePage = await mobile.newPage();
-  await mobilePage.goto(base + "/app");
-  await mobilePage.getByText("Chevaliers 58", { exact: false }).first().waitFor();
+  await mobilePage.goto(base + "/");
+  await mobilePage.waitForURL((url) => url.pathname === "/velo/app");
+  await mobilePage.locator("html.app-standalone").waitFor({ state: "attached" });
+  await mobilePage.getByText("Le défi kilomètres des patrouilles").waitFor();
+  await mobilePage.waitForFunction(async () => {
+    const registration = await navigator.serviceWorker.getRegistration();
+    return registration?.active?.state === "activated";
+  });
   const registration = await mobilePage.evaluate(async () => {
-    const reg = await navigator.serviceWorker.ready;
-    return { scope: reg.scope, script: reg.active?.scriptURL };
+    const reg = await navigator.serviceWorker.getRegistration();
+    return { scope: reg?.scope, script: reg?.active?.scriptURL };
   });
   assert.equal(registration.scope, base + "/");
   assert.equal(registration.script, base + "/sw.js");
