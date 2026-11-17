@@ -407,7 +407,7 @@ export function DailyDistanceForm({
       const targetUserId = realUser.id;
 
       // Ensure the authenticated member has a profile before creating an activity.
-      const { error: profileError } = await (supabase.from("profiles") as any).upsert(
+      const { error: profileError } = await supabase.from("profiles").upsert(
         {
           id: targetUserId,
           email: realUser.email || user?.email || null,

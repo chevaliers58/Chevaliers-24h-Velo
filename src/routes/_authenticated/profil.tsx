@@ -226,8 +226,12 @@ function Profil() {
       await refreshProfile();
       toast.success("Profil scout enregistré avec succès !");
       window.location.href = import.meta.env.BASE_URL;
-    } catch (err: any) {
-      toast.error("Erreur lors de la sauvegarde : " + (err.message || err));
+    } catch (err: unknown) {
+      const message =
+        typeof err === "object" && err !== null && "message" in err
+          ? String(err.message)
+          : String(err);
+      toast.error("Erreur lors de la sauvegarde : " + message);
     } finally {
       setBusy(false);
     }

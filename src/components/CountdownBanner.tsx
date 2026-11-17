@@ -134,8 +134,12 @@ export function CountdownBanner({ isAdmin }: { isAdmin: boolean }) {
 
       setManageOpen(false);
       fetchCountdowns();
-    } catch (err: any) {
-      toast.error("Erreur : " + (err.message || err));
+    } catch (err: unknown) {
+      const message =
+        typeof err === "object" && err !== null && "message" in err
+          ? String(err.message)
+          : String(err);
+      toast.error("Erreur : " + message);
     }
   };
 

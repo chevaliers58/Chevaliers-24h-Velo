@@ -141,13 +141,43 @@ function loadScript(src: string): Promise<void> {
   });
 }
 
-async function getJsPDF(): Promise<any> {
-  const w = window as any;
+type PdfCellData = {
+  section: string;
+  column: { index: number };
+  cell: { styles: { halign: string } };
+};
+
+// The CDN build exposes only this runtime API; model the methods used here.
+interface PdfDocument {
+  internal: { pageSize: { getWidth(): number; getHeight(): number } };
+  setFillColor(r: number, g: number, b: number): void;
+  rect(x: number, y: number, w: number, h: number, style: string): void;
+  setTextColor(r: number, g: number, b: number): void;
+  setFont(name: string, style: string): void;
+  setFontSize(size: number): void;
+  text(value: string | string[], x: number, y: number, options?: { align: string }): void;
+  splitTextToSize(value: string, width: number): string[];
+  autoTable(options: Record<string, unknown>): void;
+  lastAutoTable: { finalY: number };
+  addPage(): void;
+  getNumberOfPages(): number;
+  setPage(page: number): void;
+  save(filename: string): void;
+}
+
+type PdfConstructor = {
+  new (options: { orientation: string; unit: string; format: string }): PdfDocument;
+  API?: { autoTable?: unknown };
+};
+
+async function getJsPDF(): Promise<PdfConstructor> {
+  const w = window as Window & { jspdf?: { jsPDF?: PdfConstructor } };
   if (!w.jspdf?.jsPDF) await loadScript(JSPDF_URL);
   // Le plugin se branche tout seul sur window.jspdf.jsPDF
   if (!w.jspdf?.jsPDF?.API?.autoTable) await loadScript(AUTOTABLE_URL);
-  if (!w.jspdf?.jsPDF?.API?.autoTable) throw new Error("jsPDF n'a pas pu être initialisé.");
-  return w.jspdf.jsPDF;
+  const ctor = w.jspdf?.jsPDF;
+  if (!ctor?.API?.autoTable) throw new Error("jsPDF n'a pas pu être initialisé.");
+  return ctor;
 }
 
 /**
@@ -162,7 +192,7 @@ export async function generatePdf(report: Report): Promise<string> {
   const custom = report.customLabel?.trim();
   const title = [formatDateSlash(now), typeLabel, custom].filter(Boolean).join(" - ");
 
-  const doc: any = new jsPDF({
+  const doc = new jsPDF({
     orientation: "portrait",
     unit: "mm",
     format: "a4",
@@ -246,7 +276,7 @@ export async function generatePdf(report: Report): Promise<string> {
         3: { cellWidth: 22 },
         4: { halign: "right", cellWidth: 28, fontStyle: "bold" },
       },
-      didParseCell: (data: any) => {
+      didParseCell: (data: PdfCellData) => {
         if (data.section === "foot" && data.column.index === 4) data.cell.styles.halign = "right";
         if (data.section === "head" && data.column.index === 4) data.cell.styles.halign = "right";
       },
@@ -289,7 +319,7 @@ export async function generatePdf(report: Report): Promise<string> {
           2: { cellWidth: 24 },
           3: { halign: "right", cellWidth: 32, fontStyle: "bold" },
         },
-        didParseCell: (data: any) => {
+        didParseCell: (data: PdfCellData) => {
           if (data.section === "head" && data.column.index === 3) data.cell.styles.halign = "right";
         },
       });
