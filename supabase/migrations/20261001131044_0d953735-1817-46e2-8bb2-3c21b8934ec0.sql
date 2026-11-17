@@ -7,12 +7,11 @@ alter default privileges for role postgres in schema public
 alter default privileges for role postgres in schema public
   revoke usage, select on sequences from public, anon, authenticated;
 
-alter default privileges for role supabase_admin in schema public
-  revoke all on tables from public, anon, authenticated;
-alter default privileges for role supabase_admin in schema public
-  revoke execute on functions from public, anon, authenticated;
-alter default privileges for role supabase_admin in schema public
-  revoke usage, select on sequences from public, anon, authenticated;
+-- Supabase manages supabase_admin; the migration role cannot alter its defaults.
+-- All application objects are created by postgres. Also revoke the global
+-- default PUBLIC execute grant, which a schema-specific REVOKE cannot remove.
+alter default privileges for role postgres
+  revoke execute on functions from public;
 
 create type public.app_role as enum ('admin','user');
 create type public.patrol_category as enum ('homme','femme');
