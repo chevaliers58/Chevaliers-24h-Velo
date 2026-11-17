@@ -60,7 +60,7 @@ type ApprovedActivity = {
 };
 
 const TIMELINE_PAGE_SIZE = 1000;
-const DISTANCE_MILESTONE_KM = 1000;
+type DistanceStage = { target_km: number; name: string; description: string };
 
 async function fetchAllApprovedActivities(): Promise<ApprovedActivity[]> {
   const activities: ApprovedActivity[] = [];
@@ -83,19 +83,20 @@ async function fetchAllApprovedActivities(): Promise<ApprovedActivity[]> {
 function buildDistanceMilestones(
   activities: ApprovedActivity[],
   overrides: DistanceMilestoneOverride[],
+  stages: DistanceStage[],
 ): TimelineEvent[] {
   const events: TimelineEvent[] = [];
   const overrideByKm = new Map(overrides.map((override) => [override.milestone_km, override]));
+  const milestones = stages.filter((s) => s.target_km > 0).sort((a, b) => a.target_km - b.target_km);
   let total = 0;
 
   for (const activity of activities) {
     if (!activity.ride_date || !activity.km || activity.km <= 0) continue;
     const previous = total;
     const next = previous + activity.km;
-    const firstMilestone = Math.floor(previous / DISTANCE_MILESTONE_KM) + 1;
-    const lastMilestone = Math.floor(next / DISTANCE_MILESTONE_KM);
-    for (let milestone = firstMilestone; milestone <= lastMilestone; milestone += 1) {
-      const reachedKm = milestone * DISTANCE_MILESTONE_KM;
+    for (const milestone of milestones) {
+      const reachedKm = Number(milestone.target_km);
+      if (reachedKm <= previous || reachedKm > next) continue;
       const override = overrideByKm.get(reachedKm);
       if (override?.is_hidden) continue;
       const [yearText] = activity.ride_date.split("-");
@@ -105,10 +106,10 @@ function buildDistanceMilestones(
         id: `troop-distance-milestone:${reachedKm}`,
         year,
         date_str: dateStr,
-        title: override?.title ?? `La troupe franchit ${reachedKm.toLocaleString("fr-FR")} km`,
+        title: override?.title ?? `${milestone.name} — ${reachedKm.toLocaleString("fr-FR")} km !`,
         description:
           override?.description ??
-          `Les sorties validées de toute la troupe atteignent ${reachedKm.toLocaleString("fr-FR")} km cumulés.`,
+          milestone.description,
         image_url: null,
         drive_url: null,
         tag: "Palier de la troupe",
@@ -163,7 +164,7 @@ function TimelinePage() {
   const loadEvents = useCallback(async () => {
     setLoading(true);
     try {
-      const [{ data, error }, activities, overrideResult] = await Promise.all([
+      const [{ data, error }, activities, overrideResult, stageResult] = await Promise.all([
         supabase.from("timeline").select("*").order("date_str", { ascending: false }),
         fetchAllApprovedActivities(),
         // La timeline historique reste utilisable pendant que la migration se déploie.
@@ -171,6 +172,7 @@ function TimelinePage() {
         (supabase.from("timeline_distance_milestone_overrides") as any).select(
           "milestone_km,title,description,date_str,is_hidden",
         ),
+        supabase.from("expedition_waypoints").select("target_km,name,description"),
       ]);
 
       if (error) throw error;
@@ -181,6 +183,7 @@ function TimelinePage() {
           ...buildDistanceMilestones(
             activities,
             (overrideResult.data ?? []) as DistanceMilestoneOverride[],
+            (stageResult.data ?? []) as DistanceStage[],
           ),
           ...((data ?? []) as TimelineEvent[]),
         ].sort((a, b) => b.date_str.localeCompare(a.date_str)),

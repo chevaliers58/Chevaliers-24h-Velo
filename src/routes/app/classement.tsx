@@ -16,7 +16,7 @@ import {
   type AppSport,
 } from "@/lib/appData";
 import { SPORT_INFO } from "@/lib/activity";
-import { getPatrolEmblem } from "@/lib/patrolEmblem";
+import { getPatrolColor, getPatrolEmblem } from "@/lib/patrolEmblem";
 import { cn } from "@/lib/utils";
 import { AnnualPatrolPoints, MyPatrolRanking } from "@/components/AnnualCompetition";
 import { RankingStoryExport } from "@/components/RankingStoryExport";
@@ -158,7 +158,14 @@ function RankingScreen() {
                   <span className="w-7 shrink-0 text-center text-[17px] font-bold tabular-nums text-muted-foreground">
                     {i < 3 ? MEDALS[i] : i + 1}
                   </span>
-                  {r.lead && <span className="text-xl leading-none">{r.lead}</span>}
+                  {r.lead && (
+                    <span
+                      className="rounded-xl border-2 p-1 text-xl leading-none"
+                      style={{ borderColor: getPatrolColor(r.title) }}
+                    >
+                      {r.lead}
+                    </span>
+                  )}
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[16px] font-semibold text-foreground">
                       {r.title}

@@ -35,7 +35,7 @@ import { weekRange, monthRange, useAuth } from "@/lib/useAuth";
 import { isAppMode } from "@/lib/standalone";
 import type { Patrol } from "@/lib/database";
 import { getActivitySport, type ActivitySport, SPORT_INFO } from "@/lib/activity";
-import { getPatrolEmblem } from "@/lib/patrolEmblem";
+import { getPatrolColor, getPatrolEmblem } from "@/lib/patrolEmblem";
 import { SportIcon, SPORT_COLORS } from "@/components/SportIcon";
 import { cn } from "@/lib/utils";
 import { isStaffPatrol, TROOP_STAFF_PATROL_NAME, isTroopStaffPatrol } from "@/lib/categories";
@@ -1584,7 +1584,12 @@ function PatrolLeaderboardRow({
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="truncate font-display text-lg font-bold text-foreground flex items-center gap-1.5">
-              <span className="text-xl shrink-0">{getPatrolEmblem(name)}</span>
+              <span
+                className="shrink-0 rounded-lg border-2 p-1 text-xl leading-none"
+                style={{ borderColor: getPatrolColor(name) }}
+              >
+                {getPatrolEmblem(name)}
+              </span>
               <span>{name}</span>
             </span>
             {isChef && (

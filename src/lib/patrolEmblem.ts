@@ -76,3 +76,13 @@ export function getPatrolEmblem(patrolName?: string | null, patrolId?: string | 
   }
   return "⚜️";
 }
+
+/** Official patrol colours. Neutral blue-grey for other groups. */
+export function getPatrolColor(name?: string | null): string {
+  const key = (name || "").toLowerCase().trim();
+  if (key === "pumas") return "#E5B513";
+  if (key === "guépards" || key === "guepards") return "#C93643";
+  if (key === "ocelots") return "#3074C4";
+  if (key === "jaguars") return "#268651";
+  return "#64748B";
+}

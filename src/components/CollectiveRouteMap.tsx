@@ -88,7 +88,7 @@ export function CollectiveRouteMap({ className, overrideKm }: CollectiveRouteMap
         let kmSum = 0;
         if (actsData && actsData.length > 0) {
           kmSum = actsData
-            .filter((a) => a.status === "approved" || a.status === "pending")
+            .filter((a) => a.status === "approved")
             .reduce((sum, item) => sum + (Number(item.km) || 0), 0);
         }
 

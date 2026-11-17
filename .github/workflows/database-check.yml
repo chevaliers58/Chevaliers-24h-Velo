@@ -79,6 +79,11 @@ jobs:
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
             -f "$GITHUB_WORKSPACE/supabase/staged/private_proofs_candidate.sql" \
             -f "$GITHUB_WORKSPACE/supabase/tests/private_proofs_candidate.sql"
+      - name: Validate personalization seed (isolated only)
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
+            -f "$GITHUB_WORKSPACE/supabase/staged/personalization.sql" \
+            -f "$GITHUB_WORKSPACE/supabase/tests/personalization_candidate.sql"
       - name: Stop local stack
         if: always()
         working-directory: ${{ runner.temp }}/chevaliers-db
