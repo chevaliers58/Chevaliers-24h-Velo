@@ -461,7 +461,7 @@ try {
   await mobile.addInitScript(() => {
     Object.defineProperty(navigator, "standalone", { value: true, configurable: true });
   });
-  const mobilePage = await mobile.newPage();
+  let mobilePage = await mobile.newPage();
   await mobilePage.goto(base + "/");
   await mobilePage.waitForURL((url) => url.pathname === "/velo/app");
   await mobilePage.locator("html.app-standalone").waitFor({ state: "attached" });
@@ -480,8 +480,36 @@ try {
     { scope: base + "/", script: base + "/sw.js" },
     { timeout: 30000 },
   );
-  await mobilePage.reload();
-  await mobilePage.waitForFunction(() => !!navigator.serviceWorker.controller);
+  // A fresh scoped navigation must be controlled by the activated worker.
+  // A browser reload can bypass the worker; do not use it as the sole check.
+  const controlledPage = await mobile.newPage();
+  await controlledPage.goto(base + "/app");
+  try {
+    await controlledPage.waitForFunction(
+      (script) => navigator.serviceWorker.controller?.scriptURL === script,
+      base + "/sw.js",
+      { timeout: 30000 },
+    );
+  } catch (error) {
+    console.error(
+      "Service worker diagnostics:",
+      await controlledPage.evaluate(async () => {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        return {
+          path: location.pathname,
+          controller: navigator.serviceWorker.controller?.scriptURL ?? null,
+          registrations: registrations.map((r) => ({
+            scope: r.scope,
+            active: r.active?.state ?? null,
+            script: r.active?.scriptURL ?? null,
+          })),
+        };
+      }),
+    );
+    throw error;
+  }
+  await mobilePage.close();
+  mobilePage = controlledPage;
   const manifest = await (await fetch(base + "/manifest.webmanifest")).json();
   assert.equal(manifest.start_url, "/velo/app");
   assert.equal(manifest.scope, "/velo/");
