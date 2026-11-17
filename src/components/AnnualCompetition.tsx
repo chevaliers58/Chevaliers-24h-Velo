@@ -91,7 +91,9 @@ export function MyPatrolRanking() {
           Ce classement sera disponible après activation du nouveau schéma.
         </p>
       ) : q.data.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Ton affectation doit être confirmée par le staff.</p>
+        <p className="text-sm text-muted-foreground">
+          Ton affectation doit être confirmée par le staff.
+        </p>
       ) : (
         <ol className="divide-y">
           {q.data.map((r, i) => (
@@ -138,7 +140,15 @@ export function AnnualChallenges({ manage = false }: { manage?: boolean }) {
   async function save() {
     if (!editable || busy || q.isError) return;
     const multiplier = Number(mult);
-    if (title.trim().length < 3 || !start || !end || end < start || multiplier < 1 || multiplier > 10 || !Number.isFinite(multiplier)) {
+    if (
+      title.trim().length < 3 ||
+      !start ||
+      !end ||
+      end < start ||
+      multiplier < 1 ||
+      multiplier > 10 ||
+      !Number.isFinite(multiplier)
+    ) {
       setMessage("Vérifie le titre, les dates et le multiplicateur (1 à 10).");
       return;
     }
@@ -187,30 +197,70 @@ export function AnnualChallenges({ manage = false }: { manage?: boolean }) {
         >
           <label className="block text-sm font-semibold">
             Titre du défi
-            <input className={field} value={title} onChange={(e) => setTitle(e.target.value)} required minLength={3} maxLength={120} />
+            <input
+              className={field}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              minLength={3}
+              maxLength={120}
+            />
           </label>
           <label className="block text-sm font-semibold">
             Description
-            <textarea className={field} value={description} onChange={(e) => setDescription(e.target.value)} maxLength={2000} />
+            <textarea
+              className={field}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              maxLength={2000}
+            />
           </label>
           <div className="grid gap-2 sm:grid-cols-2">
             <label className="text-sm font-semibold">
               Début
-              <input className={field} type="date" value={start} onChange={(e) => setStart(e.target.value)} required />
+              <input
+                className={field}
+                type="date"
+                value={start}
+                onChange={(e) => setStart(e.target.value)}
+                required
+              />
             </label>
             <label className="text-sm font-semibold">
               Fin
-              <input className={field} type="date" value={end} onChange={(e) => setEnd(e.target.value)} required />
+              <input
+                className={field}
+                type="date"
+                value={end}
+                onChange={(e) => setEnd(e.target.value)}
+                required
+              />
             </label>
           </div>
           <label className="block text-sm font-semibold">
             Multiplicateur des points (×)
-            <input className={field} type="number" min="1" max="10" step="0.01" value={mult} onChange={(e) => setMult(e.target.value)} required />
+            <input
+              className={field}
+              type="number"
+              min="1"
+              max="10"
+              step="0.01"
+              value={mult}
+              onChange={(e) => setMult(e.target.value)}
+              required
+            />
           </label>
-          <button disabled={busy || q.isError || q.isPending} className="rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground disabled:opacity-50">
+          <button
+            disabled={busy || q.isError || q.isPending}
+            className="rounded-xl bg-primary px-4 py-2 font-bold text-primary-foreground disabled:opacity-50"
+          >
             {editing ? "Modifier le défi" : "Créer le défi"}
           </button>
-          {message && <p role="status" className="text-sm">{message}</p>}
+          {message && (
+            <p role="status" className="text-sm">
+              {message}
+            </p>
+          )}
         </form>
       )}
       {q.data?.map((c) => (
@@ -219,7 +269,9 @@ export function AnnualChallenges({ manage = false }: { manage?: boolean }) {
             <strong>{c.title}</strong>
             <span className="font-bold text-primary">×{formatPoints(c.multiplier)}</span>
           </div>
-          <p className="text-xs text-muted-foreground">{c.starts_on} → {c.ends_on}</p>
+          <p className="text-xs text-muted-foreground">
+            {c.starts_on} → {c.ends_on}
+          </p>
           {c.description && <p className="mt-1 text-sm">{c.description}</p>}
           {editable && (
             <button

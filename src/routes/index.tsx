@@ -44,7 +44,11 @@ import { JerseysPanel } from "@/components/JerseysPanel";
 import { ScoutSportifCard } from "@/components/ScoutSportifCard";
 import { PelotonPanel } from "@/components/PelotonPanel";
 import { CumulativeDistanceBadges, NearestDistanceTrophy } from "@/components/DistanceTrophies";
-import { AnnualChallenges, AnnualPatrolPoints, MyPatrolRanking } from "@/components/AnnualCompetition";
+import {
+  AnnualChallenges,
+  AnnualPatrolPoints,
+  MyPatrolRanking,
+} from "@/components/AnnualCompetition";
 import { ChallengesBanner, ChallengesPanel } from "@/components/ChallengesPanel";
 import { ExpeditionGoal } from "@/components/ExpeditionGoal";
 import { BirthdayBanner } from "@/components/BirthdayBanner";
