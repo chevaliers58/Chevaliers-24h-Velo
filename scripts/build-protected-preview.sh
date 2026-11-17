@@ -7,7 +7,7 @@ if [[ "${VERCEL_ENV:-}" != "preview" ]]; then
 fi
 export VITE_SUPABASE_PROJECT_ID=qxlsdauqoivqhoojlrwk
 export VITE_SUPABASE_URL=https://qxlsdauqoivqhoojlrwk.supabase.co
-: "${VITE_SUPABASE_PUBLISHABLE_KEY:?Set the project's publishable key in Preview environment only}"
+: "${VITE_SUPABASE_PUBLISHABLE_KEY:?Set the project publishable key in Preview environment only}"
 if [[ "$VITE_SUPABASE_PUBLISHABLE_KEY" != sb_publishable_* || "$VITE_SUPABASE_PUBLISHABLE_KEY" == *placeholder* || "$VITE_SUPABASE_PUBLISHABLE_KEY" == *replace_with* ]]; then
   echo "A real publishable key is required (no private or CI placeholder key)." >&2
   exit 1
