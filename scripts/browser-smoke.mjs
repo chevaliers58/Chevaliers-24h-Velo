@@ -243,50 +243,170 @@ try {
   assert.equal(contents.subarray(0, 5).toString(), "%PDF-");
   assert.ok(contents.length > 1000);
   console.log("PASS admin PDF download without external CDN");
+  stage = "edit scout profile";
+  await scoutPage.goto(base + "/profil");
+  await scoutPage.getByRole("heading", { name: "Mon Profil Scout" }).waitFor();
+  await eventually(
+    async () => (await scoutPage.locator("#totem").inputValue()) === totem,
+    "existing profile loaded",
+  );
+  await scoutPage.locator("#quali").fill("Quali Test Navigateur");
+  await scoutPage.getByRole("button", { name: "Enregistrer mon profil" }).click();
+  await eventually(async () => {
+    const p = good(await admin.from("profiles").select("quali").eq("id", scout.id).single());
+    return p.quali === "Quali Test Navigateur";
+  }, "updated profile in database");
+  await scoutPage.waitForURL((u) => u.pathname === "/velo/" || u.pathname === "/velo");
+  await scoutPage.goto(base + "/profil");
+  await eventually(
+    async () => (await scoutPage.locator("#quali").inputValue()) === "Quali Test Navigateur",
+    "profile update persisted after navigation",
+  );
+  console.log("PASS profile edit and persistence");
+
+  stage = "planned ride creation, responses, calendar and guest protection";
+  const rideTitle = "Sortie Test Navigateur";
+  const meeting = "Lieu fictif de test";
+  const futureDate = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
+  await scoutPage.goto(base + "/sorties-prevues");
+  await scoutPage.getByRole("heading", { name: "Sorties prévues", exact: true }).waitFor();
+  await scoutPage.getByRole("button", { name: "Proposer une sortie", exact: true }).first().click();
+  const rideDialog = scoutPage.getByRole("dialog");
+  await rideDialog.locator("#ride-title").fill(rideTitle);
+  await rideDialog.locator("#ride-date").fill(futureDate);
+  await rideDialog.locator("#ride-time").fill("10:00");
+  await rideDialog.locator("#ride-place").fill(meeting);
+  await rideDialog.locator("#ride-km").fill("15");
+  await rideDialog.locator("#ride-max").fill("3");
+  await rideDialog.getByRole("button", { name: "Proposer la sortie" }).click();
+  const ride = await eventually(async () => {
+    return good(await admin.from("planned_rides").select("*").eq("title", rideTitle).maybeSingle());
+  }, "planned ride saved");
+  assert.equal(ride.created_by, scout.id);
+  assert.equal(ride.meeting_point, meeting);
+  assert.equal(ride.ride_date, futureDate);
+  assert.equal(Number(ride.distance_km), 15);
+  const creatorResponse = good(
+    await admin
+      .from("planned_ride_responses")
+      .select("status")
+      .eq("ride_id", ride.id)
+      .eq("user_id", scout.id)
+      .single(),
+  );
+  assert.equal(creatorResponse.status, "yes");
+  await rideDialog.waitFor({ state: "hidden" });
+  await scoutPage.getByRole("heading", { name: rideTitle }).waitFor();
+  const icsDownload = scoutPage.waitForEvent("download", { timeout: 30000 });
+  await scoutPage.getByRole("button", { name: "Ajouter à mon agenda" }).first().click();
+  const ics = await icsDownload;
+  assert.match(ics.suggestedFilename(), /\.ics$/i);
+  const icsText = await readFile(await ics.path(), "utf8");
+  assert.ok(icsText.includes("BEGIN:VCALENDAR"));
+  assert.ok(icsText.includes("BEGIN:VEVENT"));
+  assert.ok(icsText.includes(rideTitle));
+  assert.ok(icsText.includes("LOCATION:" + meeting));
+  await staffPage.goto(base + "/sorties-prevues");
+  await staffPage.getByRole("heading", { name: rideTitle }).waitFor();
+  await staffPage
+    .getByRole("group", { name: "Ma réponse" })
+    .getByRole("button", { name: "Je viens", exact: true })
+    .click();
+  await eventually(async () => {
+    const r = good(
+      await admin
+        .from("planned_ride_responses")
+        .select("status")
+        .eq("ride_id", ride.id)
+        .eq("user_id", created.user.id)
+        .maybeSingle(),
+    );
+    return r?.status === "yes";
+  }, "second participant response");
+  await publicPage.goto(base + "/sorties-prevues");
+  await publicPage.waitForURL((u) => u.pathname.endsWith("/auth"));
+  console.log("PASS planned ride, creator response, participant, ICS and guest protection");
+
+  stage = "timeline creation and public read";
+  await staffPage.goto(base + "/timeline");
+  await staffPage.getByRole("heading", { name: "La Ligne du Temps de la Troupe" }).waitFor();
+  await staffPage.getByRole("button", { name: "Ajouter un souvenir", exact: true }).click();
+  const eventTitle = "Souvenir Test Navigateur";
+  const timelineDialog = staffPage.getByRole("dialog");
+  await timelineDialog.locator("#ev-date").fill("2026-11-15");
+  await timelineDialog.locator("#ev-title").fill(eventTitle);
+  await timelineDialog.locator("#ev-desc").fill("Récit synthétique de test.");
+  await timelineDialog.getByRole("button", { name: "Ajouter à la ligne du temps" }).click();
+  await eventually(async () => {
+    return good(await admin.from("timeline").select("id").eq("title", eventTitle).maybeSingle());
+  }, "timeline event saved");
+  await publicPage.goto(base + "/timeline");
+  await publicPage.getByRole("heading", { name: eventTitle }).waitFor();
+  assert.equal(
+    await publicPage.getByRole("button", { name: "Ajouter un souvenir", exact: true }).count(),
+    0,
+  );
+  console.log("PASS administrative timeline creation and anonymous read");
+
   stage = "late admin role response after account switch";
   const switching = await context();
   const switchingPage = await switching.newPage();
+  const controllingPage = await switching.newPage();
+  let started = false;
   let held = false;
   let releaseAdminResponse;
   const release = new Promise((resolve) => {
     releaseAdminResponse = resolve;
   });
   let responseDelivered = false;
-  // Retrieve a genuine admin response before the switch, but delay delivery.
-  await switchingPage.route("**/rest/v1/user_roles?*", async (route) => {
-    const url = new URL(route.request().url());
-    if (
-      url.searchParams.get("user_id") === "eq." + created.user.id &&
-      url.searchParams.get("role") === "eq.admin"
-    ) {
-      const response = await route.fetch();
-      held = true;
-      await release;
-      await route.fulfill({ response });
-      responseDelivered = true;
-    } else {
-      await route.continue();
-    }
-  });
+  // Login reloads the document, so use two tabs of one context. The observed
+  // tab must survive both auth events while a genuine admin response is held.
   try {
-    await login(switchingPage, adminEmail);
+    await login(controllingPage, adminEmail);
+    await controllingPage.getByRole("link", { name: "Admin", exact: true }).waitFor();
+    await switchingPage.route("**/rest/v1/user_roles?*", async (route) => {
+      const url = new URL(route.request().url());
+      if (
+        !started &&
+        url.searchParams.get("user_id") === "eq." + created.user.id &&
+        url.searchParams.get("role") === "eq.admin"
+      ) {
+        started = true;
+        const response = await route.fetch();
+        assert.ok(response.ok());
+        const data = await response.json();
+        assert.ok((Array.isArray(data) ? data : [data]).some((row) => row?.role === "admin"));
+        held = true;
+        await release;
+        await route.fulfill({ response });
+        responseDelivered = true;
+      } else {
+        await route.continue();
+      }
+    });
+    await switchingPage.goto(base + "/");
     await eventually(() => held, "captured genuine admin role response");
-    await switchingPage.getByRole("button", { name: "Déconnexion", exact: true }).click();
-    await switchingPage.getByRole("link", { name: "Connexion", exact: true }).first().click();
-    await switchingPage.locator("#login-email").fill(email);
-    await switchingPage.locator("#login-pw").fill(password);
-    await switchingPage.getByRole("button", { name: "Se connecter", exact: true }).click();
-    await switchingPage.waitForURL((u) => u.pathname === "/velo/" || u.pathname === "/velo");
-    // SPA navigation: do not reload and accidentally cancel the delayed response.
-    await switchingPage.evaluate((url) => {
-      history.pushState({}, "", url);
-      dispatchEvent(new PopStateEvent("popstate"));
-    }, base + "/admin");
-    await switchingPage.getByText("Accès réservé aux chefs et admins").waitFor();
+    await switchingPage.evaluate(() => {
+      document.documentElement.dataset.e2eSession = "retained";
+    });
+    await controllingPage.getByRole("button", { name: "Déconnexion", exact: true }).click();
+    await switchingPage.getByRole("link", { name: "Connexion", exact: true }).first().waitFor();
+    await login(controllingPage, email);
+    await switchingPage.getByRole("link", { name: "Profil", exact: true }).click();
+    await eventually(
+      async () => (await switchingPage.locator("#totem").inputValue()) === totem,
+      "new scout profile in observed tab",
+    );
+    assert.equal(await switchingPage.getByRole("link", { name: "Admin", exact: true }).count(), 0);
     releaseAdminResponse?.();
     await eventually(() => responseDelivered, "delayed admin role delivered");
     await switchingPage.waitForTimeout(700);
-    assert.ok(await switchingPage.getByText("Accès réservé aux chefs et admins").isVisible());
+    assert.equal(await switchingPage.getByRole("link", { name: "Admin", exact: true }).count(), 0);
+    assert.equal(await switchingPage.locator("#totem").inputValue(), totem);
+    assert.equal(
+      await switchingPage.locator("html").getAttribute("data-e2e-session"),
+      "retained",
+    );
   } finally {
     releaseAdminResponse?.();
     await switching.close();
