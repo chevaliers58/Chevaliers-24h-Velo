@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import type { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { isStaffPatrol, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
@@ -65,14 +73,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Helper to load profile & admin status from Supabase
-  const loadUserData = useCallback(async (currentUser: User | null) => {
-    if (!currentUser) {
-      setProfile(null);
-      setIsAdmin(false);
-      setLoading(false);
-      return;
-    }
+  // Ignore stale asynchronous responses after a change of identity.
+  const activeUserId = useRef<string | null>(null);
+  const requestVersion = useRef(0);
+
+  const loadUserData = useCallback(async (currentUser: User) => {
+    if (activeUserId.current !== currentUser.id) return;
+    const version = ++requestVersion.current;
+    const isCurrent = () =>
+      version === requestVersion.current && activeUserId.current === currentUser.id;
 
     setIsAdmin(false);
     try {
@@ -83,6 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq("id", currentUser.id)
         .maybeSingle()) as { data: DbProfile | null; error: unknown };
 
+      if (!isCurrent()) return;
       if (profError) throw profError;
       if (prof) {
         const patrolData = prof.patrols;
@@ -139,6 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .select("*, patrols(name, category)")
             .maybeSingle();
 
+          if (!isCurrent()) return;
           if (!createErr && createdProf) {
             const patrolData = (createdProf as DbProfile).patrols;
             const isChef = isStaffPatrol(patrolData);
@@ -164,6 +175,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.warn("[AuthContext] Auto-création profil Supabase :", e);
         }
 
+        if (!isCurrent()) return;
         if (!profileLoaded) {
           setProfile({
             id: currentUser.id,
@@ -181,6 +193,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
+      if (!isCurrent()) return;
       // Les droits administrateur proviennent exclusivement de la table user_roles.
       const { data: roleData, error: roleError } = await supabase
         .from("user_roles")
@@ -189,15 +202,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq("role", "admin")
         .maybeSingle();
 
+      if (!isCurrent()) return;
       if (roleError) {
         console.error("[AuthContext] Impossible de vérifier le rôle administrateur :", roleError);
       }
       setIsAdmin(!roleError && !!roleData);
     } catch (err) {
-      setIsAdmin(false);
-      console.error("[AuthContext] Error loading user data:", err);
+      if (isCurrent()) {
+        setProfile(null);
+        setIsAdmin(false);
+        console.error("[AuthContext] Error loading user data:", err);
+      }
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
   }, []);
 
@@ -210,67 +227,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    // Supabase Auth est l'unique source de session.
-    const syncSession = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) throw error;
-        const s = data.session;
-        if (!mounted) return;
-        setSession(s);
-        setUser(s?.user ?? null);
-        await loadUserData(s?.user ?? null);
-      } catch (error) {
-        console.error("[AuthContext] Impossible de récupérer la session Supabase :", error);
-        if (!mounted) return;
-        setSession(null);
-        setUser(null);
-        setProfile(null);
-        setIsAdmin(false);
-        setLoading(false);
-      }
-    };
-
-    syncSession();
-
-    // Subscribe to Supabase auth updates
+    // INITIAL_SESSION also supplies the initial session. Avoid a second
+    // independently resolving getSession request.
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (!mounted) return;
-      const nextSession = (newSession ?? null) as Session | null;
       const nextUser = nextSession?.user ?? null;
+      const nextId = nextUser?.id ?? null;
+      if (activeUserId.current !== nextId || !nextUser) {
+        ++requestVersion.current;
+        activeUserId.current = nextId;
+        setProfile(null);
+        setIsAdmin(false);
+        setLoading(!!nextUser);
+      }
       setSession(nextSession);
       setUser(nextUser);
 
       if (nextUser) {
-        // Avoid making Supabase requests inside the auth callback itself.
+        // Never make Supabase requests inside the auth callback itself.
+        const scheduledVersion = requestVersion.current;
         window.setTimeout(() => {
-          if (mounted) void loadUserData(nextUser);
+          if (
+            mounted &&
+            activeUserId.current === nextId &&
+            requestVersion.current === scheduledVersion
+          ) {
+            void loadUserData(nextUser);
+          }
         }, 0);
-      } else {
-        setProfile(null);
-        setIsAdmin(false);
-        setLoading(false);
       }
     });
 
     return () => {
       mounted = false;
+      ++requestVersion.current;
+      activeUserId.current = null;
       subscription.unsubscribe();
     };
   }, [loadUserData]);
 
   const signOut = useCallback(async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch {
-      // ignore
-    }
-    setUser(null);
-    setSession(null);
-    setProfile(null);
-    setIsAdmin(false);
+    // SIGNED_OUT invalidates pending work in the subscription.
+    const { error } = await supabase.auth.signOut();
+    if (error) console.error("[AuthContext] Déconnexion Supabase :", error);
   }, []);
 
   const value = useMemo(

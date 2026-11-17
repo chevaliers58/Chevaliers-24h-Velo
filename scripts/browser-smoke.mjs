@@ -243,6 +243,55 @@ try {
   assert.equal(contents.subarray(0, 5).toString(), "%PDF-");
   assert.ok(contents.length > 1000);
   console.log("PASS admin PDF download without external CDN");
+  stage = "late admin role response after account switch";
+  const switching = await context();
+  const switchingPage = await switching.newPage();
+  let held = false;
+  let releaseAdminResponse;
+  const release = new Promise((resolve) => {
+    releaseAdminResponse = resolve;
+  });
+  let responseDelivered = false;
+  // Retrieve a genuine admin response before the switch, but delay delivery.
+  await switchingPage.route("**/rest/v1/user_roles?*", async (route) => {
+    const url = new URL(route.request().url());
+    if (
+      url.searchParams.get("user_id") === "eq." + created.user.id &&
+      url.searchParams.get("role") === "eq.admin"
+    ) {
+      const response = await route.fetch();
+      held = true;
+      await release;
+      await route.fulfill({ response });
+      responseDelivered = true;
+    } else {
+      await route.continue();
+    }
+  });
+  try {
+    await login(switchingPage, adminEmail);
+    await eventually(() => held, "captured genuine admin role response");
+    await switchingPage.getByRole("button", { name: "Déconnexion", exact: true }).click();
+    await switchingPage.getByRole("link", { name: "Connexion", exact: true }).first().click();
+    await switchingPage.locator("#login-email").fill(email);
+    await switchingPage.locator("#login-pw").fill(password);
+    await switchingPage.getByRole("button", { name: "Se connecter", exact: true }).click();
+    await switchingPage.waitForURL((u) => u.pathname === "/velo/" || u.pathname === "/velo");
+    // SPA navigation: do not reload and accidentally cancel the delayed response.
+    await switchingPage.evaluate((url) => {
+      history.pushState({}, "", url);
+      dispatchEvent(new PopStateEvent("popstate"));
+    }, base + "/admin");
+    await switchingPage.getByText("Accès réservé aux chefs et admins").waitFor();
+    releaseAdminResponse?.();
+    await eventually(() => responseDelivered, "delayed admin role delivered");
+    await switchingPage.waitForTimeout(700);
+    assert.ok(await switchingPage.getByText("Accès réservé aux chefs et admins").isVisible());
+  } finally {
+    releaseAdminResponse?.();
+    await switching.close();
+  }
+  console.log("PASS stale admin role cannot restore access after account switch");
   stage = "mobile application and service worker";
   const mobile = await browser.newContext({
     viewport: { width: 390, height: 844 },
