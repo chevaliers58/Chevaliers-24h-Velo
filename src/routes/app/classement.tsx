@@ -18,6 +18,7 @@ import {
 import { SPORT_INFO } from "@/lib/activity";
 import { getPatrolEmblem } from "@/lib/patrolEmblem";
 import { cn } from "@/lib/utils";
+import { AnnualPatrolPoints, MyPatrolRanking } from "@/components/AnnualCompetition";
 import { RankingStoryExport } from "@/components/RankingStoryExport";
 
 export const Route = createFileRoute("/app/classement")({ ssr: false, component: RankingScreen });
@@ -125,6 +126,8 @@ function RankingScreen() {
         />
       </div>
 
+      {view === "patrols" && <AnnualPatrolPoints />}
+      <MyPatrolRanking />
       {isLoading ? (
         <AppEmpty title="Chargement du classement…" />
       ) : ranked.length === 0 ? (

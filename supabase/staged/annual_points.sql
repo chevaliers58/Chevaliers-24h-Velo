@@ -79,7 +79,8 @@ cross join lateral (
   where x.user_id=a.user_id and x.valid_from<=a.ride_date
   order by x.valid_from desc limit 1
 ) r
-where a.status='approved' and r.group_kind <> 'staff';
+where a.status='approved' and r.group_kind <> 'staff'
+  and not public.has_role(a.user_id,'admin');
 
 -- Numeric arithmetic: no per-activity rounding; only presentation rounds.
 create function public.annual_patrol_points(_from date default null,_to date default null)
@@ -111,8 +112,8 @@ returns table(user_id uuid, display_name text, km numeric)
 language sql stable security definer set search_path='' as $$
   with caller as (
     select auth.uid() as uid, public.has_role(auth.uid(),'admin') as staff,
-      (select r.patrol_id from public.annual_points_roster r
-       where r.user_id=auth.uid() and r.group_kind <> 'staff'
+      (select case when r.group_kind <> 'staff' then r.patrol_id end from public.annual_points_roster r
+       where r.user_id=auth.uid()
          and r.valid_from <= (now() at time zone 'Europe/Brussels')::date
        order by r.valid_from desc limit 1) as patrol
     where auth.uid() is not null

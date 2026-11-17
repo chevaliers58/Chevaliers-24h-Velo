@@ -45,6 +45,7 @@ import { CleanupAdmin } from "@/components/CleanupAdmin";
 import { ScoutSportifAdmin, type SportifBadge } from "@/components/ScoutSportifAdmin";
 import { SportBadge } from "@/components/SportIcon";
 import { AdminActivitiesManager } from "@/components/AdminActivitiesManager";
+import { AnnualChallenges } from "@/components/AnnualCompetition";
 import { AdminChallenges } from "@/components/AdminChallenges";
 import { AdminDistanceAwards } from "@/components/AdminDistanceAwards";
 import { ChallengesPanel } from "@/components/ChallengesPanel";
@@ -535,6 +536,7 @@ function Admin() {
           </TabsContent>
 
           <TabsContent value="challenges" className="space-y-6">
+            <AnnualChallenges manage />
             <h2 className="font-display text-lg font-bold">Créer un défi</h2>
             <ChallengesPanel />
             <h2 className="font-display text-lg font-bold">

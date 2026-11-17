@@ -44,6 +44,7 @@ import { JerseysPanel } from "@/components/JerseysPanel";
 import { ScoutSportifCard } from "@/components/ScoutSportifCard";
 import { PelotonPanel } from "@/components/PelotonPanel";
 import { CumulativeDistanceBadges, NearestDistanceTrophy } from "@/components/DistanceTrophies";
+import { AnnualChallenges, AnnualPatrolPoints, MyPatrolRanking } from "@/components/AnnualCompetition";
 import { ChallengesBanner, ChallengesPanel } from "@/components/ChallengesPanel";
 import { ExpeditionGoal } from "@/components/ExpeditionGoal";
 import { BirthdayBanner } from "@/components/BirthdayBanner";
@@ -1121,6 +1122,8 @@ function IndexForViewer() {
           </div>
         </div>
 
+        <MyPatrolRanking />
+
         {/* Maillots : jaune (km) et à pois (D+) par catégorie, selon la période et le sport */}
         {profile?.is_chef && (
           <div className="flex justify-end">
@@ -1233,7 +1236,10 @@ function IndexForViewer() {
 
         {/* View Content */}
         {view === "challenges" ? (
-          <ChallengesPanel />
+          <div className="space-y-3">
+            <AnnualChallenges />
+            <ChallengesPanel />
+          </div>
         ) : view === "map" ? (
           <CollectiveRouteMap />
         ) : view === "chart" ? (
@@ -1255,6 +1261,7 @@ function IndexForViewer() {
           />
         ) : view === "patrols" ? (
           <div className="space-y-3">
+            <AnnualPatrolPoints />
             {rankedPatrols.length === 0 ? (
               <div className="rounded-2xl border bg-card p-10 text-center text-muted-foreground">
                 Aucune patrouille ne correspond aux filtres sélectionnés.
