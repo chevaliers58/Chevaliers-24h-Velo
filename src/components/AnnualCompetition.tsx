@@ -473,33 +473,55 @@ export function AnnualSeasonAdmin() {
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="text-sm font-semibold">
           Date de début
-          <input className={field} type="date" value={seasonStart} onChange={(e) => setStart(e.target.value)} />
+          <input
+            className={field}
+            type="date"
+            value={seasonStart}
+            onChange={(e) => setStart(e.target.value)}
+          />
         </label>
         <label className="text-sm font-semibold">
           Date de fin
-          <input className={field} type="date" value={seasonEnd} onChange={(e) => setEnd(e.target.value)} />
+          <input
+            className={field}
+            type="date"
+            value={seasonEnd}
+            onChange={(e) => setEnd(e.target.value)}
+          />
         </label>
       </div>
-      <button type="button" disabled={busy || !seasonStart} className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground" onClick={saveSeason}>
+      <button
+        type="button"
+        disabled={busy || !seasonStart}
+        className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
+        onClick={saveSeason}
+      >
         Enregistrer et activer la saison
       </button>
       <hr />
       <h3 className="font-semibold">Confirmer une affectation</h3>
       <p className="text-sm text-muted-foreground">
-        Les choix faits à l’inscription ne donnent pas de droits staff ni de points avant confirmation.
+        Les choix faits à l’inscription ne donnent pas de droits staff ni de points avant
+        confirmation.
       </p>
       <label className="block text-sm font-semibold">
         Membre
-        <select className={field} value={member} onChange={(e) => {
-          const id = e.target.value;
-          const m = data.members.find((item) => item.id === id);
-          setMember(id);
-          setPatrol(m?.patrol_id ?? "");
-          setYear(m?.scout_year ? String(m.scout_year) : "other");
-        }}>
+        <select
+          className={field}
+          value={member}
+          onChange={(e) => {
+            const id = e.target.value;
+            const m = data.members.find((item) => item.id === id);
+            setMember(id);
+            setPatrol(m?.patrol_id ?? "");
+            setYear(m?.scout_year ? String(m.scout_year) : "other");
+          }}
+        >
           <option value="">Choisir un membre</option>
           {data.members.map((m) => (
-            <option key={m.id} value={m.id}>{m.totem || m.full_name || "Membre"}</option>
+            <option key={m.id} value={m.id}>
+              {m.totem || m.full_name || "Membre"}
+            </option>
           ))}
         </select>
       </label>
@@ -507,27 +529,51 @@ export function AnnualSeasonAdmin() {
         Patrouille
         <select className={field} value={patrol} onChange={(e) => setPatrol(e.target.value)}>
           <option value="">Choisir une patrouille</option>
-          {data.patrols.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          {data.patrols.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
         </select>
       </label>
       {!selected?.is_admin && (
         <label className="block text-sm font-semibold">
           Année scoute
           <select className={field} value={year} onChange={(e) => setYear(e.target.value)}>
-            {[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n}</option>)}
+            {[1, 2, 3, 4].map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
             <option value="other">Autre membre de l’unité (hors points)</option>
           </select>
         </label>
       )}
       <label className="block text-sm font-semibold">
         Date d’effet
-        <input className={field} type="date" value={from || seasonStart} onChange={(e) => setFrom(e.target.value)} />
+        <input
+          className={field}
+          type="date"
+          value={from || seasonStart}
+          onChange={(e) => setFrom(e.target.value)}
+        />
       </label>
-      <button type="button" disabled={busy || !member || !patrol || !(from || seasonStart)} className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground" onClick={confirmMember}>
+      <button
+        type="button"
+        disabled={busy || !member || !patrol || !(from || seasonStart)}
+        className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
+        onClick={confirmMember}
+      >
         Confirmer le membre
       </button>
-      {message && <p className="text-sm" role="status">{message}</p>}
-      <p className="text-xs text-muted-foreground">{data.entries.length} affectation(s) datée(s).</p>
+      {message && (
+        <p className="text-sm" role="status">
+          {message}
+        </p>
+      )}
+      <p className="text-xs text-muted-foreground">
+        {data.entries.length} affectation(s) datée(s).
+      </p>
     </section>
   );
 }
