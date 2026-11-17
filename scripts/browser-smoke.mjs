@@ -5,9 +5,12 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createClient } from "@supabase/supabase-js";
 
-const base = "http://127.0.0.1:3000/velo";
+const origin = process.env.E2E_WEB_ORIGIN;
+assert.match(origin, /^http:\/\/127\.0\.0\.1:\d+$/);
+const base = origin + "/velo";
 const api = process.env.VITE_SUPABASE_URL;
-assert.equal(api, "http://127.0.0.1:54321");
+assert.match(api, /^http:\/\/127\.0\.0\.1:\d+$/);
+assert.equal(api, process.env.E2E_EXPECTED_API_URL);
 const key = process.env.LOCAL_SERVICE_ROLE_KEY;
 assert.ok(key);
 const admin = createClient(api, key, {
@@ -45,7 +48,7 @@ async function context() {
   // Deny all external network calls (Strava, maps, emails, tracking, CDN).
   await ctx.route("**/*", (r) => {
     const u = new URL(r.request().url());
-    return u.origin === "http://127.0.0.1:3000" || u.origin === api
+    return u.origin === origin || u.origin === api
       ? r.continue()
       : r.abort();
   });
