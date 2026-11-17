@@ -5,62 +5,80 @@ on:
 permissions:
   contents: read
 jobs:
-  trial:
+  compare-types:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    env:
-      VITE_SUPABASE_PROJECT_ID: ci-local
-      VITE_SUPABASE_URL: https://ci-placeholder.supabase.co
-      VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
-      VITE_TROOP_NAME: Chevaliers 58
-      VITE_SITE_URL: https://19-58.net/velo
-      VITE_BASE_PATH: /velo/
-      VITE_TROOP_STRAVA_CLUB_URL: https://www.strava.com/clubs/Chevaliers58
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Resolve targeted upgrades in a disposable checkout
+      - name: Compare original and candidate TypeScript diagnostics
         run: |
-          npm view zod@4.6.7 version
-          npm view vite@8.3.8 version
-          npm pkg set 'dependencies.zod=4.6.7' 'devDependencies.vite=8.3.8'
-          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-          npm audit fix --package-lock-only --ignore-scripts --no-fund || true
-          npm ls zod vite seroval minimatch --package-lock-only || true
-      - name: Record candidate files
+          git checkout dd0a466cff2a061e08ebe87550acbf57d427c02c -- package.json package-lock.json
+          npm ci --no-audit
+          npx tsc --noEmit --pretty false >/tmp/baseline-tsc.log 2>&1 || true
+          git checkout HEAD -- package.json package-lock.json
+          npm ci --no-audit
+          npx tsc --noEmit --pretty false >/tmp/candidate-tsc.log 2>&1 || true
+          python - <<'PY'
+          from collections import Counter
+          from pathlib import Path
+          import re
+          pattern = re.compile(r"^(.*?\(\d+,\d+\): error TS\d+:.*)$", re.M)
+          a = Counter(pattern.findall(Path('/tmp/baseline-tsc.log').read_text()))
+          b = Counter(pattern.findall(Path('/tmp/candidate-tsc.log').read_text()))
+          print("Baseline error count:", sum(a.values()))
+          print("Candidate error count:", sum(b.values()))
+          print("New or changed diagnostics:", sum((b-a).values()))
+          for line in sorted((b-a).elements()):
+              print(line)
+          print("Resolved or changed diagnostics:", sum((a-b).values()))
+          PY
+      - name: Verify dependency security
+        run: npm audit
+  regenerate-db-types:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: supabase/setup-cli@v3
+        with:
+          version: 2.122.1
+      - name: Prepare isolated test database
         run: |
-          git diff --stat -- package.json package-lock.json
-          git diff -- package.json package-lock.json > /tmp/dependency-candidate.patch
-          echo 'CANDIDATE_DIFF_START'
-          cat /tmp/dependency-candidate.patch
-          echo 'CANDIDATE_DIFF_END'
-      - name: Install and test
-        run: npm ci
-      - name: Audit after updates
+          mkdir -p "$RUNNER_TEMP/chevaliers-types"
+          cd "$RUNNER_TEMP/chevaliers-types"
+          supabase init
+          mkdir -p supabase/migrations
+          cp "$GITHUB_WORKSPACE"/supabase/migrations/*.sql supabase/migrations/
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          count = 0
+          for p in Path("supabase/migrations").glob("*.sql"):
+              data,n = re.subn(r"https?://[A-Za-z0-9-]+\.supabase\.co/functions/v1/", "http://127.0.0.1:1/functions/v1/", p.read_text())
+              count += n
+              p.write_text(data)
+          assert count == 3
+          p = Path('supabase/config.toml')
+          p.write_text(re.sub(r"(?m)^major_version\s*=\s*\d+", "major_version = 17", p.read_text()))
+          PY
+      - name: Replay migrations and generate exact public schema types
+        working-directory: ${{ runner.temp }}/chevaliers-types
         run: |
-          npm audit --omit=dev || true
-          npm audit || true
-      - name: Lint
-        run: npm run lint
-      - name: TypeScript diagnostic
-        continue-on-error: true
-        run: npx tsc --noEmit
-      - name: Build
-        run: npm run build
-      - name: Smoke test
-        run: |
-          node .output/server/index.mjs >/tmp/chevaliers-test.log 2>&1 &
-          pid=$!
-          trap 'kill "$pid" 2>/dev/null || true' EXIT
-          for i in $(seq 1 30); do
-            if curl --fail --silent http://127.0.0.1:3000/velo/ >/tmp/home.html; then break; fi
-            sleep 1
-          done
-          grep -q 'Chevaliers 58' /tmp/home.html
-          for route in auth timeline solidarite nouveau-mot-de-passe sw.js widget/troupe-km.js; do
-            curl --fail --silent "http://127.0.0.1:3000/velo/$route" >/dev/null
-          done
+          supabase db start
+          supabase db reset --local --no-seed
+          supabase gen types typescript --local --schema public >/tmp/chevaliers-db-types.ts
+          echo 'GENERATED_TYPES_START'
+          cat /tmp/chevaliers-db-types.ts
+          echo 'GENERATED_TYPES_END'
+      - name: Stop isolated database
+        if: always()
+        working-directory: ${{ runner.temp }}/chevaliers-types
+        run: supabase stop --no-backup
