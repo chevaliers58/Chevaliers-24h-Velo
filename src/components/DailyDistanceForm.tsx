@@ -369,8 +369,8 @@ export function DailyDistanceForm({
       }
     }
 
-    const trimmedStrava = stravaUrl.trim();
-    if (activeTab === "strava" && trimmedStrava) {
+    const trimmedStrava = activeTab === "strava" ? stravaUrl.trim() : "";
+    if (activeTab === "strava") {
       if (!/^https:\/\/(www\.)?strava\.(com|app\.link)\//i.test(trimmedStrava)) {
         toast.error(
           "Lien Strava invalide. Il doit commencer par https://www.strava.com/activities/...",

@@ -79,6 +79,28 @@ begin
     raise exception 'Scout can self-assign admin role';
   exception when insufficient_privilege then null;
   end;
+  -- A photo submitted by a scout always waits for approval.
+  insert into public.activities(id,user_id,ride_date,km,proof_path,status)
+  values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2',auth.uid(),
+          greatest(current_date,date '2026-09-27'),8,'local-photo.jpg','approved');
+  if not exists (
+    select 1 from public.activities
+    where id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2' and status = 'pending'
+  ) then
+    raise exception 'Scout photo can bypass validation';
+  end if;
+  begin
+    insert into public.activities(user_id,ride_date,km,strava_link)
+    values (auth.uid(),greatest(current_date,date '2026-09-27'),10,'https://example.invalid/activity');
+    raise exception 'Invalid Strava link can bypass validation';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into public.activities(user_id,ride_date,km)
+    values (auth.uid(),greatest(current_date,date '2026-09-27'),10);
+    raise exception 'Activity accepted without proof';
+  exception when check_violation then null;
+  end;
   -- A manual Strava link keeps the original auto-approval behavior.
   insert into public.activities(id,user_id,ride_date,km,strava_link)
   values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1',auth.uid(),
@@ -148,6 +170,16 @@ do $test$
 begin
   if not public.has_role(auth.uid(),'admin') then
     raise exception 'Bootstrap admin role missing';
+  end if;
+  -- The existing admin UI submits its own photo activities as approved.
+  insert into public.activities(id,user_id,ride_date,km,proof_path,status)
+  values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3',auth.uid(),
+          greatest(current_date,date '2026-09-27'),7,'local-admin-photo.jpg','approved');
+  if not exists (
+    select 1 from public.activities
+    where id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3' and status = 'approved'
+  ) then
+    raise exception 'Admin photo validation disagrees with the original form';
   end if;
   perform public.set_admin_by_email('scout@local-test.invalid',true);
   if not exists(select 1 from public.user_roles where user_id = '22222222-2222-4222-8222-222222222222' and role = 'admin') then

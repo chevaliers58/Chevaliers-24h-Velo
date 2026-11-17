@@ -207,7 +207,9 @@ Deno.serve(async (request) => {
       const cause = profilesResult.error ?? installationsResult.error ?? subscriptionsResult.error;
       console.error("Chargement du statut de l’application impossible", cause);
       return json(
-        { error: `Impossible de charger l’état de l’application : ${cause?.message ?? "Erreur inconnue"}` },
+        {
+          error: `Impossible de charger l’état de l’application : ${cause?.message ?? "Erreur inconnue"}`,
+        },
         500,
       );
     }
