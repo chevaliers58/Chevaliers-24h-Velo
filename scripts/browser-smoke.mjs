@@ -251,10 +251,18 @@ try {
     "existing profile loaded",
   );
   await scoutPage.locator("#quali").fill("Quali Test Navigateur");
+  const manualProfileUrl = "https://www.strava.com/athletes/123456789";
+  await scoutPage.locator("#strava").fill(manualProfileUrl);
+  assert.equal(
+    await scoutPage.getByRole("button", { name: /Associer mon compte Strava/ }).count(),
+    0,
+  );
   await scoutPage.getByRole("button", { name: "Enregistrer mon profil" }).click();
   await eventually(async () => {
-    const p = good(await admin.from("profiles").select("quali").eq("id", scout.id).single());
-    return p.quali === "Quali Test Navigateur";
+    const p = good(
+      await admin.from("profiles").select("quali,strava_url").eq("id", scout.id).single(),
+    );
+    return p.quali === "Quali Test Navigateur" && p.strava_url === manualProfileUrl;
   }, "updated profile in database");
   await scoutPage.waitForURL((u) => u.pathname === "/velo/" || u.pathname === "/velo");
   await scoutPage.goto(base + "/profil");
@@ -262,7 +270,8 @@ try {
     async () => (await scoutPage.locator("#quali").inputValue()) === "Quali Test Navigateur",
     "profile update persisted after navigation",
   );
-  console.log("PASS profile edit and persistence");
+  assert.equal(await scoutPage.locator("#strava").inputValue(), manualProfileUrl);
+  console.log("PASS profile edit and manual Strava link; no OAuth association");
 
   stage = "planned ride creation, responses, calendar and guest protection";
   const rideTitle = "Sortie Test Navigateur";

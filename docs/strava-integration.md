@@ -1,28 +1,12 @@
-# Intégration Strava
+# Strava : mode manuel uniquement
 
-## Ce que prépare cette branche
+Décision du responsable des Chevaliers 58 (17 novembre 2026) : l'import automatique Strava n'est pas nécessaire. Le site conserve la saisie des kilomètres et le lien de preuve Strava saisis par le scout, le lien de profil en option et le lien public du club. Les photos et GPX restent disponibles selon les règles historiques.
 
-- Le profil peut lancer une autorisation Strava OAuth avec le scope minimal `activity:read`.
-- Les jetons d’accès et de renouvellement restent dans `strava_connections`, table sans accès navigateur.
-- Le webhook vérifie le jeton de souscription, accuse réception rapidement, puis traite les événements en arrière-plan.
-- Les activités prises en charge sont importées une seule fois grâce à l’identifiant Strava unique. Les activités supprimées ou rendues privées sont retirées de la copie du site.
-- Le bouton public de l’accueil doit être configuré avec le lien du club de votre troupe.
+## Mise en service
 
-## Configuration Chevaliers 58
+- Ne pas créer d'application API Strava, configurer de secrets STRAVA_*, ni enregistrer de webhook.
+- Les deux handlers historiques `strava-oauth` et `strava-webhook` répondent désormais HTTP 410 sans accès aux services ou à la base. Ne pas les déployer. Aucun bouton d'association OAuth dans le profil.
+- Les 57 migrations existantes sont conservées pour garder l'installation reproductible. Les structures OAuth privées et les champs de provenance sont inactifs côté application ; aucune donnée ni jeton ne doit y être ajouté. Le contrôle RLS historique continue d'interdire aux clients de falsifier une provenance serveur.
+- Le test navigateur vérifie les liens saisis manuellement et l'absence d'association automatique. Les anciens handlers sont consultables dans l'historique Git antérieur à cette décision.
 
-Créer une nouvelle application API Strava pour Chevaliers 58 ; ne pas réutiliser les identifiants ni les jetons de l'ancienne troupe. Définir dans les secrets Supabase :
-
-- `STRAVA_CLIENT_ID`
-- `STRAVA_CLIENT_SECRET`
-- `STRAVA_REDIRECT_URI` = `https://qxlsdauqoivqhoojlrwk.supabase.co/functions/v1/strava-oauth`
-- `STRAVA_WEBHOOK_VERIFY_TOKEN` = une valeur aléatoire longue
-- `STRAVA_WEBHOOK_SUBSCRIPTION_ID` = l’identifiant obtenu à la création de la souscription
-- `SITE_URL` = `https://19-58.net/velo`
-
-Dans le tableau de bord Strava, déclarer comme callback OAuth l'URL `https://qxlsdauqoivqhoojlrwk.supabase.co/functions/v1/strava-oauth`. Enregistrer ensuite le webhook sur `https://qxlsdauqoivqhoojlrwk.supabase.co/functions/v1/strava-webhook` avec le même jeton de vérification, puis renseigner l'identifiant de souscription obtenu dans `STRAVA_WEBHOOK_SUBSCRIPTION_ID`. Déployer les fonctions `strava-oauth` et `strava-webhook` après configuration des secrets.
-
-## Limites liées à Strava
-
-Le lien vers le club promeut la communauté, mais ne donne pas au site accès aux activités des membres. Chaque scout doit associer son propre compte et autoriser l’accès. L’import automatique démarre à la réception des prochains événements ; cette première version ne récupère pas l’historique. Les activités accessibles par `activity:read` sont celles visibles par l’athlète et ses abonnés, selon les réglages de confidentialité Strava.
-
-Une souscription Strava requiert une application API et une callback joignable. Tant que Strava n’a pas accordé l’accès demandé, le flux ne peut pas être activé. Ne jamais ajouter le secret client ou des jetons dans le dépôt.
+Ne pas réactiver cette intégration sans demande explicite et nouvel examen des conditions API et de la confidentialité. Cette décision ne vaut pas approbation des règles de visibilité des autres données.

@@ -131,20 +131,15 @@ Configurer dans **Supabase → Edge Functions → Secrets** :
 |---|---|
 | `SITE_URL=https://19-58.net/velo` | CORS, liens et redirections |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Notifications push PWA |
-| `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET` | OAuth Strava |
-| `STRAVA_REDIRECT_URI` | Facultatif ; URL de la fonction `strava-oauth` par défaut |
-| `STRAVA_WEBHOOK_VERIFY_TOKEN`, `STRAVA_WEBHOOK_SUBSCRIPTION_ID`, `STRAVA_WEBHOOK_SIGNING_SECRET` | Vérification, abonnement et authentification des événements webhook Strava |
 | `RESEND_API_KEY`, `PENDING_ACTIVITY_ALERT_FROM`, `PENDING_ACTIVITY_ALERT_TO` | E-mail d'alerte des sorties en attente |
 
 `VAPID_SUBJECT` doit être un contact `mailto:` valide. L'adresse
 `PENDING_ACTIVITY_ALERT_FROM` doit être autorisée dans Resend.
 
-Avant d'activer l'import automatique, confirmer auprès de Strava que le classement partagé est autorisé par ses conditions API en vigueur. Le lien manuel vers une activité et le lien du club sont indépendants de cet import. Si l'usage est autorisé, créer une nouvelle application API Strava pour Chevaliers 58. Son callback doit être
-`https://qxlsdauqoivqhoojlrwk.supabase.co/functions/v1/strava-oauth`. Enregistrer le webhook
-sur `https://qxlsdauqoivqhoojlrwk.supabase.co/functions/v1/strava-webhook`.
+Décision Chevaliers 58 : pas d'import automatique Strava. Les liens manuels de preuve, de profil et du club restent disponibles. Ne créer ni application API, ni webhook, ni secrets Strava. Les deux anciens handlers sont neutralisés et ne font pas partie du déploiement.
 
 Le secret Edge `SITE_URL` est distinct de `VITE_SITE_URL`, injecté au build du frontend.
-Les clés VAPID privées, le secret Strava et la clé Resend restent exclusivement dans Supabase.
+Les clés VAPID privées et la clé Resend restent exclusivement dans Supabase.
 
 Le site est préparé pour le sous-chemin `/velo` avec `VITE_BASE_PATH=/velo/` et
 `VITE_SITE_URL=https://19-58.net/velo`. Le préfixe doit être routé vers l'application par
@@ -170,16 +165,15 @@ aux propriétaires ou aux administrateurs selon le bucket.
 
 ### Ordre de mise en service Supabase
 
-1. Créer une nouvelle application Strava pour Chevaliers 58 et configurer son callback.
-2. Configurer les secrets Edge ci-dessus.
-3. Déployer les cinq fonctions Edge (`menage`, `pending-activity-alert`,
-   `strava-oauth`, `strava-webhook`, `app-notifications`).
-4. Appliquer les migrations SQL dans l'ordre du dossier `supabase/migrations/`.
+1. Configurer les secrets Edge nécessaires ci-dessus.
+2. Déployer uniquement les trois fonctions Edge utiles (`menage`, `pending-activity-alert`,
+   `app-notifications`). Ne pas déployer les deux anciens endpoints Strava.
+3. Appliquer les migrations SQL dans l'ordre du dossier `supabase/migrations/`.
    Certaines migrations activent les tâches cron ; les fonctions doivent donc déjà être déployées.
-5. Créer le premier compte dans l'application (confirmer l'adresse si la confirmation est activée), puis exécuter
+4. Créer le premier compte dans l'application (confirmer l'adresse si la confirmation est activée), puis exécuter
    `supabase/bootstrap_admin.sql` avec son adresse exacte.
-6. Configurer les URL d'authentification Supabase et tester les inscriptions,
-   les notifications, le nettoyage en mode aperçu et les retours OAuth.
+5. Configurer les URL d'authentification Supabase et tester les inscriptions,
+   les notifications, le nettoyage en mode aperçu et les preuves manuelles.
 
 Les migrations ne préchargent volontairement pas les patrouilles de l'ancien site. Après
 création du premier administrateur, celui-ci devra créer les patrouilles réelles des Chevaliers 58

@@ -69,10 +69,14 @@ jobs:
           deno-version: v2.x
       - name: Type-check cleanup Edge Function
         run: deno check supabase/functions/menage/index.ts
-      - name: Type-check Strava webhook and run signature tests
+      - name: Verify disabled Strava endpoints and legacy signature helper
         run: |
           deno check supabase/functions/strava-webhook/index.ts
-          deno test supabase/functions/strava-webhook/signature_test.ts
+          deno test supabase/functions/_shared/strava-disabled_test.ts supabase/functions/strava-webhook/signature_test.ts
+          if git grep -n -E 'strava-oauth|strava-webhook' -- src; then
+            echo "Automatic Strava integration must not be exposed by the app."
+            exit 1
+          fi
       - name: Type-check remaining Edge Functions
         run: |
           deno check --node-modules-dir=none supabase/functions/strava-oauth/index.ts supabase/functions/app-notifications/index.ts supabase/functions/pending-activity-alert/index.ts
