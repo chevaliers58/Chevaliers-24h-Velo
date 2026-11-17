@@ -6,7 +6,7 @@ import { supabase as supabaseClient } from "@/integrations/supabase/client";
 const supabase = supabaseClient as unknown as SupabaseClient;
 import { getActivitySport, type ActivitySport } from "@/lib/database";
 import { isStaffPatrol, isTroopStaffPatrol, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
-import { monthRange, weekRange } from "@/lib/useAuth";
+import { monthRange, weekRange, useAuth } from "@/lib/useAuth";
 
 /**
  * Données de la troupe pour l'app installée : une seule lecture des vues
@@ -68,8 +68,11 @@ export interface PatrolRow {
 }
 
 export function useTroopData() {
+  const { user, loading } = useAuth();
   return useQuery<TroopData>({
-    queryKey: ["app-troop-data"],
+    queryKey: ["app-troop-data", user?.id ?? null],
+    enabled: !loading,
+    gcTime: 0,
     staleTime: 30_000,
     refetchOnWindowFocus: true,
     queryFn: async () => {

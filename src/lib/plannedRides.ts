@@ -291,10 +291,11 @@ export function downloadIcs(ride: PlannedRide) {
 
 // ---------- Groupe WhatsApp des sorties (lien réservé aux membres) ----------
 
-export function useWhatsappGroupLink(enabled: boolean) {
+export function useWhatsappGroupLink(userId: string | undefined) {
   return useQuery<string | null>({
-    queryKey: ["member-link", "whatsapp_sorties"],
-    enabled,
+    queryKey: ["member-link", "whatsapp_sorties", userId],
+    enabled: !!userId,
+    gcTime: 0,
     staleTime: 5 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase

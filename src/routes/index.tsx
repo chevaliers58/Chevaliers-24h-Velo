@@ -177,7 +177,12 @@ function FilterPill({
 }
 
 function Index() {
-  const { user, profile, isAdmin } = useAuth();
+  const { user } = useAuth();
+  return <IndexForViewer key={user?.id ?? "anonymous"} />;
+}
+
+function IndexForViewer() {
+  const { user, profile, isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { background: themeBackground } = useSeasonalTheme();
   // Application installée sur téléphone : l'accueil est l'écran /app (le site n'est pas concerné)
@@ -274,7 +279,9 @@ function Index() {
     isLoading: isLeaderboardLoading,
     isError: isLeaderboardError,
   } = useQuery<LeaderboardItem[]>({
-    queryKey: ["leaderboard", period, sportMode],
+    queryKey: ["leaderboard", period, sportMode, user?.id ?? null],
+    enabled: !authLoading,
+    gcTime: 0,
     refetchInterval: 30_000,
     refetchOnWindowFocus: true,
     queryFn: async () => {
@@ -408,7 +415,7 @@ function Index() {
 
   const selectedUserIds = selectedEntry?.userIds ?? [];
   const { data: entryActivities = [], isLoading: isEntryActivitiesLoading } = useQuery({
-    queryKey: ["leaderboard-entry-activities", selectedUserIds, period, sportMode],
+    queryKey: ["leaderboard-entry-activities", selectedUserIds, period, sportMode, user?.id ?? null],
     enabled: !!selectedEntry && selectedUserIds.length > 0,
     queryFn: async () => {
       const { data, error } = await supabase

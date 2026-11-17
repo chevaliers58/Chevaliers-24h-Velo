@@ -386,11 +386,19 @@ try {
     });
     await switchingPage.goto(base + "/");
     await eventually(() => held, "captured genuine admin role response");
+    await switchingPage.getByRole("button", { name: /Classement Individuel/ }).click();
+    await switchingPage.getByText("Admin Test Navigateur", { exact: true }).first().waitFor();
     await switchingPage.evaluate(() => {
       document.documentElement.dataset.e2eSession = "retained";
     });
     await controllingPage.getByRole("button", { name: "Déconnexion", exact: true }).click();
     await switchingPage.getByRole("link", { name: "Connexion", exact: true }).first().waitFor();
+    await switchingPage.getByRole("button", { name: /Classement Individuel/ }).click();
+    await switchingPage.getByText("Admin T.", { exact: true }).first().waitFor();
+    assert.equal(
+      await switchingPage.getByText("Admin Test Navigateur", { exact: true }).count(),
+      0,
+    );
     await login(controllingPage, email);
     await switchingPage.getByRole("link", { name: "Profil", exact: true }).click();
     await eventually(

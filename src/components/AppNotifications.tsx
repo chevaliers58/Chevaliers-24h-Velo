@@ -36,6 +36,12 @@ function base64UrlToBytes(value: string) {
 
 export function AppNotifications() {
   const { user } = useAuth();
+  if (!user) return null;
+  return <UserNotifications key={user.id} />;
+}
+
+function UserNotifications() {
+  const { user } = useAuth();
   const { pathname } = useLocation();
   const onAppHome = pathname === "/app" || pathname === "/app/";
   const [standalone, setStandalone] = useState(false);
