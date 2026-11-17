@@ -48,8 +48,8 @@ do $$ begin
   raise exception 'invité ajoute des participants';
 exception when insufficient_privilege then raise notice 'OK invité : ne peut pas ajouter de participants';
 end $$;
-insert into public.activities (id, user_id, km, ride_date, group_ride_id)
-  values ('bbbbbbbb-0000-0000-0000-000000000005', '33333333-3333-3333-3333-333333333333', 30, '2026-10-10', '99999999-0000-0000-0000-000000000001');
+insert into public.activities (id, user_id, km, ride_date, group_ride_id, proof_path)
+  values ('bbbbbbbb-0000-0000-0000-000000000005', '33333333-3333-3333-3333-333333333333', 30, '2026-10-10', '99999999-0000-0000-0000-000000000001', 'synthetic-photo.png');
 -- Deuxième sortie du même scout dans le même groupe -> ignorée
 insert into public.activities (id, user_id, km, ride_date, strava_link, group_ride_id)
   values ('bbbbbbbb-0000-0000-0000-000000000006', '33333333-3333-3333-3333-333333333333', 30, '2026-10-10', 'https://strava.com/a/13', '99999999-0000-0000-0000-000000000001');

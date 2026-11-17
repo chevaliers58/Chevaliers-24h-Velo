@@ -65,6 +65,10 @@ jobs:
             psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
               -f "$GITHUB_WORKSPACE/supabase/tests/$test"
           done
+      - name: Test group rides, walk, corrections, birthdays, achievements and themes
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
+            -f "$GITHUB_WORKSPACE/supabase/tests/secondary_smoke.sql"
       - name: Stop local stack
         if: always()
         working-directory: ${{ runner.temp }}/chevaliers-db
