@@ -39,6 +39,15 @@ export function isStaffPatrol(p: PatrolLike): boolean {
   return n.includes("staff") || n.includes("chef");
 }
 
+/** Collective ranking only; does not confer staff rights. */
+export function isOtherUnitPatrol(p: PatrolLike): boolean {
+  return (p?.name ?? "").trim().toLowerCase() === "autres membres de l'unité";
+}
+
+export function isCollectivePatrol(p: PatrolLike): boolean {
+  return isStaffPatrol(p) || isOtherUnitPatrol(p);
+}
+
 /**
  * Une ligne de classement apparaît-elle dans la catégorie demandée ?
  * Le staff apparaît dans toutes les catégories (Garçons, Filles, Staff).

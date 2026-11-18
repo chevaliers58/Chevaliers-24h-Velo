@@ -25,6 +25,7 @@ export interface ScoutProfile {
   patrol_category?: string | null;
   is_chef?: boolean;
   onboarded: boolean;
+  member_approved?: boolean;
   created_at?: string | null | undefined;
 }
 
@@ -59,6 +60,7 @@ interface DbProfile {
   strava_url?: string | null;
   patrol_id?: string | null;
   onboarded?: boolean;
+  member_approved?: boolean;
   created_at?: string;
   patrols?: {
     name?: string | null;
@@ -112,6 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           patrol_category: patrolData?.category ?? (isChef ? "staff" : null),
           is_chef: isChef,
           onboarded: !!prof.onboarded,
+          member_approved: prof.member_approved === true,
           created_at: prof.created_at,
         });
       } else {
@@ -167,6 +170,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               patrol_category: patrolData?.category ?? (isChef ? "staff" : null),
               is_chef: isChef,
               onboarded: true,
+              member_approved: (createdProf as DbProfile).member_approved === true,
               created_at: createdProf.created_at,
             });
             profileLoaded = true;

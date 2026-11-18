@@ -29,6 +29,7 @@ export interface Profile {
   patrol_id: string | null;
   is_chef?: boolean;
   is_admin?: boolean;
+  member_approved?: boolean;
   onboarded: boolean;
   created_at: string;
 }

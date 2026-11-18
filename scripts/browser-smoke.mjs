@@ -87,6 +87,7 @@ try {
       user_metadata: { full_name: "Admin Test Navigateur", patrol_id: patrol.id, scout_year: "1" },
     }),
   );
+  good(await admin.from("profiles").update({ member_approved: true }).eq("id", created.user.id));
   good(await admin.from("user_roles").insert({ user_id: created.user.id, role: "admin" }));
   stage = "anonymous access and protected route";
   const guest = await context();
@@ -125,8 +126,16 @@ try {
   // this is not an email delivery test.
   if (!scout.email_confirmed_at)
     good(await admin.auth.admin.updateUserById(scout.id, { email_confirm: true }));
+  assert.equal(profile.member_approved, false);
   await guest.close();
-  console.log("PASS real signup and profile metadata");
+  const pendingContext = await context();
+  const pendingPage = await pendingContext.newPage();
+  await login(pendingPage, email);
+  await pendingPage.goto(base + "/mes-km");
+  await pendingPage.getByText("Inscription en attente de validation", { exact: true }).waitFor();
+  await pendingContext.close();
+  good(await admin.from("profiles").update({ member_approved: true }).eq("id", scout.id));
+  console.log("PASS real signup and staff approval gate");
   stage = "login with scout and deny admin";
   const member = await context();
   const scoutPage = await member.newPage();
@@ -412,7 +421,7 @@ try {
   stage = "late admin role response after account switch";
   // A separate non-staff member keeps the privacy regression meaningful now
   // that verified staff are excluded from the individual rankings.
-  good(
+  const masked = good(
     await admin.auth.admin.createUser({
       email: "masked-member-e2e@example.com",
       password,
@@ -420,6 +429,7 @@ try {
       user_metadata: { full_name: "Membre Test Navigateur", patrol_id: patrol.id, scout_year: "3" },
     }),
   );
+  good(await admin.from("profiles").update({ member_approved: true }).eq("id", masked.user.id));
   const switching = await context();
   const switchingPage = await switching.newPage();
   const controllingPage = await switching.newPage();

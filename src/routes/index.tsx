@@ -38,7 +38,7 @@ import { getActivitySport, type ActivitySport, SPORT_INFO } from "@/lib/activity
 import { getPatrolColor, getPatrolEmblem } from "@/lib/patrolEmblem";
 import { SportIcon, SPORT_COLORS } from "@/components/SportIcon";
 import { cn } from "@/lib/utils";
-import { isStaffPatrol, TROOP_STAFF_PATROL_NAME, isTroopStaffPatrol } from "@/lib/categories";
+import { isStaffPatrol, isCollectivePatrol, TROOP_STAFF_PATROL_NAME, isTroopStaffPatrol } from "@/lib/categories";
 import { computeJerseys } from "@/lib/jerseys";
 import { JerseysPanel } from "@/components/JerseysPanel";
 import { ScoutSportifCard } from "@/components/ScoutSportifCard";
@@ -358,7 +358,7 @@ function IndexForViewer() {
           .map((p) => {
             const pt = p.patrols;
             // Le staff et les admins ne participent pas aux classements individuels.
-            const isStaffOrChef = isStaffPatrol(pt) || !!p.is_admin;
+            const isStaffOrChef = isCollectivePatrol(pt) || !!p.is_admin;
 
             const userActs = acts.filter((a) => {
               if (a.user_id !== p.id) return false;
@@ -514,13 +514,13 @@ function IndexForViewer() {
     return combinedPatrols
       .filter((p) => {
         if (!p) return false;
-        const staff = isStaffPatrol(p);
+        const staff = isCollectivePatrol(p);
         // Le staff compte en kilomètres lorsque toutes les années sont affichées.
         if (scoutYear !== "all" && staff) return false;
         return true;
       })
       .map((p) => {
-        const staffPatrol = isStaffPatrol(p);
+        const staffPatrol = isCollectivePatrol(p);
 
         // Membres de la patrouille. Les animateurs sans patrouille sont rattachés
         // à la patrouille « Staff troupe » (et pas à chacune des patrouilles staff).
@@ -648,6 +648,11 @@ function IndexForViewer() {
 
   return (
     <div className="mobile-home-page min-h-screen bg-background">
+      {user && !authLoading && !profile?.member_approved && (
+        <div className="bg-amber-100 p-3 text-center text-sm font-semibold text-amber-950">
+          Inscription en attente de validation par le staff.
+        </div>
+      )}
       {/* Hero Section */}
       <section className="mobile-home-hero relative overflow-hidden bg-bark text-bark-foreground">
         <img
@@ -1531,7 +1536,7 @@ function IndexForViewer() {
           </div>
           {!!selectedEntry?.collectiveKm && (
             <p className="rounded-xl border p-3 text-sm">
-              Contribution collective du staff : {selectedEntry.collectiveKm.toFixed(1)} km.
+              Contribution collective : {selectedEntry.collectiveKm.toFixed(1)} km.
             </p>
           )}
           {(entryActivities.length > 0 || !!selectedEntry?.collectiveKm) && (

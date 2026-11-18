@@ -78,7 +78,9 @@ jobs:
             -f "$GITHUB_WORKSPACE/supabase/staged/private_proofs_candidate.sql" \
             -f "$GITHUB_WORKSPACE/supabase/staged/personalization.sql" \
             -f "$GITHUB_WORKSPACE/supabase/staged/official_season_gate.sql" \
-            -f "$GITHUB_WORKSPACE/supabase/staged/staff_collective_privacy.sql"
+            -f "$GITHUB_WORKSPACE/supabase/staged/staff_collective_privacy.sql" \
+            -f "$GITHUB_WORKSPACE/supabase/staged/admin_role_mirror.sql" \
+            -f "$GITHUB_WORKSPACE/supabase/staged/member_approval_collective.sql"
       - name: Install app and pinned browser test runner
         run: |
           npm ci

@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Profile, Patrol } from "@/lib/database";
 import { cn } from "@/lib/utils";
 import { isStaffPatrol } from "@/lib/categories";
@@ -115,6 +116,24 @@ export function AdminUserList({
       return;
     }
     toast.success(`Mot de passe de ${name} réinitialisé.`);
+  };
+
+  const handleApproval = async (target: Profile, approved: boolean) => {
+    if (!window.confirm(approved ? "Valider cette inscription ?" : "Suspendre cet accès membre ?")) return;
+    setTogglingUserId(target.id);
+    try {
+      const { error } = await (supabase as unknown as SupabaseClient).rpc("set_member_approval", {
+        _user_id: target.id,
+        _approved: approved,
+      });
+      if (error) throw error;
+      toast.success(approved ? "Inscription validée." : "Accès suspendu.");
+      await onRefresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Impossible de modifier cette inscription.");
+    } finally {
+      setTogglingUserId(null);
+    }
   };
 
   const handleToggleAdmin = async (target: Profile, newChecked: boolean) => {
@@ -583,7 +602,7 @@ export function AdminUserList({
                             <Switch
                               id={`switch-admin-${p.id}`}
                               checked={isAdm}
-                              disabled={isCurrent || isBusy}
+                              disabled={isCurrent || isBusy || !p.member_approved}
                               onCheckedChange={(checked) => handleToggleAdmin(p, checked)}
                               className="data-[state=checked]:bg-amber-500"
                               aria-label={`Attribuer ou révoquer les droits admin pour ${p.full_name || p.email}`}
@@ -601,6 +620,16 @@ export function AdminUserList({
                             {isAdm ? "Administrateur" : "Scout standard"}
                           </label>
 
+                          {!isAdm && (
+                            <Button
+                              size="sm"
+                              variant={p.member_approved ? "outline" : "default"}
+                              disabled={isBusy}
+                              onClick={() => void handleApproval(p, !p.member_approved)}
+                            >
+                              {p.member_approved ? "Suspendre" : "Valider l’inscription"}
+                            </Button>
+                          )}
                           {(!isAdm || isCurrent) && (
                             <button
                               type="button"

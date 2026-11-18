@@ -29,7 +29,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { isStaffPatrol, isTroopStaffPatrol } from "@/lib/categories";
+import { isCollectivePatrol, isTroopStaffPatrol } from "@/lib/categories";
 
 export interface PatrolDailyContributionChartProps {
   className?: string;
@@ -219,7 +219,7 @@ export function PatrolDailyContributionChart({
     return patrols.filter((p) => {
       return (
         categoryFilter === "all" ||
-        (categoryFilter === "staff" ? isStaffPatrol(p) : !isStaffPatrol(p))
+        (categoryFilter === "staff" ? isCollectivePatrol(p) : !isCollectivePatrol(p))
       );
     });
   }, [patrols, categoryFilter]);
@@ -500,7 +500,7 @@ export function PatrolDailyContributionChart({
               onClick={() => setCategoryFilter("staff")}
               className="h-7 text-xs px-2.5"
             >
-              Staff
+              Staff et autres membres
             </Button>
           </div>
         </div>

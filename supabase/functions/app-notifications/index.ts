@@ -163,6 +163,14 @@ Deno.serve(async (request) => {
   const token = (request.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
   const { data: authData, error: authError } = await admin.auth.getUser(token);
   if (authError || !authData.user) return json({ error: "Connexion requise" }, 401);
+  const { data: membership, error: membershipError } = await admin
+    .from("profiles")
+    .select("member_approved")
+    .eq("id", authData.user.id)
+    .maybeSingle();
+  if (membershipError || !membership?.member_approved || !authData.user.email_confirmed_at) {
+    return json({ error: "Inscription en attente de validation" }, 403);
+  }
   if (body.action === "register-installation") {
     const installationId = typeof body.installationId === "string" ? body.installationId : "";
     const platform = typeof body.platform === "string" ? body.platform : "other";

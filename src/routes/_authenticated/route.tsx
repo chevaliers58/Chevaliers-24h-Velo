@@ -21,11 +21,26 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthenticatedOutlet() {
-  const { user } = useAuth();
+  const { user, profile, loading, signOut, refreshProfile } = useAuth();
   const { user: routeUser } = Route.useRouteContext();
   // The async route guard may still refer to the previous session. Hide the
   // private subtree until it agrees with the current identity and remount it
   // on identity changes, including local form state and in-flight responses.
   if (!user || user.id !== routeUser.id) return null;
+  if (loading) return null;
+  if (!profile?.member_approved) {
+    return (
+      <main className="mx-auto max-w-lg space-y-4 px-5 py-16 text-center">
+        <h1 className="font-display text-2xl font-bold">Inscription en attente de validation</h1>
+        <p>Le staff doit confirmer ton inscription avant que tu puisses accéder aux espaces membres.</p>
+        <button className="rounded-lg bg-primary px-4 py-2 text-primary-foreground" onClick={() => void refreshProfile()}>
+          Vérifier mon statut
+        </button>
+        <button className="block mx-auto underline" onClick={() => void signOut()}>
+          Se déconnecter
+        </button>
+      </main>
+    );
+  }
   return <Outlet key={user.id} />;
 }

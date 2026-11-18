@@ -5,7 +5,7 @@ import { supabase as supabaseClient } from "@/integrations/supabase/client";
 // Client non typé : les vues publiques ne sont pas toutes dans les types générés
 const supabase = supabaseClient as unknown as SupabaseClient;
 import { getActivitySport, type ActivitySport } from "@/lib/database";
-import { isStaffPatrol, isTroopStaffPatrol, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
+import { isStaffPatrol, isCollectivePatrol, isTroopStaffPatrol, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
 import { monthRange, weekRange, useAuth } from "@/lib/useAuth";
 import { fetchStaffCollectiveDistances, type StaffCollectiveDistance } from "@/lib/staffCollective";
 
@@ -128,7 +128,7 @@ export function rankScouts(data: TroopData | undefined, period: AppPeriod, sport
   }
   return data.profiles
     .map((p) => {
-      const staff = isStaffPatrol(p.patrols) || !!p.is_admin;
+      const staff = isCollectivePatrol(p.patrols) || !!p.is_admin;
       const t = totals.get(p.id) ?? { km: 0, rides: 0 };
       return {
         user_id: p.id,
@@ -153,7 +153,7 @@ export function rankPatrols(data: TroopData | undefined, period: AppPeriod, spor
     : [...data.patrols, { id: "staff", name: TROOP_STAFF_PATROL_NAME, category: "staff" }];
   return list
     .map((p) => {
-      const isStaff = isStaffPatrol(p);
+      const isStaff = isCollectivePatrol(p);
       const main = isStaff && (isTroopStaffPatrol(p) || p.id === "staff");
       const members = scouts.filter(
         (s) => s.patrol_id === p.id || (main && s.is_staff && !s.patrol_id),
