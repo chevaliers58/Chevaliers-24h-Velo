@@ -89,6 +89,11 @@ jobs:
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
             -f "$GITHUB_WORKSPACE/supabase/staged/official_season_gate.sql" \
             -f "$GITHUB_WORKSPACE/supabase/tests/official_season_gate.sql"
+      - name: Validate staff collective-only projection (isolated only)
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
+            -f "$GITHUB_WORKSPACE/supabase/staged/staff_collective_privacy.sql" \
+            -f "$GITHUB_WORKSPACE/supabase/tests/staff_collective_privacy.sql"
       - name: Stop local stack
         if: always()
         working-directory: ${{ runner.temp }}/chevaliers-db
