@@ -288,6 +288,7 @@ function AuthPage() {
         email,
         password,
         options: {
+          emailRedirectTo: new URL(import.meta.env.BASE_URL, window.location.origin).href,
           data: {
             full_name: d.full_name.trim(),
             name: d.full_name.trim(),
@@ -311,8 +312,9 @@ function AuthPage() {
 
       const newUserId = authData.user?.id;
 
-      // 2. Explicitly write/upsert into public.profiles in Supabase
-      if (newUserId) {
+      // The Auth trigger creates profiles even when email confirmation is required.
+      // Only an authenticated new account may perform the optional profile upsert.
+      if (newUserId && authData.session?.user.id === newUserId) {
         try {
           const { error: profileError } = await supabase.from("profiles").upsert(
             {

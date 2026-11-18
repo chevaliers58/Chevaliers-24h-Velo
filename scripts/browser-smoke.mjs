@@ -106,7 +106,12 @@ try {
   await page.getByRole("option", { name: new RegExp(patrolName) }).click();
   await page.getByRole("combobox").filter({ hasText: "Choisir l'année" }).click();
   await page.getByRole("option", { name: "1ère année (Novice)" }).click();
+  const signupRequest = page.waitForRequest((r) => {
+    const u = new URL(r.url());
+    return u.origin === api && u.pathname.endsWith("/auth/v1/signup");
+  });
   await page.getByRole("button", { name: "Créer mon compte scout" }).click();
+  assert.equal(new URL((await signupRequest).url()).searchParams.get("redirect_to"), base + "/");
   const scout = await eventually(async () => {
     const users = good(await admin.auth.admin.listUsers());
     return users.users.find((u) => u.email === email);
