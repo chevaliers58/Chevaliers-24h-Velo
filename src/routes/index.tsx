@@ -54,6 +54,7 @@ import { ExpeditionGoal } from "@/components/ExpeditionGoal";
 import { BirthdayBanner } from "@/components/BirthdayBanner";
 import { useSeasonalTheme } from "@/context/SeasonalThemeContext";
 import { computePeloton, type PelotonUserScore } from "@/lib/peloton";
+import { fetchStaffCollectiveDistances } from "@/lib/staffCollective";
 import type { DistanceActivity } from "@/lib/distanceTrophies";
 import { WeeklyStreakCard } from "@/components/WeeklyStreakCard";
 import { RankingStoryExport } from "@/components/RankingStoryExport";
@@ -94,6 +95,7 @@ interface RankedActivity {
 interface SelectedLeaderboardEntry {
   title: string;
   userIds: string[];
+  collectiveKm: number;
 }
 
 export const Route = createFileRoute("/")({
@@ -198,6 +200,12 @@ function IndexForViewer() {
   const [pendingKm, setPendingKm] = useState(0);
   const [selectedEntry, setSelectedEntry] = useState<SelectedLeaderboardEntry | null>(null);
 
+  const { data: staffDistances = [], isError: staffDistancesError } = useQuery({
+    queryKey: ["staff-collective-distances"],
+    queryFn: () => fetchStaffCollectiveDistances(),
+    refetchInterval: 30_000,
+  });
+
   const { data: myApprovedActivities = [] } = useQuery<
     Array<DistanceActivity & { ride_date: string }>
   >({
@@ -205,7 +213,7 @@ function IndexForViewer() {
     enabled: !!user?.id,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("activities_public")
+        .from("activities")
         .select("km,note,status,ride_date")
         .eq("user_id", user!.id)
         .eq("status", "approved");
@@ -236,7 +244,7 @@ function IndexForViewer() {
     refetchOnWindowFocus: true,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("activities_public")
+        .from("activities")
         .select("km")
         .eq("user_id", user!.id)
         .eq("status", "approved")
@@ -247,7 +255,7 @@ function IndexForViewer() {
     },
   });
 
-  const { data: troopTotalKm = 0 } = useQuery<number>({
+  const { data: scoutTotalKm = 0 } = useQuery<number>({
     queryKey: ["troop-approved-km-all-time"],
     refetchInterval: 30_000,
     refetchOnWindowFocus: true,
@@ -260,6 +268,8 @@ function IndexForViewer() {
       return (data ?? []).reduce((sum, activity) => sum + Number(activity.km || 0), 0);
     },
   });
+
+  const troopTotalKm = scoutTotalKm + staffDistances.reduce((sum, row) => sum + Number(row.km), 0);
 
   const range =
     period === "week"
@@ -436,6 +446,17 @@ function IndexForViewer() {
     },
   });
 
+  const visibleStaffDistances = useMemo(
+    () =>
+      staffDistances.filter(
+        (a) =>
+          scoutYear === "all" &&
+          (!range || (a.ride_date >= range.from && a.ride_date <= range.to)) &&
+          (sportMode === "all" || a.sport === sportMode),
+      ),
+    [staffDistances, scoutYear, range, sportMode],
+  );
+
   const { data: patrols = [] } = useQuery<Patrol[]>({
     queryKey: ["patrols"],
     queryFn: async () => {
@@ -511,7 +532,10 @@ function IndexForViewer() {
               return isMainStaffPatrol && r.is_chef && !r.patrol_id;
             })
           : [];
-        const km = members.reduce((s, r) => s + Number(r?.km || 0), 0);
+        const collectiveKm = visibleStaffDistances
+          .filter((a) => a.patrol_id === p.id || (isMainStaffPatrol && !a.patrol_id))
+          .reduce((s, a) => s + Number(a.km), 0);
+        const km = members.reduce((s, r) => s + Number(r?.km || 0), 0) + collectiveKm;
         const pelotonPoints = members
           .filter((r) => !r.is_chef && r.category !== "staff")
           .reduce((s, r) => s + (r?.peloton?.points || 0), 0);
@@ -522,11 +546,12 @@ function IndexForViewer() {
           isChef: staffPatrol,
           members: members.length,
           km,
+          collectiveKm,
           pelotonPoints: Math.round(pelotonPoints * 10) / 10,
         };
       })
       .sort((a, b) => b.km - a.km);
-  }, [patrols, filteredScouts, scoutYear]);
+  }, [patrols, filteredScouts, scoutYear, visibleStaffDistances]);
 
   const scoutRows = useMemo(() => {
     let list = filteredScouts
@@ -545,8 +570,11 @@ function IndexForViewer() {
   }, [filteredScouts, scoutSearch]);
 
   const totalKm = useMemo(() => {
-    return filteredScouts.reduce((s, r) => s + Number(r.km || 0), 0);
-  }, [filteredScouts]);
+    return (
+      filteredScouts.reduce((s, r) => s + Number(r.km || 0), 0) +
+      visibleStaffDistances.reduce((s, a) => s + Number(a.km), 0)
+    );
+  }, [filteredScouts, visibleStaffDistances]);
 
   const topPatrol = useMemo(() => {
     return patrolRows.find((p) => Number(p.km) > 0) || null;
@@ -615,7 +643,7 @@ function IndexForViewer() {
           scout.patrol_id === patrol.id || (isMainStaffPatrol && scout.is_chef && !scout.patrol_id),
       )
       .map((scout) => scout.user_id);
-    setSelectedEntry({ title: patrol.name, userIds });
+    setSelectedEntry({ title: patrol.name, userIds, collectiveKm: patrol.collectiveKm });
   };
 
   return (
@@ -956,7 +984,7 @@ function IndexForViewer() {
               </span>
             </div>
             <div className="mt-2 font-display text-2xl font-black text-foreground sm:text-3xl">
-              {globalActivityCount.toLocaleString("fr-BE")}
+              {(globalActivityCount + staffDistances.reduce((s, a) => s + Number(a.rides), 0)).toLocaleString("fr-BE")}
             </div>
             <p className="mt-1 text-xs text-muted-foreground">tous sports, depuis le début</p>
           </div>
@@ -990,7 +1018,7 @@ function IndexForViewer() {
               </span>
             </div>
             <div className="mt-2 font-display text-2xl font-black text-foreground sm:text-3xl flex flex-wrap items-baseline gap-2">
-              <span>{totalKm.toFixed(1)}</span>
+              <span data-testid="collective-km">{totalKm.toFixed(1)}</span>
               <span className="text-base font-normal text-muted-foreground">km</span>
               {pendingKm > 0 && (
                 <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
@@ -1266,6 +1294,11 @@ function IndexForViewer() {
         ) : view === "patrols" ? (
           <div className="space-y-3">
             <AnnualPatrolPoints />
+            {staffDistancesError && (
+              <p role="alert" className="text-sm text-muted-foreground">
+                Les kilomètres collectifs du staff sont momentanément indisponibles.
+              </p>
+            )}
             {rankedPatrols.length === 0 ? (
               <div className="rounded-2xl border bg-card p-10 text-center text-muted-foreground">
                 Aucune patrouille ne correspond aux filtres sélectionnés.
@@ -1456,7 +1489,7 @@ function IndexForViewer() {
               </p>
             ) : entryActivities.length === 0 ? (
               <p className="py-8 text-center text-sm text-muted-foreground">
-                Aucune sortie approuvée ne correspond à ces filtres.
+                Aucune sortie individuelle publique ne correspond à ces filtres.
               </p>
             ) : (
               entryActivities.map((activity, index) => {
@@ -1494,12 +1527,16 @@ function IndexForViewer() {
               })
             )}
           </div>
-          {entryActivities.length > 0 && (
+          {!!selectedEntry?.collectiveKm && (
+            <p className="rounded-xl border p-3 text-sm">
+              Contribution collective du staff : {selectedEntry.collectiveKm.toFixed(1)} km.
+            </p>
+          )}
+          {(entryActivities.length > 0 || !!selectedEntry?.collectiveKm) && (
             <p className="border-t pt-3 text-right text-sm font-bold">
               Total affiché :{" "}
-              {entryActivities
-                .reduce((sum, activity) => sum + Number(activity.km || 0), 0)
-                .toFixed(1)}{" "}
+              {(entryActivities.reduce((sum, activity) => sum + Number(activity.km || 0), 0) +
+                (selectedEntry?.collectiveKm ?? 0)).toFixed(1)}{" "}
               km
             </p>
           )}

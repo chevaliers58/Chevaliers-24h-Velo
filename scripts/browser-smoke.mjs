@@ -696,6 +696,23 @@ try {
   await mobileScoutPage.waitForURL((url) => url.pathname === "/velo/app/mes-kms");
   await mobileMember.close();
   console.log("PASS mobile member screens, manual activity and history navigation");
+  stage = "staff contributions without public individual rides";
+  good(
+    await admin.from("activities").insert({
+      user_id: created.user.id,
+      ride_date: mobileRide.ride_date,
+      km: 40,
+      strava_link: "https://www.strava.com/activities/990109",
+    }),
+  );
+  await publicPage.goto(base + "/");
+  await publicPage.getByTestId("collective-km").filter({ hasText: "63.0" }).waitFor();
+  await publicPage.getByRole("button", { name: "Individuel", exact: false }).first().click();
+  assert.equal(
+    await publicPage.getByTestId("individual-rankings").getByText("Admin Test Navigateur", { exact: true }).count(),
+    0,
+  );
+  console.log("PASS staff contributions counted without individual public rank");
   console.log("BROWSER_SMOKE_OK");
 } catch (error) {
   console.error("Browser smoke failed at:", stage);

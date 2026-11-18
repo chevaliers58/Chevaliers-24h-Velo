@@ -7,6 +7,7 @@ const supabase = supabaseClient as unknown as SupabaseClient;
 import { getActivitySport, type ActivitySport } from "@/lib/database";
 import { isStaffPatrol, isTroopStaffPatrol, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
 import { monthRange, weekRange, useAuth } from "@/lib/useAuth";
+import { fetchStaffCollectiveDistances, type StaffCollectiveDistance } from "@/lib/staffCollective";
 
 /**
  * Données de la troupe pour l'app installée : une seule lecture des vues
@@ -46,6 +47,7 @@ export interface TroopData {
   profiles: PublicProfile[];
   activities: PublicActivity[];
   patrols: Patrol[];
+  staffDistances: StaffCollectiveDistance[];
 }
 
 export interface ScoutRow {
@@ -76,7 +78,7 @@ export function useTroopData() {
     staleTime: 30_000,
     refetchOnWindowFocus: true,
     queryFn: async () => {
-      const [p, a, pt] = await Promise.all([
+      const [p, a, pt, staffDistances] = await Promise.all([
         supabase
           .from("profiles_public")
           .select(
@@ -86,6 +88,7 @@ export function useTroopData() {
           .from("activities_public")
           .select("user_id, km, elevation_m, ride_date, status, note"),
         supabase.from("patrols").select("id, name, category").order("name"),
+        fetchStaffCollectiveDistances(),
       ]);
       if (p.error) throw p.error;
       if (a.error) throw a.error;
@@ -93,6 +96,7 @@ export function useTroopData() {
         profiles: (p.data ?? []) as unknown as PublicProfile[],
         activities: (a.data ?? []) as unknown as PublicActivity[],
         patrols: (pt.data ?? []) as unknown as Patrol[],
+        staffDistances,
       };
     },
   });
@@ -143,21 +147,29 @@ export function rankScouts(data: TroopData | undefined, period: AppPeriod, sport
 export function rankPatrols(data: TroopData | undefined, period: AppPeriod, sport: AppSport) {
   if (!data) return [] as PatrolRow[];
   const scouts = rankScouts(data, period, sport);
+  const staff = staffDistancesInScope(data, period, sport);
   const list = data.patrols.some((p) => isStaffPatrol(p))
     ? data.patrols
     : [...data.patrols, { id: "staff", name: TROOP_STAFF_PATROL_NAME, category: "staff" }];
   return list
     .map((p) => {
-      const staff = isStaffPatrol(p);
-      const main = staff && (isTroopStaffPatrol(p) || p.id === "staff");
+      const isStaff = isStaffPatrol(p);
+      const main = isStaff && (isTroopStaffPatrol(p) || p.id === "staff");
       const members = scouts.filter(
         (s) => s.patrol_id === p.id || (main && s.is_staff && !s.patrol_id),
       );
       return {
         id: p.id,
         name: p.name,
-        is_staff: staff,
-        km: Math.round(members.reduce((sum, s) => sum + s.km, 0) * 10) / 10,
+        is_staff: isStaff,
+        km:
+          Math.round(
+            (members.reduce((sum, s) => sum + s.km, 0) +
+              staff
+                .filter((s) => s.patrol_id === p.id || (main && !s.patrol_id))
+                .reduce((sum, s) => sum + Number(s.km), 0)) *
+              10,
+          ) / 10,
         members: members.length,
       };
     })
@@ -249,5 +261,17 @@ export function inGroup(row: Pick<ScoutRow, "is_staff" | "scout_year">, group: A
 
 /** Km validés de toute la troupe (toutes disciplines) sur la période. */
 export function troopTotal(data: TroopData | undefined, period: AppPeriod) {
-  return rankScouts(data, period, "all").reduce((s, r) => s + r.km, 0);
+  return (
+    rankScouts(data, period, "all").reduce((s, r) => s + r.km, 0) +
+    staffDistancesInScope(data, period, "all").reduce((sum, row) => sum + Number(row.km), 0)
+  );
+}
+
+function staffDistancesInScope(data: TroopData | undefined, period: AppPeriod, sport: AppSport) {
+  const r = periodRange(period);
+  return (data?.staffDistances ?? []).filter(
+    (a) =>
+      (!r || (a.ride_date >= r.from && a.ride_date <= r.to)) &&
+      (sport === "all" || sport === a.sport),
+  );
 }

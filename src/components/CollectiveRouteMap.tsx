@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { fetchStaffCollectiveDistances } from "@/lib/staffCollective";
 
 export interface Waypoint {
   id: string;
@@ -92,6 +93,8 @@ export function CollectiveRouteMap({ className, overrideKm }: CollectiveRouteMap
             .reduce((sum, item) => sum + (Number(item.km) || 0), 0);
         }
 
+        const collective = await fetchStaffCollectiveDistances();
+        kmSum += collective.reduce((sum, row) => sum + Number(row.km), 0);
         setTotalKm(Math.round(kmSum * 10) / 10);
       } catch (err) {
         console.warn("Erreur chargement kilomètres collectifs :", err);

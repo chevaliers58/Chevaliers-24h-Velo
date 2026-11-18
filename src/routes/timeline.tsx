@@ -27,6 +27,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { fetchStaffCollectiveDistances } from "@/lib/staffCollective";
 
 const supabase = supabaseClient as unknown as SupabaseClient;
 
@@ -76,8 +77,19 @@ async function fetchAllApprovedActivities(): Promise<ApprovedActivity[]> {
     if (error) throw error;
     const page = (data ?? []) as ApprovedActivity[];
     activities.push(...page);
-    if (page.length < TIMELINE_PAGE_SIZE) return activities;
+    if (page.length < TIMELINE_PAGE_SIZE) break;
   }
+  const collective = await fetchStaffCollectiveDistances();
+  return [
+    ...activities,
+    ...collective.map((row) => ({
+      id: null,
+      user_id: null,
+      km: Number(row.km),
+      ride_date: row.ride_date,
+      created_at: null,
+    })),
+  ].sort((a, b) => (a.ride_date ?? "").localeCompare(b.ride_date ?? ""));
 }
 
 function buildDistanceMilestones(
