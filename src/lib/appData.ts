@@ -5,7 +5,12 @@ import { supabase as supabaseClient } from "@/integrations/supabase/client";
 // Client non typé : les vues publiques ne sont pas toutes dans les types générés
 const supabase = supabaseClient as unknown as SupabaseClient;
 import { getActivitySport, type ActivitySport } from "@/lib/database";
-import { isStaffPatrol, isCollectivePatrol, isTroopStaffPatrol, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
+import {
+  isStaffPatrol,
+  isCollectivePatrol,
+  isTroopStaffPatrol,
+  TROOP_STAFF_PATROL_NAME,
+} from "@/lib/categories";
 import { monthRange, weekRange, useAuth } from "@/lib/useAuth";
 import { fetchStaffCollectiveDistances, type StaffCollectiveDistance } from "@/lib/staffCollective";
 

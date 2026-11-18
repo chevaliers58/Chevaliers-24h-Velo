@@ -893,7 +893,7 @@ export function DailyDistanceForm({
           <Select
             value={selectedPatrolId}
             onValueChange={(val) => setSelectedPatrolId(val)}
-            disabled={loadingPatrols || submitting}
+            disabled={loadingPatrols || submitting || (!isAdmin && !!profile?.patrol_id)}
           >
             <SelectTrigger
               id="patrol-select"
@@ -1110,14 +1110,14 @@ export function DailyDistanceForm({
                   Patrouille associée <span className="text-destructive">*</span>
                 </Label>
                 <span className="text-[11px] text-muted-foreground">
-                  Les kilomètres compteront pour cette patrouille
+                  Affectation confirmée par le staff
                 </span>
               </div>
 
               <Select
                 value={selectedPatrolId}
                 onValueChange={(val) => setSelectedPatrolId(val)}
-                disabled={loadingPatrols || submitting}
+                disabled={loadingPatrols || submitting || (!isAdmin && !!profile?.patrol_id)}
               >
                 <SelectTrigger
                   id="patrol-select"

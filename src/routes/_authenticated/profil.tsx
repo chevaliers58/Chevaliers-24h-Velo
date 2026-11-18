@@ -76,7 +76,7 @@ function daysInMonth(month: number): number {
 
 function Profil() {
   const { user } = Route.useRouteContext();
-  const { refreshProfile } = useAuth();
+  const { refreshProfile, isAdmin } = useAuth();
   const [patrols, setPatrols] = useState<{ id: string; name: string; category: string }[]>([]);
   const [f, setF] = useState({
     full_name: "",
@@ -315,8 +315,10 @@ function Profil() {
 
             <div className="space-y-1.5">
               <Label htmlFor="profil-patrouille">Patrouille *</Label>
+              <p className="text-xs text-muted-foreground">Affectation et année confirmées par le staff.</p>
               <Select
                 value={f.patrol_id}
+                disabled={!isAdmin}
                 onValueChange={(v) => {
                   setF({
                     ...f,
@@ -349,14 +351,17 @@ function Profil() {
                   Patrouille staff sélectionnée
                 </div>
                 <p className="mt-0.5 text-[11px] opacity-90">
-                  Tes kilomètres comptent dans les classements Garçons et Filles, avec
-                  l&apos;étiquette Staff.
+                  Tes kilomètres contribuent aux objectifs collectifs, hors classement individuel et points.
                 </p>
               </div>
             ) : (
               <div className="space-y-1.5">
                 <Label htmlFor="profil-annee">Année scout</Label>
-                <Select value={f.scout_year} onValueChange={(v) => setF({ ...f, scout_year: v })}>
+                <Select
+                  value={f.scout_year}
+                  disabled={!isAdmin}
+                  onValueChange={(v) => setF({ ...f, scout_year: v })}
+                >
                   <SelectTrigger id="profil-annee">
                     <SelectValue placeholder="Sélectionne ton année dans la troupe" />
                   </SelectTrigger>

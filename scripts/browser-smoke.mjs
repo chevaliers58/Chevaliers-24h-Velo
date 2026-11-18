@@ -147,8 +147,7 @@ try {
   await scoutPage.goto(base + "/mes-km");
   const form = scoutPage.locator("#enregistrer form");
   await form.locator("#distance-km").fill("12");
-  await form.locator("#patrol-select").click();
-  await scoutPage.getByRole("option", { name: new RegExp(patrolName) }).click();
+  await form.locator("#patrol-select").filter({ hasText: patrolName }).waitFor();
   await form
     .getByPlaceholder("https://www.strava.com/activities/123456789...")
     .fill("https://www.strava.com/activities/123456789");
@@ -217,8 +216,7 @@ try {
   stage = "submit photo and verify storage";
   await scoutPage.goto(base + "/mes-km");
   await form.locator("#distance-km").fill("8");
-  await form.locator("#patrol-select").click();
-  await scoutPage.getByRole("option", { name: new RegExp(patrolName) }).click();
+  await form.locator("#patrol-select").filter({ hasText: patrolName }).waitFor();
   await form.getByRole("button", { name: "Photo compteur" }).click();
   await form.locator('input[type="file"][accept="image/*"]').setInputFiles({
     name: "test-proof.png",
@@ -688,8 +686,7 @@ try {
     assert.equal(new URL(mobileScoutPage.url()).pathname, "/velo/app/" + path);
   }
   await mobileScoutPage.locator("#distance-km").fill("3");
-  await mobileScoutPage.locator("#patrol-select").click();
-  await mobileScoutPage.getByRole("option", { name: new RegExp(patrolName) }).click();
+  await mobileScoutPage.locator("#patrol-select").filter({ hasText: patrolName }).waitFor();
   await mobileScoutPage
     .getByPlaceholder("Colle le lien de ton activité Strava")
     .fill("https://www.strava.com/activities/987654321");

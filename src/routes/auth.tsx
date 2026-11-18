@@ -31,7 +31,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/useAuth";
 
 import { ForgotPassword } from "@/components/ForgotPassword";
-import { isStaffPatrol, isTroopStaffPatrol, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
+import { isStaffPatrol, isOtherUnitPatrol, isTroopStaffPatrol, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -277,7 +277,8 @@ function AuthPage() {
       d.patrol_id === "staff" ||
       d.patrol_id === "patrol-staff" ||
       isStaffPatrol(patrols.find((p) => p.id === d.patrol_id));
-    const scoutYearNum = isStaff ? null : Number(d.scout_year);
+    const isOther = isOtherUnitPatrol(patrols.find((p) => p.id === d.patrol_id));
+    const scoutYearNum = isStaff || isOther || d.scout_year === "other" ? null : Number(d.scout_year);
 
     try {
       const email = d.email.trim();
@@ -346,11 +347,11 @@ function AuthPage() {
 
       if (authData.session) {
         toast.success(
-          `Compte scout créé avec succès dans Supabase ! Bienvenue chez ${TROOP_NAME}.`,
+          "Compte créé. Le staff doit maintenant valider ton inscription.",
         );
       } else {
         toast.success(
-          "Compte créé dans Supabase ! Si la confirmation par e-mail est active, vérifie ta boîte de réception.",
+          "Compte créé. Confirme ton adresse e-mail, puis attends la validation du staff.",
         );
       }
       window.location.href = import.meta.env.BASE_URL;
@@ -641,6 +642,7 @@ function AuthPage() {
                           <SelectItem value="3">3ème année</SelectItem>
                           <SelectItem value="4">4ème année (Aîné/CP)</SelectItem>
                           <SelectItem value="staff">👑 Staff</SelectItem>
+                          <SelectItem value="other">Autre membre de l’unité</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

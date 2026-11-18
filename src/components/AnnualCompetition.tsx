@@ -443,12 +443,8 @@ export function AnnualSeasonAdmin() {
       setMessage("Sélectionne la patrouille Staff pour un chef.");
       return;
     }
-    if (!selected.is_admin && chosenPatrol.category === "staff") {
-      setMessage("Un compte staff doit d’abord être autorisé comme administrateur.");
-      return;
-    }
     const other = chosenPatrol.name.trim().toLowerCase() === "autres membres de l'unité";
-    const kind = selected.is_admin ? "staff" : other || year === "other" ? "other" : "scout";
+    const kind = selected.is_admin || chosenPatrol.category === "staff" ? "staff" : other || year === "other" ? "other" : "scout";
     if (!window.confirm("Confirmer l’affectation et le barème à partir de cette date ?")) return;
     setBusy(true);
     try {

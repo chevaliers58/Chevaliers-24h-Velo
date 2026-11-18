@@ -48,6 +48,24 @@ begin
   end if;
   update public.profiles set member_approved=_approved where id=_user_id;
   if not found then raise exception 'Compte introuvable'; end if;
+  -- Approval attests the proposed affiliation. Start the official roster at season
+  -- start; administrators may later enter a dated correction in the roster UI.
+  if _approved then
+    insert into public.annual_points_roster(user_id,valid_from,patrol_id,group_kind,scout_year)
+    select p.id, coalesce(s.starts_on,(now() at time zone 'Europe/Brussels')::date),pt.id,
+      case when p.is_admin or pt.category='staff' then 'staff'
+           when lower(btrim(pt.name))='autres membres de l''unité' then 'other'
+           else 'scout' end,
+      case when not p.is_admin and pt.category<>'staff'
+                and lower(btrim(pt.name))<>'autres membres de l''unité'
+           then p.scout_year end
+    from public.profiles p join public.patrols pt on pt.id=p.patrol_id
+    cross join public.annual_points_settings s
+    where p.id=_user_id and s.singleton
+      and (p.is_admin or pt.category='staff' or lower(btrim(pt.name))='autres membres de l''unité'
+           or p.scout_year between 1 and 4)
+    on conflict(user_id,valid_from) do nothing;
+  end if;
 end;
 $$;
 revoke all on function public.set_member_approval(uuid,boolean) from public,anon,authenticated;
