@@ -476,7 +476,7 @@ export function DailyDistanceForm({
         console.error("Erreur insertion activités Supabase :", insertError);
         toast.error(
           insertError.message?.includes("date_debut_defi") ||
-          insertError.message?.includes("saison_chevaliers")
+            insertError.message?.includes("saison_chevaliers")
             ? season.message
             : "Erreur Supabase : " + insertError.message,
         );
@@ -1260,9 +1260,7 @@ export function DailyDistanceForm({
                   max={season.latest}
                   required
                 />
-                <p className="text-[11px] text-muted-foreground">
-                  {season.message}
-                </p>
+                <p className="text-[11px] text-muted-foreground">{season.message}</p>
               </div>
             </div>
 

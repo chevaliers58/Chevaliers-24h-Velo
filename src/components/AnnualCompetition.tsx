@@ -416,7 +416,12 @@ export function AnnualSeasonAdmin() {
   }
   async function saveSeason() {
     if (!seasonStart || seasonStart > seasonEnd || !data || busy) return;
-    if (!window.confirm("Enregistrer ces dates et ouvrir les enregistrements ainsi que le décompte des points ?")) return;
+    if (
+      !window.confirm(
+        "Enregistrer ces dates et ouvrir les enregistrements ainsi que le décompte des points ?",
+      )
+    )
+      return;
     setBusy(true);
     try {
       const { error } = await db
