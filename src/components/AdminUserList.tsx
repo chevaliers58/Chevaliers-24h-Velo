@@ -119,7 +119,8 @@ export function AdminUserList({
   };
 
   const handleApproval = async (target: Profile, approved: boolean) => {
-    if (!window.confirm(approved ? "Valider cette inscription ?" : "Suspendre cet accès membre ?")) return;
+    if (!window.confirm(approved ? "Valider cette inscription ?" : "Suspendre cet accès membre ?"))
+      return;
     setTogglingUserId(target.id);
     try {
       const { error } = await (supabase as unknown as SupabaseClient).rpc("set_member_approval", {
@@ -130,7 +131,9 @@ export function AdminUserList({
       toast.success(approved ? "Inscription validée." : "Accès suspendu.");
       await onRefresh();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Impossible de modifier cette inscription.");
+      toast.error(
+        error instanceof Error ? error.message : "Impossible de modifier cette inscription.",
+      );
     } finally {
       setTogglingUserId(null);
     }

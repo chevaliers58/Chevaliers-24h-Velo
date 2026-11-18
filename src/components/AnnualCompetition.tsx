@@ -40,7 +40,8 @@ export function AnnualPatrolPoints() {
         <Trophy className="h-5 w-5 text-amber-500" /> Patrouilles — points de l’année
       </h2>
       <p className="text-sm text-muted-foreground">
-        1re/2e : 2 pts/km · 3e/4e : 1 pt/km. Bonus de groupe et de défi. Staff et autres membres de l’unité hors points.
+        1re/2e : 2 pts/km · 3e/4e : 1 pt/km. Bonus de groupe et de défi. Staff et autres membres de
+        l’unité hors points.
       </p>
       {q.isPending ? (
         <p className="text-sm">Chargement…</p>
@@ -81,7 +82,9 @@ export function MyPatrolRanking() {
     <section className={panel}>
       <h2 className="flex items-center gap-2 font-display text-lg font-bold">
         <Lock className="h-5 w-5 text-primary" />
-        {isAdmin ? "Classement privé du staff et des autres membres" : "Classement privé de ma patrouille"}
+        {isAdmin
+          ? "Classement privé du staff et des autres membres"
+          : "Classement privé de ma patrouille"}
       </h2>
       <p className="text-sm text-muted-foreground">Distance validée, visible dans ton groupe.</p>
       {q.isPending ? (
@@ -444,7 +447,12 @@ export function AnnualSeasonAdmin() {
       return;
     }
     const other = chosenPatrol.name.trim().toLowerCase() === "autres membres de l'unité";
-    const kind = selected.is_admin || chosenPatrol.category === "staff" ? "staff" : other || year === "other" ? "other" : "scout";
+    const kind =
+      selected.is_admin || chosenPatrol.category === "staff"
+        ? "staff"
+        : other || year === "other"
+          ? "other"
+          : "scout";
     if (!window.confirm("Confirmer l’affectation et le barème à partir de cette date ?")) return;
     setBusy(true);
     try {

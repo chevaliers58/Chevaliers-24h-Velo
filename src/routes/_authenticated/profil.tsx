@@ -315,7 +315,9 @@ function Profil() {
 
             <div className="space-y-1.5">
               <Label htmlFor="profil-patrouille">Patrouille *</Label>
-              <p className="text-xs text-muted-foreground">Affectation et année confirmées par le staff.</p>
+              <p className="text-xs text-muted-foreground">
+                Affectation et année confirmées par le staff.
+              </p>
               <Select
                 value={f.patrol_id}
                 disabled={!isAdmin}
@@ -351,7 +353,8 @@ function Profil() {
                   Patrouille staff sélectionnée
                 </div>
                 <p className="mt-0.5 text-[11px] opacity-90">
-                  Tes kilomètres contribuent aux objectifs collectifs, hors classement individuel et points.
+                  Tes kilomètres contribuent aux objectifs collectifs, hors classement individuel et
+                  points.
                 </p>
               </div>
             ) : (

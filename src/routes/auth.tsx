@@ -31,7 +31,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/useAuth";
 
 import { ForgotPassword } from "@/components/ForgotPassword";
-import { isStaffPatrol, isOtherUnitPatrol, isTroopStaffPatrol, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
+import {
+  isStaffPatrol,
+  isOtherUnitPatrol,
+  isTroopStaffPatrol,
+  TROOP_STAFF_PATROL_NAME,
+} from "@/lib/categories";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -278,7 +283,8 @@ function AuthPage() {
       d.patrol_id === "patrol-staff" ||
       isStaffPatrol(patrols.find((p) => p.id === d.patrol_id));
     const isOther = isOtherUnitPatrol(patrols.find((p) => p.id === d.patrol_id));
-    const scoutYearNum = isStaff || isOther || d.scout_year === "other" ? null : Number(d.scout_year);
+    const scoutYearNum =
+      isStaff || isOther || d.scout_year === "other" ? null : Number(d.scout_year);
 
     try {
       const email = d.email.trim();
@@ -346,9 +352,7 @@ function AuthPage() {
       setBusy(false);
 
       if (authData.session) {
-        toast.success(
-          "Compte créé. Le staff doit maintenant valider ton inscription.",
-        );
+        toast.success("Compte créé. Le staff doit maintenant valider ton inscription.");
       } else {
         toast.success(
           "Compte créé. Confirme ton adresse e-mail, puis attends la validation du staff.",

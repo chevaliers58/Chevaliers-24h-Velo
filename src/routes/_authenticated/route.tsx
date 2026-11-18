@@ -32,8 +32,13 @@ function AuthenticatedOutlet() {
     return (
       <main className="mx-auto max-w-lg space-y-4 px-5 py-16 text-center">
         <h1 className="font-display text-2xl font-bold">Inscription en attente de validation</h1>
-        <p>Le staff doit confirmer ton inscription avant que tu puisses accéder aux espaces membres.</p>
-        <button className="rounded-lg bg-primary px-4 py-2 text-primary-foreground" onClick={() => void refreshProfile()}>
+        <p>
+          Le staff doit confirmer ton inscription avant que tu puisses accéder aux espaces membres.
+        </p>
+        <button
+          className="rounded-lg bg-primary px-4 py-2 text-primary-foreground"
+          onClick={() => void refreshProfile()}
+        >
           Vérifier mon statut
         </button>
         <button className="block mx-auto underline" onClick={() => void signOut()}>
