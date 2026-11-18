@@ -94,6 +94,11 @@ jobs:
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
             -f "$GITHUB_WORKSPACE/supabase/staged/staff_collective_privacy.sql" \
             -f "$GITHUB_WORKSPACE/supabase/tests/staff_collective_privacy.sql"
+      - name: Validate authoritative administrator flag (isolated only)
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
+            -f "$GITHUB_WORKSPACE/supabase/staged/admin_role_mirror.sql" \
+            -f "$GITHUB_WORKSPACE/supabase/tests/admin_role_mirror.sql"
       - name: Stop local stack
         if: always()
         working-directory: ${{ runner.temp }}/chevaliers-db
