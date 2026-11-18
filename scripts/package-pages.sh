@@ -18,6 +18,8 @@ mkdir -p "$target_dir/velo"
 cp -a "$source_dir/." "$target_dir/velo/"
 # Pages serves root index.html for unknown SPA navigation paths.
 cp "$source_dir/index.html" "$target_dir/index.html"
+# Root and application path must share the same indexing preference.
+cp "$source_dir/robots.txt" "$target_dir/robots.txt"
 # Never inherit the source owner's Google verification token.
 rm -f -- "$target_dir/velo/google3836faab573a94d5.html"
 # Header metadata must live at the deployment root.
