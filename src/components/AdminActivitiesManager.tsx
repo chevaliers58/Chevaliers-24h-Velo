@@ -42,7 +42,7 @@ import {
   type ActivitySport,
 } from "@/lib/activity";
 import { deleteActivity } from "@/lib/proofStorage";
-import { CHALLENGE_START } from "@/lib/challengeStart";
+import { useChallengeSeason } from "@/lib/challengeStart";
 import { correctionSummary, type ActivityCorrection } from "@/lib/corrections";
 import { cn } from "@/lib/utils";
 
@@ -440,6 +440,7 @@ function EditDialog({
   const [km, setKm] = useState(String(act.km));
   const [dplus, setDplus] = useState(act.elevation_m == null ? "" : String(act.elevation_m));
   const [date, setDate] = useState(act.ride_date);
+  const season = useChallengeSeason();
   const [sport, setSport] = useState<ActivitySport>(getActivitySport(act));
   const [status, setStatus] = useState<"approved" | "pending">(
     act.status === "pending" ? "pending" : "approved",
@@ -455,7 +456,11 @@ function EditDialog({
     const d = dplus.trim() === "" ? null : Math.round(Number(dplus.replace(",", ".")));
     if (d !== null && (isNaN(d) || d < 0 || d > 20000))
       return toast.error("Dénivelé invalide (0 à 20 000 m)");
-    if (!date || date < CHALLENGE_START) return toast.error("Date avant le début du défi");
+    if (
+      !date ||
+      (date !== act.ride_date && (!season.ready || date < season.start || date > season.latest))
+    )
+      return toast.error(season.message);
 
     const patch: Partial<Pick<Act, "km" | "elevation_m" | "ride_date" | "note" | "status">> = {};
     if (kmN !== Number(act.km)) patch.km = kmN;
@@ -473,8 +478,8 @@ function EditDialog({
     setSaving(false);
     if (error) {
       toast.error(
-        error.message.includes("date_debut_defi")
-          ? "Date avant le début du défi"
+        error.message.includes("date_debut_defi") || error.message.includes("saison_chevaliers")
+          ? season.message
           : "Modification impossible : " + error.message,
       );
       return;
@@ -535,8 +540,8 @@ function EditDialog({
             <Input
               id="edit-date"
               type="date"
-              min={CHALLENGE_START}
-              max={new Date().toISOString().slice(0, 10)}
+              min={season.start}
+              max={season.latest}
               value={date}
               onChange={(e) => setDate(e.target.value)}
               className="h-11"

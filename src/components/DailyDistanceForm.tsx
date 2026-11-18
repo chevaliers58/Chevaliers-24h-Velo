@@ -42,7 +42,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { isStaffPatrol } from "@/lib/categories";
-import { CHALLENGE_START, CHALLENGE_START_LABEL } from "@/lib/challengeStart";
+import { brusselsDate, useChallengeSeason } from "@/lib/challengeStart";
 
 export interface DailyDistanceFormProps {
   /** Callback fired after a successful submission */
@@ -98,6 +98,7 @@ export function DailyDistanceForm({
 }: DailyDistanceFormProps) {
   const { user, profile, isAdmin, refreshProfile } = useAuth();
   const { theme } = useSeasonalTheme();
+  const season = useChallengeSeason();
 
   // Form states
   const [sport, setSport] = useState<ActivitySport>("velo");
@@ -106,7 +107,7 @@ export function DailyDistanceForm({
   const [appDetailsOpen, setAppDetailsOpen] = useState(false);
   const [appOtherDate, setAppOtherDate] = useState(false);
   const [elevationM, setElevationM] = useState("");
-  const [rideDate, setRideDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [rideDate, setRideDate] = useState(() => brusselsDate());
   const [selectedPatrolId, setSelectedPatrolId] = useState<string>(defaultPatrolId || "");
   const [openChallenges, setOpenChallenges] = useState<
     Array<{
@@ -261,10 +262,8 @@ export function DailyDistanceForm({
       return;
     }
 
-    if (!rideDate || rideDate < CHALLENGE_START) {
-      toast.error(
-        `Le défi a commencé le ${CHALLENGE_START_LABEL} : les sorties d'avant ne comptent pas.`,
-      );
+    if (!season.ready || !rideDate || rideDate < season.start || rideDate > season.latest) {
+      toast.error(season.message);
       return;
     }
 
@@ -476,8 +475,9 @@ export function DailyDistanceForm({
         }
         console.error("Erreur insertion activités Supabase :", insertError);
         toast.error(
-          insertError.message?.includes("date_debut_defi")
-            ? `Le défi a commencé le ${CHALLENGE_START_LABEL} : les sorties d'avant ne comptent pas.`
+          insertError.message?.includes("date_debut_defi") ||
+          insertError.message?.includes("saison_chevaliers")
+            ? season.message
             : "Erreur Supabase : " + insertError.message,
         );
         setSubmitting(false);
@@ -665,12 +665,8 @@ export function DailyDistanceForm({
   );
 
   function renderAppForm() {
-    const iso = (d: Date) =>
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    const today = iso(new Date());
-    const yesterdayDate = new Date();
-    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-    const yesterday = iso(yesterdayDate);
+    const today = season.today;
+    const yesterday = brusselsDate(new Date(Date.now() - 86400000));
     const dateMode = appOtherDate
       ? "other"
       : rideDate === today
@@ -795,7 +791,7 @@ export function DailyDistanceForm({
             </button>
             <button
               type="button"
-              disabled={joiningGroup || yesterday < CHALLENGE_START}
+              disabled={joiningGroup || yesterday < season.start || yesterday > season.latest}
               className={pill(dateMode === "yesterday")}
               onClick={() => {
                 setAppOtherDate(false);
@@ -821,8 +817,8 @@ export function DailyDistanceForm({
               onChange={(e) => setRideDate(e.target.value)}
               disabled={joiningGroup}
               className="h-12 rounded-2xl bg-card text-[16px]"
-              min={CHALLENGE_START}
-              max={today}
+              min={season.start}
+              max={season.latest}
               required
             />
           )}
@@ -991,9 +987,10 @@ export function DailyDistanceForm({
 
         {/* Bouton d'envoi */}
         <div className="pt-1">
+          {!season.ready && <p className="mb-2 text-sm text-muted-foreground">{season.message}</p>}
           <Button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || !season.ready}
             className={cn(
               "h-14 w-full rounded-2xl text-[17px] font-bold shadow-sm",
               sport === "course"
@@ -1259,13 +1256,12 @@ export function DailyDistanceForm({
                   onChange={(e) => setRideDate(e.target.value)}
                   disabled={joiningGroup}
                   className="h-12 rounded-xl shadow-xs"
-                  min={CHALLENGE_START}
-                  max={new Date().toISOString().slice(0, 10)}
+                  min={season.start}
+                  max={season.latest}
                   required
                 />
                 <p className="text-[11px] text-muted-foreground">
-                  Par défaut : aujourd&apos;hui (modifiable si la sortie date d&apos;hier). Seules
-                  les sorties depuis le {CHALLENGE_START_LABEL} comptent.
+                  {season.message}
                 </p>
               </div>
             </div>
@@ -1406,9 +1402,10 @@ export function DailyDistanceForm({
               />
             </div>
 
+            {!season.ready && <p className="text-sm text-muted-foreground">{season.message}</p>}
             <Button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || !season.ready}
               size="lg"
               className={cn(
                 "h-auto min-h-11 w-full whitespace-normal rounded-xl py-3 font-display font-black text-sm sm:text-base shadow-md gap-2 transition-all",

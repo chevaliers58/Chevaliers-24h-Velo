@@ -66,6 +66,12 @@ async function activities(id) {
 }
 try {
   stage = "seed only synthetic patrol and admin";
+  good(
+    await admin
+      .from("annual_points_settings")
+      .update({ starts_on: "2026-09-27", ends_on: "2099-12-31", enabled: true })
+      .eq("singleton", true),
+  );
   const patrol = good(
     await admin
       .from("patrols")

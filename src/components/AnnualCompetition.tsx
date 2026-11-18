@@ -409,13 +409,14 @@ export function AnnualSeasonAdmin() {
   const seasonEnd = end || data.settings.ends_on;
   async function refresh() {
     await qc.invalidateQueries({ queryKey: ["annual-season-admin"] });
+    await qc.invalidateQueries({ queryKey: ["challenge-season"] });
     await qc.invalidateQueries({ queryKey: ["annual-patrol-points"] });
     await qc.invalidateQueries({ queryKey: ["private-patrol-ranking"] });
     await qc.invalidateQueries({ queryKey: ["my-annual-points"] });
   }
   async function saveSeason() {
     if (!seasonStart || seasonStart > seasonEnd || !data || busy) return;
-    if (!window.confirm("Enregistrer ces dates et activer le décompte des points ?")) return;
+    if (!window.confirm("Enregistrer ces dates et ouvrir les enregistrements ainsi que le décompte des points ?")) return;
     setBusy(true);
     try {
       const { error } = await db
@@ -426,7 +427,7 @@ export function AnnualSeasonAdmin() {
       setMessage("Saison enregistrée.");
       await refresh();
     } catch {
-      setMessage("Échec de l’enregistrement de la saison.");
+      setMessage("Échec : la période doit inclure toutes les sorties déjà enregistrées.");
     } finally {
       setBusy(false);
     }

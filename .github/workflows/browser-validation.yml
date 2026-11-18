@@ -76,7 +76,8 @@ jobs:
           psql "$db_url" -X -v ON_ERROR_STOP=1 \
             -f "$GITHUB_WORKSPACE/supabase/staged/annual_points.sql" \
             -f "$GITHUB_WORKSPACE/supabase/staged/private_proofs_candidate.sql" \
-            -f "$GITHUB_WORKSPACE/supabase/staged/personalization.sql"
+            -f "$GITHUB_WORKSPACE/supabase/staged/personalization.sql" \
+            -f "$GITHUB_WORKSPACE/supabase/staged/official_season_gate.sql"
       - name: Install app and pinned browser test runner
         run: |
           npm ci
