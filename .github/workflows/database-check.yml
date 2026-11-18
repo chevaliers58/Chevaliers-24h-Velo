@@ -104,6 +104,11 @@ jobs:
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
             -f "$GITHUB_WORKSPACE/supabase/staged/member_approval_collective.sql" \
             -f "$GITHUB_WORKSPACE/supabase/tests/member_approval_collective.sql"
+      - name: Validate external group aliases and collective ride notifications
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
+            -f "$GITHUB_WORKSPACE/supabase/staged/notifications_patrol_names.sql" \
+            -f "$GITHUB_WORKSPACE/supabase/tests/notifications_patrol_names.sql"
       - name: Stop local stack
         if: always()
         working-directory: ${{ runner.temp }}/chevaliers-db

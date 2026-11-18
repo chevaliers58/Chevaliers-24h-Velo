@@ -41,7 +41,8 @@ export function isStaffPatrol(p: PatrolLike): boolean {
 
 /** Collective ranking only; does not confer staff rights. */
 export function isOtherUnitPatrol(p: PatrolLike): boolean {
-  return (p?.name ?? "").trim().toLowerCase() === "autres membres de l'unité";
+  const name = (p?.name ?? "").trim().toLowerCase();
+  return name === "autres membres de l'unité" || name === "externes";
 }
 
 export function isCollectivePatrol(p: PatrolLike): boolean {

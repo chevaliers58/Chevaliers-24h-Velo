@@ -62,6 +62,8 @@ const notificationType: Record<string, string> = {
   weekly_reminder: "Rappel du dimanche",
   new_signup: "Nouvelle inscription",
   challenge_received: "Défi reçu",
+  planned_ride: "Nouvelle sortie collective",
+  planned_ride_cancelled: "Sortie collective annulée",
 };
 
 export function AdminAppNotifications() {
@@ -181,7 +183,7 @@ export function AdminAppNotifications() {
       return;
     }
     toast.success(
-      `Notification envoyée à ${selected.length} scout${selected.length > 1 ? "s" : ""}. Le push arrivera dans les instants qui suivent.`,
+      `Notification envoyée à ${selected.length} scout${selected.length > 1 ? "s" : ""}. Le push dépend de l’activation sur les appareils.`,
     );
     setTitle("");
     setBody("");

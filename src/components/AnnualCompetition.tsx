@@ -5,6 +5,7 @@ import { Lock, Trophy, Zap } from "lucide-react";
 import { supabase as client } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/useAuth";
 import { formatKm } from "@/lib/appData";
+import { isOtherUnitPatrol } from "@/lib/categories";
 
 const db = client as unknown as SupabaseClient;
 const formatPoints = (value: number) =>
@@ -446,7 +447,7 @@ export function AnnualSeasonAdmin() {
       setMessage("Sélectionne la patrouille Staff pour un chef.");
       return;
     }
-    const other = chosenPatrol.name.trim().toLowerCase() === "autres membres de l'unité";
+    const other = isOtherUnitPatrol(chosenPatrol);
     const kind =
       selected.is_admin || chosenPatrol.category === "staff"
         ? "staff"

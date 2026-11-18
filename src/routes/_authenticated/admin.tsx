@@ -40,7 +40,7 @@ import type { Patrol, Profile, Activity, TimelineEvent } from "@/lib/database";
 import { getActivitySport, cleanActivityNote } from "@/lib/activity";
 import { AdminUserList } from "@/components/AdminUserList";
 import { ExportDialog } from "@/components/ExportDialog";
-import { CATEGORY_LABELS, type PatrolCategory } from "@/lib/categories";
+import { CATEGORY_LABELS, isCollectivePatrol, type PatrolCategory } from "@/lib/categories";
 import { SeasonalThemeAdmin } from "@/components/SeasonalThemeAdmin";
 import { CleanupAdmin } from "@/components/CleanupAdmin";
 import { ScoutSportifAdmin, type SportifBadge } from "@/components/ScoutSportifAdmin";
@@ -252,6 +252,26 @@ function Admin() {
     }
     setNewPatrol({ name: "", category: "homme" });
     load();
+  };
+
+  const renamePatrol = async (patrol: Patrol) => {
+    const name = window.prompt("Nouveau nom de la patrouille", patrol.name)?.trim();
+    if (!name || name === patrol.name) return;
+    if (isCollectivePatrol(patrol) || isCollectivePatrol({ name, category: patrol.category })) {
+      toast.error("Les groupes spéciaux doivent conserver leur catégorie et leur nom réservé.");
+      return;
+    }
+    if (patrols.some((p) => p.id !== patrol.id && p.name.toLowerCase() === name.toLowerCase())) {
+      toast.error("Ce nom est déjà utilisé.");
+      return;
+    }
+    const { error } = await supabase.from("patrols").update({ name }).eq("id", patrol.id);
+    if (error) {
+      toast.error("Erreur : " + error.message);
+      return;
+    }
+    toast.success("Patrouille renommée, membres et historique conservés.");
+    await load();
   };
 
   const deletePatrol = async (id: string, name: string) => {
@@ -753,14 +773,27 @@ function Admin() {
                           </span>
                         </div>
 
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => deletePatrol(p.id, p.name)}
-                          className="text-muted-foreground hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={isCollectivePatrol(p)}
+                            onClick={() => void renamePatrol(p)}
+                            aria-label={`Renommer ${p.name}`}
+                          >
+                            <Edit3 className="mr-1 h-4 w-4" /> Renommer
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={isCollectivePatrol(p) || count > 0}
+                            onClick={() => deletePatrol(p.id, p.name)}
+                            aria-label={`Supprimer ${p.name}`}
+                            className="text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     );
                   })}

@@ -48,7 +48,11 @@ async function createSundayReminders() {
   if (!settings?.weekly_enabled) return 0;
   const sunday = brusselsSunday(settings.weekly_hour);
   if (!sunday) return 0;
-  const { data: profiles, error } = await admin.from("profiles").select("id").limit(5000);
+  const { data: profiles, error } = await admin
+    .from("profiles")
+    .select("id")
+    .eq("member_approved", true)
+    .limit(5000);
   if (error) throw error;
   const rows = (profiles ?? []).map(({ id }) => ({
     user_id: id,
@@ -84,13 +88,27 @@ async function dispatchPending() {
   webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
   const { data: notifications, error } = await admin
     .from("app_notifications")
-    .select("id,user_id,title,body,href,push_attempts")
+    .select("id,user_id,kind,title,body,href,push_attempts")
     .is("push_sent_at", null)
     .order("created_at", { ascending: true })
     .limit(100);
   if (error) throw error;
   let delivered = 0;
   for (const notification of notifications ?? []) {
+    const { data: recipient, error: recipientError } = await admin
+      .from("profiles")
+      .select("member_approved,is_admin")
+      .eq("id", notification.user_id)
+      .maybeSingle();
+    if (recipientError) throw recipientError;
+    const staffOnly = ["new_signup", "activity_pending"].includes(notification.kind);
+    if (!recipient?.member_approved || (staffOnly && !recipient.is_admin)) {
+      await admin
+        .from("app_notifications")
+        .update({ push_sent_at: new Date().toISOString() })
+        .eq("id", notification.id);
+      continue;
+    }
     const { data: subscriptions, error: subscriptionError } = await admin
       .from("app_push_subscriptions")
       .select("endpoint,subscription")
@@ -106,7 +124,9 @@ async function dispatchPending() {
           row.subscription,
           JSON.stringify({
             title: notification.title,
-            body: notification.body,
+            body: staffOnly
+              ? "Ouvre l’application pour consulter cette demande."
+              : notification.body,
             url: notification.href,
           }),
         );
