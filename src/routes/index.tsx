@@ -984,7 +984,9 @@ function IndexForViewer() {
               </span>
             </div>
             <div className="mt-2 font-display text-2xl font-black text-foreground sm:text-3xl">
-              {(globalActivityCount + staffDistances.reduce((s, a) => s + Number(a.rides), 0)).toLocaleString("fr-BE")}
+              {(
+                globalActivityCount + staffDistances.reduce((s, a) => s + Number(a.rides), 0)
+              ).toLocaleString("fr-BE")}
             </div>
             <p className="mt-1 text-xs text-muted-foreground">tous sports, depuis le début</p>
           </div>
@@ -1535,8 +1537,10 @@ function IndexForViewer() {
           {(entryActivities.length > 0 || !!selectedEntry?.collectiveKm) && (
             <p className="border-t pt-3 text-right text-sm font-bold">
               Total affiché :{" "}
-              {(entryActivities.reduce((sum, activity) => sum + Number(activity.km || 0), 0) +
-                (selectedEntry?.collectiveKm ?? 0)).toFixed(1)}{" "}
+              {(
+                entryActivities.reduce((sum, activity) => sum + Number(activity.km || 0), 0) +
+                (selectedEntry?.collectiveKm ?? 0)
+              ).toFixed(1)}{" "}
               km
             </p>
           )}

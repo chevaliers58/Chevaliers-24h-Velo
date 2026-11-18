@@ -709,7 +709,10 @@ try {
   await publicPage.getByTestId("collective-km").filter({ hasText: "63.0" }).waitFor();
   await publicPage.getByRole("button", { name: "Individuel", exact: false }).first().click();
   assert.equal(
-    await publicPage.getByTestId("individual-rankings").getByText("Admin Test Navigateur", { exact: true }).count(),
+    await publicPage
+      .getByTestId("individual-rankings")
+      .getByText("Admin Test Navigateur", { exact: true })
+      .count(),
     0,
   );
   console.log("PASS staff contributions counted without individual public rank");
