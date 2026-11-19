@@ -18,3 +18,5 @@ La fonction envoie les notifications inscrites dans `app_notifications` et reço
 5. Dans l’application installée, chaque scout peut accepter l’invitation à activer les notifications ou utiliser la cloche. Le texte précise les types d’alertes : rappel du dimanche (si activé), paliers et messages ponctuels. Sur iPhone/iPad, il faut d’abord ajouter l’app à l’écran d’accueil ; l’autorisation doit être demandée depuis l’app installée.
 
 Le service worker affiche les notifications et ouvre leur destination lorsque l’utilisateur appuie dessus. La clé publique est fournie à l’application par la fonction ; elle n’a pas besoin d’être intégrée au build du site.
+
+En production Chevaliers 58, la paire PUBLIC_VAPID_KEY / PRIVATE_VAPID_KEY est prioritaire ; les noms historiques VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY restent compatibles uniquement comme paire. SITE_URL=https://chevaliers-24h-velo.pages.dev/velo. Ne jamais régénérer une paire fonctionnelle sans plan de réabonnement. La fonction vérifie la correspondance des clés avant de fournir la clé publique ou d'envoyer.

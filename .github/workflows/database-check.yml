@@ -108,6 +108,7 @@ jobs:
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
             -f "$GITHUB_WORKSPACE/supabase/staged/notifications_patrol_names.sql" \
+            -f "$GITHUB_WORKSPACE/supabase/staged/collective_ride_notifications.sql" \
             -f "$GITHUB_WORKSPACE/supabase/tests/notifications_patrol_names.sql"
       - name: Stop local stack
         if: always()
