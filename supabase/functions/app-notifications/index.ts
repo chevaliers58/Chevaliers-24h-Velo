@@ -1,13 +1,22 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
+import { createECDH } from "node:crypto";
+import { Buffer } from "node:buffer";
+import { isTrustedPushEndpoint } from "./endpoint.ts";
 
 const url = Deno.env.get("SUPABASE_URL")!;
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY") ?? "";
-const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
-const vapidSubject = Deno.env.get("VAPID_SUBJECT") ?? "https://alezan42-cycling.pages.dev";
+// Prefer the owner's configured pair together; never mix naming conventions.
+const namedPublic = Deno.env.get("PUBLIC_VAPID_KEY")?.trim();
+const namedPrivate = Deno.env.get("PRIVATE_VAPID_KEY")?.trim();
+const useNamedPair = !!(namedPublic || namedPrivate);
+const vapidPublicKey = useNamedPair ? namedPublic ?? "" : Deno.env.get("VAPID_PUBLIC_KEY")?.trim() ?? "";
+const vapidPrivateKey = useNamedPair ? namedPrivate ?? "" : Deno.env.get("VAPID_PRIVATE_KEY")?.trim() ?? "";
+const vapidSubject = Deno.env.get("VAPID_SUBJECT") ?? Deno.env.get("SITE_URL") ?? "";
+const siteUrl = (Deno.env.get("SITE_URL") ?? "http://localhost:3000").replace(/\/+$/, "");
+const siteOrigin = new URL(siteUrl).origin;
 const cors = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": siteOrigin,
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-cron-secret",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -45,7 +54,11 @@ async function createSundayReminders() {
   if (!settings?.weekly_enabled) return 0;
   const sunday = brusselsSunday(settings.weekly_hour);
   if (!sunday) return 0;
-  const { data: profiles, error } = await admin.from("profiles").select("id").limit(5000);
+  const { data: profiles, error } = await admin
+    .from("profiles")
+    .select("id")
+    .eq("member_approved", true)
+    .limit(5000);
   if (error) throw error;
   const rows = (profiles ?? []).map(({ id }) => ({
     user_id: id,
@@ -75,32 +88,66 @@ async function deleteExpiredReadNotifications() {
   return data?.length ?? 0;
 }
 
-async function dispatchPending() {
-  if (!vapidPublicKey || !vapidPrivateKey)
-    throw new Error("Clés VAPID absentes (VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY)");
+function configurePush() {
+  if (!vapidPublicKey || !vapidPrivateKey || !vapidSubject)
+    throw new Error("Configuration VAPID incomplète");
+  // Verify the public key really belongs to the configured private key.
+  const ecdh = createECDH("prime256v1");
+  ecdh.setPrivateKey(Buffer.from(vapidPrivateKey, "base64url"));
+  if (!ecdh.getPublicKey().equals(Buffer.from(vapidPublicKey, "base64url")))
+    throw new Error("Paire VAPID incohérente");
   webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+}
+function pushHref(href: string) {
+  const base = new URL(siteUrl).pathname.replace(/\/+$/, "");
+  const safe = href.startsWith("/") && !href.startsWith("//") && !href.includes("\\") ? href : "/";
+  return base && safe !== base && !safe.startsWith(base + "/") ? base + safe : safe;
+}
+
+async function dispatchPending() {
+  configurePush();
   const { data: notifications, error } = await admin
     .from("app_notifications")
-    .select("id,user_id,title,body,href,push_attempts")
+    .select("id,user_id,kind,title,body,href,push_attempts")
     .is("push_sent_at", null)
     .order("created_at", { ascending: true })
     .limit(100);
   if (error) throw error;
   let delivered = 0;
   for (const notification of notifications ?? []) {
+    const { data: recipient, error: recipientError } = await admin
+      .from("profiles")
+      .select("member_approved,is_admin")
+      .eq("id", notification.user_id)
+      .maybeSingle();
+    if (recipientError) throw recipientError;
+    const staffOnly = ["new_signup", "activity_pending"].includes(notification.kind);
+    if (!recipient?.member_approved || (staffOnly && !recipient.is_admin)) {
+      await admin
+        .from("app_notifications")
+        .update({ push_sent_at: new Date().toISOString() })
+        .eq("id", notification.id);
+      continue;
+    }
     const { data: subscriptions, error: subscriptionError } = await admin
       .from("app_push_subscriptions")
       .select("endpoint,subscription")
       .eq("user_id", notification.user_id);
     let deliveryError = subscriptionError?.message ?? "";
     for (const row of subscriptions ?? []) {
+      if (!isTrustedPushEndpoint(row.endpoint) || row.subscription?.endpoint !== row.endpoint) {
+        deliveryError = "Adresse push non autorisée";
+        continue;
+      }
       try {
         await webpush.sendNotification(
           row.subscription,
           JSON.stringify({
             title: notification.title,
-            body: notification.body,
-            url: notification.href,
+            body: staffOnly
+              ? "Ouvre l’application pour consulter cette demande."
+              : notification.body,
+            url: pushHref(notification.href),
           }),
         );
         delivered++;
@@ -152,10 +199,25 @@ Deno.serve(async (request) => {
     }
   }
 
-  if (body.action === "public-key") return json({ publicKey: vapidPublicKey });
+  if (body.action === "public-key") {
+    try {
+      configurePush();
+      return json({ publicKey: vapidPublicKey });
+    } catch {
+      return json({ error: "Configuration VAPID indisponible" }, 503);
+    }
+  }
   const token = (request.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
   const { data: authData, error: authError } = await admin.auth.getUser(token);
   if (authError || !authData.user) return json({ error: "Connexion requise" }, 401);
+  const { data: membership, error: membershipError } = await admin
+    .from("profiles")
+    .select("member_approved")
+    .eq("id", authData.user.id)
+    .maybeSingle();
+  if (membershipError || !membership?.member_approved || !authData.user.email_confirmed_at) {
+    return json({ error: "Inscription en attente de validation" }, 403);
+  }
   if (body.action === "register-installation") {
     const installationId = typeof body.installationId === "string" ? body.installationId : "";
     const platform = typeof body.platform === "string" ? body.platform : "other";
@@ -179,25 +241,18 @@ Deno.serve(async (request) => {
       : json({ ok: true });
   }
   if (body.action === "admin-status") {
-    const isMasterAdmin = authData.user.email?.toLowerCase() === "baudeletgauthier@gmail.com";
-    if (!isMasterAdmin) {
-      const [roleResult, profileResult] = await Promise.all([
-        admin
-          .from("user_roles")
-          .select("user_id")
-          .eq("user_id", authData.user.id)
-          .eq("role", "admin")
-          .maybeSingle(),
-        admin.from("profiles").select("is_admin").eq("id", authData.user.id).maybeSingle(),
-      ]);
-      const roleError = roleResult.error ?? profileResult.error;
-      if (roleError) {
-        console.error("Vérification du rôle admin impossible", roleError);
-        return json({ error: `Vérification du rôle admin impossible : ${roleError.message}` }, 500);
-      }
-      if (!roleResult.data && !profileResult.data?.is_admin)
-        return json({ error: "Accès réservé au staff" }, 403);
+    const { data: adminRole, error: roleError } = await admin
+      .from("user_roles")
+      .select("user_id")
+      .eq("user_id", authData.user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (roleError) {
+      console.error("Vérification du rôle admin impossible", roleError);
+      return json({ error: "Vérification du rôle admin impossible." }, 500);
     }
+    if (!adminRole) return json({ error: "Accès réservé au staff" }, 403);
+
     const [profilesResult, installationsResult, subscriptionsResult] = await Promise.all([
       admin.from("profiles").select("id,full_name,totem").order("full_name"),
       admin.from("app_installations").select("user_id,platform,last_seen_at"),
@@ -207,7 +262,9 @@ Deno.serve(async (request) => {
       const cause = profilesResult.error ?? installationsResult.error ?? subscriptionsResult.error;
       console.error("Chargement du statut de l’application impossible", cause);
       return json(
-        { error: `Impossible de charger l’état de l’application : ${cause.message}` },
+        {
+          error: `Impossible de charger l’état de l’application : ${cause?.message ?? "Erreur inconnue"}`,
+        },
         500,
       );
     }
@@ -243,7 +300,7 @@ Deno.serve(async (request) => {
       !subscription?.endpoint ||
       !subscription.keys?.p256dh ||
       !subscription.keys.auth ||
-      !subscription.endpoint.startsWith("https://")
+      !isTrustedPushEndpoint(subscription.endpoint)
     ) {
       return json({ error: "Abonnement push invalide" }, 400);
     }

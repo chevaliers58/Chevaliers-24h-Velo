@@ -16,6 +16,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TROOP_NAME } from "@/lib/troop-config";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -28,18 +29,22 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/useAuth";
-import { db } from "@/lib/database";
+
 import { ForgotPassword } from "@/components/ForgotPassword";
-import logoAlezanComplet from "@/assets/logo-alezan.png";
-import { isStaffPatrol, isTroopStaffPatrol, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
+import {
+  isStaffPatrol,
+  isOtherUnitPatrol,
+  isTroopStaffPatrol,
+  TROOP_STAFF_PATROL_NAME,
+} from "@/lib/categories";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Connexion & Inscription — ALEZAN 42" },
+      { title: `Connexion & Inscription — ${TROOP_NAME}` },
       { name: "description", content: "Connecte-toi pour enregistrer tes kilomètres à vélo." },
-      { property: "og:title", content: "Connexion & Inscription — ALEZAN 42" },
+      { property: "og:title", content: `Connexion & Inscription — ${TROOP_NAME}` },
       { property: "og:description", content: "Rejoins le défi vélo des patrouilles." },
     ],
   }),
@@ -215,7 +220,7 @@ function AuthPage() {
             await supabase.from("profiles").upsert(
               {
                 id: authData.user.id,
-                email: authData.user.email,
+                email: authData.user.email ?? null,
                 full_name:
                   (meta["full_name"] as string) ||
                   (meta["name"] as string) ||
@@ -239,17 +244,10 @@ function AuthPage() {
         }
       }
 
-      // Also keep local DB in sync
-      try {
-        db.signIn(email);
-      } catch {
-        // ignore
-      }
-
       await refreshProfile();
       setBusy(false);
       toast.success("Bon retour parmi nous !");
-      window.location.href = "/";
+      window.location.href = import.meta.env.BASE_URL;
     } catch (err: unknown) {
       setBusy(false);
       const msg = err instanceof Error ? err.message : String(err);
@@ -284,7 +282,9 @@ function AuthPage() {
       d.patrol_id === "staff" ||
       d.patrol_id === "patrol-staff" ||
       isStaffPatrol(patrols.find((p) => p.id === d.patrol_id));
-    const scoutYearNum = isStaff ? null : Number(d.scout_year);
+    const isOther = isOtherUnitPatrol(patrols.find((p) => p.id === d.patrol_id));
+    const scoutYearNum =
+      isStaff || isOther || d.scout_year === "other" ? null : Number(d.scout_year);
 
     try {
       const email = d.email.trim();
@@ -295,6 +295,7 @@ function AuthPage() {
         email,
         password,
         options: {
+          emailRedirectTo: new URL(import.meta.env.BASE_URL, window.location.origin).href,
           data: {
             full_name: d.full_name.trim(),
             name: d.full_name.trim(),
@@ -318,8 +319,9 @@ function AuthPage() {
 
       const newUserId = authData.user?.id;
 
-      // 2. Explicitly write/upsert into public.profiles in Supabase
-      if (newUserId) {
+      // The Auth trigger creates profiles even when email confirmation is required.
+      // Only an authenticated new account may perform the optional profile upsert.
+      if (newUserId && authData.session?.user.id === newUserId) {
         try {
           const { error: profileError } = await supabase.from("profiles").upsert(
             {
@@ -346,34 +348,17 @@ function AuthPage() {
         }
       }
 
-      // 3. Keep local DB synchronized
-      try {
-        db.signUp(email, {
-          full_name: d.full_name.trim(),
-          totem: d.totem?.trim() || null,
-          quali: d.quali?.trim() || null,
-          scout_year: scoutYearNum,
-          patrol_id: targetPatrolId,
-          phone: d.phone?.trim() || null,
-          birth_day: d.birth_day ? Number(d.birth_day) : null,
-          birth_month: d.birth_month ? Number(d.birth_month) : null,
-          is_chef: isStaff,
-        });
-      } catch {
-        // ignore
-      }
-
       await refreshProfile();
       setBusy(false);
 
       if (authData.session) {
-        toast.success("Compte scout créé avec succès dans Supabase ! Bienvenue sur l'ALEZAN 42.");
+        toast.success("Compte créé. Le staff doit maintenant valider ton inscription.");
       } else {
         toast.success(
-          "Compte créé dans Supabase ! Si la confirmation par e-mail est active, vérifie ta boîte de réception.",
+          "Compte créé. Confirme ton adresse e-mail, puis attends la validation du staff.",
         );
       }
-      window.location.href = "/";
+      window.location.href = import.meta.env.BASE_URL;
     } catch (err: unknown) {
       setBusy(false);
       const msg = err instanceof Error ? err.message : String(err);
@@ -404,13 +389,14 @@ function AuthPage() {
 
         {/* Header Icon & Title */}
         <div className="text-center">
-          <img
-            src={logoAlezanComplet}
-            alt="Alezan 42 Cycling Team"
-            className="mx-auto h-24 w-auto drop-shadow-sm"
-          />
+          <div
+            aria-label="Fleur de lys scoute"
+            className="mx-auto grid h-24 w-24 place-items-center text-7xl drop-shadow-sm"
+          >
+            ⚜️
+          </div>
           <h1 className="mt-4 font-display text-2xl sm:text-3xl font-black text-foreground">
-            Défi Vélo ALEZAN 42
+            Défi Vélo {TROOP_NAME}
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
             Plateforme officielle de comptabilisation des kilomètres de la troupe
@@ -660,6 +646,7 @@ function AuthPage() {
                           <SelectItem value="3">3ème année</SelectItem>
                           <SelectItem value="4">4ème année (Aîné/CP)</SelectItem>
                           <SelectItem value="staff">👑 Staff</SelectItem>
+                          <SelectItem value="other">Autre membre de l’unité</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

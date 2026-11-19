@@ -30,21 +30,17 @@ import { RecentActivityFeed } from "@/components/RecentActivityFeed";
 import { CollectiveRouteMap } from "@/components/CollectiveRouteMap";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { SITE_URL, TROOP_NAME, TROOP_STRAVA_CLUB_URL } from "@/lib/troop-config";
 import { weekRange, monthRange, useAuth } from "@/lib/useAuth";
 import { isAppMode } from "@/lib/standalone";
-import {
-  db,
-  type Patrol,
-  getActivitySport,
-  type ActivitySport,
-  getPatrolEmblem,
-  SPORT_INFO,
-} from "@/lib/database";
+import type { Patrol } from "@/lib/database";
+import { getActivitySport, type ActivitySport, SPORT_INFO } from "@/lib/activity";
+import { getPatrolColor, getPatrolEmblem } from "@/lib/patrolEmblem";
 import { SportIcon, SPORT_COLORS } from "@/components/SportIcon";
 import { cn } from "@/lib/utils";
 import {
   isStaffPatrol,
-  matchesCategory,
+  isCollectivePatrol,
   TROOP_STAFF_PATROL_NAME,
   isTroopStaffPatrol,
 } from "@/lib/categories";
@@ -53,11 +49,17 @@ import { JerseysPanel } from "@/components/JerseysPanel";
 import { ScoutSportifCard } from "@/components/ScoutSportifCard";
 import { PelotonPanel } from "@/components/PelotonPanel";
 import { CumulativeDistanceBadges, NearestDistanceTrophy } from "@/components/DistanceTrophies";
+import {
+  AnnualChallenges,
+  AnnualPatrolPoints,
+  MyPatrolRanking,
+} from "@/components/AnnualCompetition";
 import { ChallengesBanner, ChallengesPanel } from "@/components/ChallengesPanel";
 import { ExpeditionGoal } from "@/components/ExpeditionGoal";
 import { BirthdayBanner } from "@/components/BirthdayBanner";
 import { useSeasonalTheme } from "@/context/SeasonalThemeContext";
 import { computePeloton, type PelotonUserScore } from "@/lib/peloton";
+import { fetchStaffCollectiveDistances } from "@/lib/staffCollective";
 import type { DistanceActivity } from "@/lib/distanceTrophies";
 import { WeeklyStreakCard } from "@/components/WeeklyStreakCard";
 import { RankingStoryExport } from "@/components/RankingStoryExport";
@@ -98,23 +100,22 @@ interface RankedActivity {
 interface SelectedLeaderboardEntry {
   title: string;
   userIds: string[];
+  collectiveKm: number;
 }
 
 export const Route = createFileRoute("/")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "ALEZAN 42 — Le défi vélo des patrouilles" },
+      { title: `${TROOP_NAME} — Le défi vélo des patrouilles` },
       {
         name: "description",
-        content:
-          "Classement hebdomadaire des kilomètres à vélo entre patrouilles scoutes de l'ALEZAN 42.",
+        content: `Classement hebdomadaire des kilomètres à vélo entre patrouilles scoutes de ${TROOP_NAME}.`,
       },
-      { property: "og:title", content: "ALEZAN 42 — Le défi vélo des patrouilles" },
+      { property: "og:title", content: `${TROOP_NAME} — Le défi vélo des patrouilles` },
       { property: "og:description", content: "Quelle patrouille roulera le plus cette semaine ?" },
     ],
-    // Adresse officielle (le site répond aussi sur alezan42-cycling.pages.dev)
-    links: [{ rel: "canonical", href: "https://alezan42-cycling.lesscoutsdemoustier.be/" }],
+    links: SITE_URL ? [{ rel: "canonical", href: `${SITE_URL}/` }] : [],
   }),
   component: Index,
 });
@@ -128,8 +129,7 @@ const PERIOD_LABELS: Record<Period, string> = {
   lastMonth: "Mois passé",
   all: "Depuis le début",
 };
-type GenderCat = "all" | "homme" | "femme";
-type ScoutYearFilter = "all" | "scouts" | "1" | "2" | "3" | "4" | "chef";
+type ScoutYearFilter = "all" | "scouts" | "young" | "1" | "2" | "3" | "4";
 type SportMode = "velo" | "course" | "marche" | "all";
 
 /** Icône du mode de classement (Tous = vélo). */
@@ -183,7 +183,12 @@ function FilterPill({
 }
 
 function Index() {
-  const { user, profile, isAdmin } = useAuth();
+  const { user } = useAuth();
+  return <IndexForViewer key={user?.id ?? "anonymous"} />;
+}
+
+function IndexForViewer() {
+  const { user, profile, isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { background: themeBackground } = useSeasonalTheme();
   // Application installée sur téléphone : l'accueil est l'écran /app (le site n'est pas concerné)
@@ -192,7 +197,6 @@ function Index() {
   }, [navigate]);
   const [sportMode, setSportMode] = useState<SportMode>("all");
   const [period, setPeriod] = useState<Period>("all");
-  const [cat, setCat] = useState<GenderCat>("all");
   const [scoutYear, setScoutYear] = useState<ScoutYearFilter>("all");
   const [view, setView] = useState<
     "patrols" | "scouts" | "peloton" | "map" | "chart" | "challenges"
@@ -201,6 +205,12 @@ function Index() {
   const [pendingKm, setPendingKm] = useState(0);
   const [selectedEntry, setSelectedEntry] = useState<SelectedLeaderboardEntry | null>(null);
 
+  const { data: staffDistances = [], isError: staffDistancesError } = useQuery({
+    queryKey: ["staff-collective-distances"],
+    queryFn: () => fetchStaffCollectiveDistances(),
+    refetchInterval: 30_000,
+  });
+
   const { data: myApprovedActivities = [] } = useQuery<
     Array<DistanceActivity & { ride_date: string }>
   >({
@@ -208,7 +218,7 @@ function Index() {
     enabled: !!user?.id,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("activities_public")
+        .from("activities")
         .select("km,note,status,ride_date")
         .eq("user_id", user!.id)
         .eq("status", "approved");
@@ -239,7 +249,7 @@ function Index() {
     refetchOnWindowFocus: true,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("activities_public")
+        .from("activities")
         .select("km")
         .eq("user_id", user!.id)
         .eq("status", "approved")
@@ -250,7 +260,7 @@ function Index() {
     },
   });
 
-  const { data: troopTotalKm = 0 } = useQuery<number>({
+  const { data: scoutTotalKm = 0 } = useQuery<number>({
     queryKey: ["troop-approved-km-all-time"],
     refetchInterval: 30_000,
     refetchOnWindowFocus: true,
@@ -263,6 +273,8 @@ function Index() {
       return (data ?? []).reduce((sum, activity) => sum + Number(activity.km || 0), 0);
     },
   });
+
+  const troopTotalKm = scoutTotalKm + staffDistances.reduce((sum, row) => sum + Number(row.km), 0);
 
   const range =
     period === "week"
@@ -280,7 +292,9 @@ function Index() {
     isLoading: isLeaderboardLoading,
     isError: isLeaderboardError,
   } = useQuery<LeaderboardItem[]>({
-    queryKey: ["leaderboard", period, sportMode],
+    queryKey: ["leaderboard", period, sportMode, user?.id ?? null],
+    enabled: !!user || !authLoading,
+    gcTime: 0,
     refetchInterval: 30_000,
     refetchOnWindowFocus: true,
     queryFn: async () => {
@@ -348,9 +362,8 @@ function Index() {
         const items: LeaderboardItem[] = profs
           .map((p) => {
             const pt = p.patrols;
-            // Staff = membre d'une patrouille staff. Être admin ou ne pas avoir
-            // d'année scout ne suffit pas (un admin sans patrouille compte comme staff).
-            const isStaffOrChef = isStaffPatrol(pt) || (!pt && !!p.is_admin);
+            // Le staff et les admins ne participent pas aux classements individuels.
+            const isStaffOrChef = isCollectivePatrol(pt) || !!p.is_admin;
 
             const userActs = acts.filter((a) => {
               if (a.user_id !== p.id) return false;
@@ -387,9 +400,9 @@ function Index() {
             return {
               user_id: p.id,
               display_name: displayName,
-              totem: p.totem,
-              quali: p.quali,
-              full_name: p.full_name,
+              totem: p.totem ?? null,
+              quali: p.quali ?? null,
+              full_name: p.full_name ?? null,
               patrol_id: p.patrol_id || "",
               patrol_name:
                 pt?.name || (isStaffOrChef ? TROOP_STAFF_PATROL_NAME : "Sans patrouille"),
@@ -397,7 +410,7 @@ function Index() {
               km: Number(totalKm.toFixed(1)),
               dplus: Math.round(totalDplus),
               distanceTotals,
-              scout_year: p.scout_year ?? undefined,
+              scout_year: p.scout_year ?? null,
               is_chef: isStaffOrChef,
               peloton: peloton.get(p.id),
             };
@@ -414,7 +427,13 @@ function Index() {
 
   const selectedUserIds = selectedEntry?.userIds ?? [];
   const { data: entryActivities = [], isLoading: isEntryActivitiesLoading } = useQuery({
-    queryKey: ["leaderboard-entry-activities", selectedUserIds, period, sportMode],
+    queryKey: [
+      "leaderboard-entry-activities",
+      selectedUserIds,
+      period,
+      sportMode,
+      user?.id ?? null,
+    ],
     enabled: !!selectedEntry && selectedUserIds.length > 0,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -432,6 +451,17 @@ function Index() {
     },
   });
 
+  const visibleStaffDistances = useMemo(
+    () =>
+      staffDistances.filter(
+        (a) =>
+          scoutYear === "all" &&
+          (!range || (a.ride_date >= range.from && a.ride_date <= range.to)) &&
+          (sportMode === "all" || a.sport === sportMode),
+      ),
+    [staffDistances, scoutYear, range, sportMode],
+  );
+
   const { data: patrols = [] } = useQuery<Patrol[]>({
     queryKey: ["patrols"],
     queryFn: async () => {
@@ -442,21 +472,17 @@ function Index() {
     },
   });
 
-  // Filter scouts by gender category AND scout year
-  // Rule: Patrol "Staff" / scouts who are staff are considered both "homme et femme" (fille et garçon)
+  // Filter scouts by scout year only.
   const filteredScouts = useMemo(() => {
     if (!Array.isArray(leaderboardData)) return [];
     return leaderboardData.filter((r) => {
       if (!r) return false;
       const isStaffOrChef = !!r.is_chef || r.category === "staff";
 
-      // 1. Catégorie : le staff apparaît chez les Garçons ET chez les Filles
-      if (!matchesCategory(r.category, isStaffOrChef, cat)) return false;
-
       // 2. Scout year filter:
       if (scoutYear !== "all") {
-        if (scoutYear === "chef") {
-          if (!isStaffOrChef) return false;
+        if (scoutYear === "young") {
+          if (isStaffOrChef || (r.scout_year !== 1 && r.scout_year !== 2)) return false;
         } else if (scoutYear === "scouts") {
           // Scouts de 1re à 4e année ensemble, sans le staff
           if (isStaffOrChef) return false;
@@ -470,7 +496,7 @@ function Index() {
 
       return true;
     });
-  }, [leaderboardData, cat, scoutYear]);
+  }, [leaderboardData, scoutYear]);
 
   // Aggregate patrol rows
   const patrolRows = useMemo(() => {
@@ -493,16 +519,13 @@ function Index() {
     return combinedPatrols
       .filter((p) => {
         if (!p) return false;
-        const staff = isStaffPatrol(p);
-        // Filtre « Staff » : uniquement les patrouilles staff ;
-        // filtre par année : pas de patrouilles staff (elles n'ont pas d'année)
-        if (scoutYear === "chef" && !staff) return false;
-        if (scoutYear !== "all" && scoutYear !== "chef" && staff) return false;
-        // Les patrouilles staff apparaissent chez les Garçons ET chez les Filles
-        return matchesCategory(p.category, staff, cat);
+        const staff = isCollectivePatrol(p);
+        // Le staff compte en kilomètres lorsque toutes les années sont affichées.
+        if (scoutYear !== "all" && staff) return false;
+        return true;
       })
       .map((p) => {
-        const staffPatrol = isStaffPatrol(p);
+        const staffPatrol = isCollectivePatrol(p);
 
         // Membres de la patrouille. Les animateurs sans patrouille sont rattachés
         // à la patrouille « Staff troupe » (et pas à chacune des patrouilles staff).
@@ -514,8 +537,13 @@ function Index() {
               return isMainStaffPatrol && r.is_chef && !r.patrol_id;
             })
           : [];
-        const km = members.reduce((s, r) => s + Number(r?.km || 0), 0);
-        const pelotonPoints = members.reduce((s, r) => s + (r?.peloton?.points || 0), 0);
+        const collectiveKm = visibleStaffDistances
+          .filter((a) => a.patrol_id === p.id || (isMainStaffPatrol && !a.patrol_id))
+          .reduce((s, a) => s + Number(a.km), 0);
+        const km = members.reduce((s, r) => s + Number(r?.km || 0), 0) + collectiveKm;
+        const pelotonPoints = members
+          .filter((r) => !r.is_chef && r.category !== "staff")
+          .reduce((s, r) => s + (r?.peloton?.points || 0), 0);
         return {
           id: p.id,
           name: p.name,
@@ -523,14 +551,17 @@ function Index() {
           isChef: staffPatrol,
           members: members.length,
           km,
+          collectiveKm,
           pelotonPoints: Math.round(pelotonPoints * 10) / 10,
         };
       })
       .sort((a, b) => b.km - a.km);
-  }, [patrols, filteredScouts, cat, scoutYear]);
+  }, [patrols, filteredScouts, scoutYear, visibleStaffDistances]);
 
   const scoutRows = useMemo(() => {
-    let list = [...filteredScouts].sort((a, b) => Number(b.km) - Number(a.km));
+    let list = filteredScouts
+      .filter((s) => !s.is_chef && s.category !== "staff")
+      .sort((a, b) => Number(b.km) - Number(a.km));
     if (scoutSearch.trim()) {
       const q = scoutSearch.toLowerCase().trim();
       list = list.filter(
@@ -544,8 +575,11 @@ function Index() {
   }, [filteredScouts, scoutSearch]);
 
   const totalKm = useMemo(() => {
-    return filteredScouts.reduce((s, r) => s + Number(r.km || 0), 0);
-  }, [filteredScouts]);
+    return (
+      filteredScouts.reduce((s, r) => s + Number(r.km || 0), 0) +
+      visibleStaffDistances.reduce((s, a) => s + Number(a.km), 0)
+    );
+  }, [filteredScouts, visibleStaffDistances]);
 
   const topPatrol = useMemo(() => {
     return patrolRows.find((p) => Number(p.km) > 0) || null;
@@ -556,7 +590,9 @@ function Index() {
   }, [scoutRows]);
 
   const activeScoutsCount = useMemo(() => {
-    return filteredScouts.filter((s) => Number(s.km || 0) > 0).length;
+    return filteredScouts.filter(
+      (s) => !s.is_chef && s.category !== "staff" && Number(s.km || 0) > 0,
+    ).length;
   }, [filteredScouts]);
 
   const rankedPatrols = useMemo(() => {
@@ -598,7 +634,8 @@ function Index() {
     });
   }, [scoutRows]);
 
-  const openScoutProfile = (scout: LeaderboardItem) => {
+  const openScoutProfile = (scout: LeaderboardItem | undefined) => {
+    if (!scout) return;
     void navigate({ to: "/scout/$scoutId", params: { scoutId: scout.user_id } });
   };
 
@@ -611,11 +648,16 @@ function Index() {
           scout.patrol_id === patrol.id || (isMainStaffPatrol && scout.is_chef && !scout.patrol_id),
       )
       .map((scout) => scout.user_id);
-    setSelectedEntry({ title: patrol.name, userIds });
+    setSelectedEntry({ title: patrol.name, userIds, collectiveKm: patrol.collectiveKm });
   };
 
   return (
     <div className="mobile-home-page min-h-screen bg-background">
+      {user && !authLoading && !profile?.member_approved && (
+        <div className="bg-amber-100 p-3 text-center text-sm font-semibold text-amber-950">
+          Inscription en attente de validation par le staff.
+        </div>
+      )}
       {/* Hero Section */}
       <section className="mobile-home-hero relative overflow-hidden bg-bark text-bark-foreground">
         <img
@@ -644,12 +686,12 @@ function Index() {
               )}
               <span>
                 {sportMode === "course"
-                  ? "ALEZAN 42 — Défi Course à Pied Inter-Patrouilles 🏃"
+                  ? `${TROOP_NAME} — Défi Course à Pied Inter-Patrouilles 🏃`
                   : sportMode === "marche"
-                    ? "ALEZAN 42 — Défi Marche Inter-Patrouilles 🥾"
+                    ? `${TROOP_NAME} — Défi Marche Inter-Patrouilles 🥾`
                     : sportMode === "all"
-                      ? "ALEZAN 42 — Défi Combiné (Vélo, Course & Marche) 🏆"
-                      : "ALEZAN 42 — Défi Vélo Inter-Patrouilles 🚴"}
+                      ? `${TROOP_NAME} — Défi Combiné (Vélo, Course & Marche) 🏆`
+                      : `${TROOP_NAME} — Défi Vélo Inter-Patrouilles 🚴`}
               </span>
             </div>
             <h1 className="mt-4 font-display text-4xl font-black leading-[1.05] tracking-[-0.02em] text-white md:text-6xl lg:col-span-2 lg:text-5xl">
@@ -667,23 +709,23 @@ function Index() {
                   : "Chaque kilomètre compte pour ta patrouille ! Enregistre tes sorties avec Strava ou ta photo de compteur, grimpe au classement général et fais briller tes couleurs. Toujours prêts !"}
             </p>
 
-            <a
-              href="https://www.strava.com/clubs/Troupe-Alezan42"
-              target="_blank"
-              rel="noreferrer"
-              className="mobile-hero-secondary mt-5 inline-flex max-w-full items-center gap-3 lg:col-start-3 lg:row-span-2 lg:row-start-2 lg:mt-0 lg:self-center lg:justify-self-end rounded-2xl border border-white/25 bg-white/10 px-4 py-3 text-white shadow-lg backdrop-blur-sm transition hover:bg-white/20"
-            >
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#fc4c02] text-lg font-black">
-                S
-              </span>
-              <span className="text-left">
-                <span className="block text-sm font-bold">Retrouve-nous sur Strava</span>
-                <span className="block text-xs text-white/80">
-                  Rejoins le club Troupe de l’Alezan
+            {TROOP_STRAVA_CLUB_URL && (
+              <a
+                href={TROOP_STRAVA_CLUB_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="mobile-hero-secondary mt-5 inline-flex max-w-full items-center gap-3 lg:col-start-3 lg:row-span-2 lg:row-start-2 lg:mt-0 lg:self-center lg:justify-self-end rounded-2xl border border-white/25 bg-white/10 px-4 py-3 text-white shadow-lg backdrop-blur-sm transition hover:bg-white/20"
+              >
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#fc4c02] text-lg font-black">
+                  S
                 </span>
-              </span>
-              <ExternalLink className="ml-1 h-4 w-4 shrink-0 text-white/80" />
-            </a>
+                <span className="text-left">
+                  <span className="block text-sm font-bold">Retrouve-nous sur Strava</span>
+                  <span className="block text-xs text-white/80">Rejoins le club {TROOP_NAME}</span>
+                </span>
+                <ExternalLink className="ml-1 h-4 w-4 shrink-0 text-white/80" />
+              </a>
+            )}
 
             {/* Scout Identity Bandeau (Visible when logged in) */}
             {user && (
@@ -952,7 +994,9 @@ function Index() {
               </span>
             </div>
             <div className="mt-2 font-display text-2xl font-black text-foreground sm:text-3xl">
-              {globalActivityCount.toLocaleString("fr-BE")}
+              {(
+                globalActivityCount + staffDistances.reduce((s, a) => s + Number(a.rides), 0)
+              ).toLocaleString("fr-BE")}
             </div>
             <p className="mt-1 text-xs text-muted-foreground">tous sports, depuis le début</p>
           </div>
@@ -986,7 +1030,7 @@ function Index() {
               </span>
             </div>
             <div className="mt-2 font-display text-2xl font-black text-foreground sm:text-3xl flex flex-wrap items-baseline gap-2">
-              <span>{totalKm.toFixed(1)}</span>
+              <span data-testid="collective-km">{totalKm.toFixed(1)}</span>
               <span className="text-base font-normal text-muted-foreground">km</span>
               {pendingKm > 0 && (
                 <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
@@ -1090,21 +1134,6 @@ function Index() {
                 </FilterPill>
               ))}
             </div>
-
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider mr-1">
-                Genre :
-              </span>
-              <FilterPill active={cat === "all"} onClick={() => setCat("all")}>
-                Toutes
-              </FilterPill>
-              <FilterPill active={cat === "homme"} onClick={() => setCat("homme")}>
-                Garçons
-              </FilterPill>
-              <FilterPill active={cat === "femme"} onClick={() => setCat("femme")}>
-                Filles
-              </FilterPill>
-            </div>
           </div>
 
           {/* Row 2: Scout Year Filter */}
@@ -1131,11 +1160,13 @@ function Index() {
             <FilterPill active={scoutYear === "4"} onClick={() => setScoutYear("4")}>
               4ème année
             </FilterPill>
-            <FilterPill active={scoutYear === "chef"} onClick={() => setScoutYear("chef")}>
-              👑 Staff
+            <FilterPill active={scoutYear === "young"} onClick={() => setScoutYear("young")}>
+              Jeunes (1re et 2e)
             </FilterPill>
           </div>
         </div>
+
+        <MyPatrolRanking />
 
         {/* Maillots : jaune (km) et à pois (D+) par catégorie, selon la période et le sport */}
         {profile?.is_chef && (
@@ -1249,7 +1280,10 @@ function Index() {
 
         {/* View Content */}
         {view === "challenges" ? (
-          <ChallengesPanel />
+          <div className="space-y-3">
+            <AnnualChallenges />
+            <ChallengesPanel />
+          </div>
         ) : view === "map" ? (
           <CollectiveRouteMap />
         ) : view === "chart" ? (
@@ -1264,9 +1298,19 @@ function Index() {
             Impossible de synchroniser le classement. Réessaie dans quelques instants.
           </div>
         ) : view === "peloton" ? (
-          <PelotonPanel scouts={filteredScouts} patrols={patrolRows} sportMode={sportMode} />
+          <PelotonPanel
+            scouts={filteredScouts.filter((s) => !s.is_chef && s.category !== "staff")}
+            patrols={patrolRows.filter((p) => !p.isChef)}
+            sportMode={sportMode}
+          />
         ) : view === "patrols" ? (
           <div className="space-y-3">
+            <AnnualPatrolPoints />
+            {staffDistancesError && (
+              <p role="alert" className="text-sm text-muted-foreground">
+                Les kilomètres collectifs du staff sont momentanément indisponibles.
+              </p>
+            )}
             {rankedPatrols.length === 0 ? (
               <div className="rounded-2xl border bg-card p-10 text-center text-muted-foreground">
                 Aucune patrouille ne correspond aux filtres sélectionnés.
@@ -1277,7 +1321,6 @@ function Index() {
                   key={p.id}
                   rank={p.rank}
                   name={p.name}
-                  category={p.category}
                   isChef={p.isChef}
                   members={p.members}
                   km={p.km}
@@ -1289,7 +1332,7 @@ function Index() {
             )}
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-6" data-testid="individual-rankings">
             {/* Search bar & count */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card p-3 rounded-2xl border border-border/80 shadow-sm">
               <div className="relative flex-1">
@@ -1425,7 +1468,7 @@ function Index() {
                     displayName={s.display_name}
                     patrolName={s.patrol_name}
                     scoutYear={s.scout_year ?? null}
-                    isChef={s.is_chef}
+                    isChef={s.is_chef ?? false}
                     km={s.km}
                     dplus={s.dplus}
                     distanceTotals={s.distanceTotals}
@@ -1458,11 +1501,11 @@ function Index() {
               </p>
             ) : entryActivities.length === 0 ? (
               <p className="py-8 text-center text-sm text-muted-foreground">
-                Aucune sortie approuvée ne correspond à ces filtres.
+                Aucune sortie individuelle publique ne correspond à ces filtres.
               </p>
             ) : (
               entryActivities.map((activity, index) => {
-                const member = leaderboardData.find((scout) => scout.user_id === activity.user_id);
+                const member = leaderboardData?.find((scout) => scout.user_id === activity.user_id);
                 const sport = getActivitySport(activity);
                 return (
                   <div
@@ -1470,7 +1513,7 @@ function Index() {
                     className="flex items-center justify-between gap-3 rounded-xl border bg-card p-3"
                   >
                     <div className="min-w-0">
-                      {selectedEntry.userIds.length > 1 && (
+                      {(selectedEntry?.userIds.length ?? 0) > 1 && (
                         <p className="truncate text-xs font-semibold text-foreground">
                           {member?.display_name ?? "Membre"}
                         </p>
@@ -1496,12 +1539,18 @@ function Index() {
               })
             )}
           </div>
-          {entryActivities.length > 0 && (
+          {!!selectedEntry?.collectiveKm && (
+            <p className="rounded-xl border p-3 text-sm">
+              Contribution collective : {selectedEntry.collectiveKm.toFixed(1)} km.
+            </p>
+          )}
+          {(entryActivities.length > 0 || !!selectedEntry?.collectiveKm) && (
             <p className="border-t pt-3 text-right text-sm font-bold">
               Total affiché :{" "}
-              {entryActivities
-                .reduce((sum, activity) => sum + Number(activity.km || 0), 0)
-                .toFixed(1)}{" "}
+              {(
+                entryActivities.reduce((sum, activity) => sum + Number(activity.km || 0), 0) +
+                (selectedEntry?.collectiveKm ?? 0)
+              ).toFixed(1)}{" "}
               km
             </p>
           )}
@@ -1514,7 +1563,6 @@ function Index() {
 function PatrolLeaderboardRow({
   rank,
   name,
-  category,
   isChef,
   members,
   km,
@@ -1524,7 +1572,6 @@ function PatrolLeaderboardRow({
 }: {
   rank: number;
   name: string;
-  category: string;
   isChef?: boolean;
   members: number;
   km: number;
@@ -1588,16 +1635,17 @@ function PatrolLeaderboardRow({
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="truncate font-display text-lg font-bold text-foreground flex items-center gap-1.5">
-              <span className="text-xl shrink-0">{getPatrolEmblem(name)}</span>
+              <span
+                className="shrink-0 rounded-lg border-2 p-1 text-xl leading-none"
+                style={{ borderColor: getPatrolColor(name) }}
+              >
+                {getPatrolEmblem(name)}
+              </span>
               <span>{name}</span>
             </span>
-            {isChef ? (
+            {isChef && (
               <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-600 uppercase tracking-wider">
                 👑 Staff
-              </span>
-            ) : (
-              <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold text-secondary-foreground">
-                {category === "homme" ? "Garçons" : "Filles"}
               </span>
             )}
           </div>

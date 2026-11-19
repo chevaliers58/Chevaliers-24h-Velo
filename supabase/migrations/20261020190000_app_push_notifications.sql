@@ -79,7 +79,7 @@ select cron.schedule(
   '* * * * *',
   $job$
     select net.http_post(
-      url := 'https://civblymnwigeayfecujp.supabase.co/functions/v1/app-notifications',
+      url := 'https://qxlsdauqoivqhoojlrwk.supabase.co/functions/v1/app-notifications',
       headers := jsonb_build_object(
         'Content-Type', 'application/json',
         'x-cron-secret', (select valeur from menage_prive.cle where id = true)

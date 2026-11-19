@@ -53,6 +53,14 @@ export function BirthdayBanner({ userId }: { userId: string | undefined }) {
   const todayUtc = Date.UTC(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate());
   const staffBirthdays = settings.staffBirthdays.flatMap((birthdayDate) => {
     const [month, day] = birthdayDate.split("-").map(Number);
+    if (
+      month === undefined ||
+      day === undefined ||
+      !Number.isInteger(month) ||
+      !Number.isInteger(day)
+    ) {
+      return [];
+    }
     let next = new Date(todayDate.getFullYear(), month - 1, day);
     if (next.getMonth() !== month - 1) next = new Date(todayDate.getFullYear(), month, 0);
     let diff = Math.round(
@@ -132,7 +140,7 @@ export function BirthdayBanner({ userId }: { userId: string | undefined }) {
             <span className="font-semibold text-foreground">Anniversaire du staff bientôt : </span>
             {staffSoon
               .map((b) => {
-                const [month, day] = b.date.split("-").map(Number);
+                const [month = 0, day = 0] = b.date.split("-").map(Number);
                 return b.days_until === 1 ? "demain" : `le ${day} ${MONTHS_SHORT[month - 1] ?? ""}`;
               })
               .join(" · ")}

@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { User, Check, Crown, Link2 } from "lucide-react";
+import { User, Check, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,14 +15,15 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/useAuth";
-import { db, getPatrolEmblem } from "@/lib/database";
-import { isStaffPatrol, isTroopStaffPatrol, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
+import { TROOP_NAME } from "@/lib/troop-config";
+import { getPatrolEmblem } from "@/lib/patrolEmblem";
+import { isStaffPatrol } from "@/lib/categories";
 
 export const Route = createFileRoute("/_authenticated/profil")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Mon profil — ALEZAN 42" },
+      { title: `Mon profil — ${TROOP_NAME}` },
       {
         name: "description",
         content: "Complète ton profil scout : totem, quali, année, patrouille.",
@@ -75,7 +76,7 @@ function daysInMonth(month: number): number {
 
 function Profil() {
   const { user } = Route.useRouteContext();
-  const { refreshProfile } = useAuth();
+  const { refreshProfile, isAdmin } = useAuth();
   const [patrols, setPatrols] = useState<{ id: string; name: string; category: string }[]>([]);
   const [f, setF] = useState({
     full_name: "",
@@ -89,31 +90,6 @@ function Profil() {
     birth_month: "",
   });
   const [busy, setBusy] = useState(false);
-  const [connectingStrava, setConnectingStrava] = useState(false);
-
-  useEffect(() => {
-    const result = new URLSearchParams(window.location.search).get("strava");
-    if (!result) return;
-    if (result === "connected")
-      toast.success(
-        "Compte Strava associé ! Les nouvelles sorties publiques seront synchronisées.",
-      );
-    else if (result === "refused") toast.info("Connexion Strava annulée.");
-    else toast.error("La connexion Strava a échoué. Réessaie plus tard.");
-    window.history.replaceState({}, "", window.location.pathname);
-  }, []);
-
-  const connectStrava = async () => {
-    setConnectingStrava(true);
-    const { data, error } = await supabase.functions.invoke("strava-oauth", { body: {} });
-    setConnectingStrava(false);
-    const result = data as { url?: string; error?: string } | null;
-    if (error || !result?.url) {
-      toast.error(result?.error ?? error?.message ?? "Impossible de démarrer la connexion Strava.");
-      return;
-    }
-    window.location.assign(result.url);
-  };
 
   useEffect(() => {
     let active = true;
@@ -124,14 +100,7 @@ function Profil() {
         .select("id, name, category")
         .order("name");
 
-      let list = pts && pts.length > 0 ? pts : db.getPatrols();
-      if (
-        !list.some(
-          (p) => p.name.toLowerCase().includes("staff") || p.name.toLowerCase().includes("chef"),
-        )
-      ) {
-        list = [{ id: "staff", name: TROOP_STAFF_PATROL_NAME, category: "staff" }, ...list];
-      }
+      const list = pts ?? [];
       if (active) {
         setPatrols(list);
       }
@@ -143,7 +112,7 @@ function Profil() {
         .eq("id", user.id)
         .maybeSingle();
 
-      const p = profile || db.getProfile(user.id);
+      const p = profile;
       if (active && p) {
         setF({
           full_name: p.full_name ?? "",
@@ -203,13 +172,7 @@ function Profil() {
       return;
     }
 
-    let targetPatrolId: string | null = d.patrol_id;
-    if (!targetPatrolId || d.patrol_id === "staff" || d.patrol_id.includes("staff")) {
-      const staffItem = patrols.find((p) => isTroopStaffPatrol(p));
-      if (staffItem) {
-        targetPatrolId = staffItem.id;
-      }
-    }
+    const targetPatrolId: string | null = d.patrol_id;
 
     const profilePayload = {
       id: user.id,
@@ -235,18 +198,15 @@ function Profil() {
         throw new Error(error.message);
       }
 
-      // Mise à jour du cache local
-      db.updateProfile(user.id, {
-        ...profilePayload,
-        email: user.email ?? null,
-        is_chef: isChefPatrol,
-      });
-
       await refreshProfile();
       toast.success("Profil scout enregistré avec succès !");
-      window.location.href = "/";
-    } catch (err: any) {
-      toast.error("Erreur lors de la sauvegarde : " + (err.message || err));
+      window.location.href = import.meta.env.BASE_URL;
+    } catch (err: unknown) {
+      const message =
+        typeof err === "object" && err !== null && "message" in err
+          ? String(err.message)
+          : String(err);
+      toast.error("Erreur lors de la sauvegarde : " + message);
     } finally {
       setBusy(false);
     }
@@ -355,8 +315,12 @@ function Profil() {
 
             <div className="space-y-1.5">
               <Label htmlFor="profil-patrouille">Patrouille *</Label>
+              <p className="text-xs text-muted-foreground">
+                Affectation et année confirmées par le staff.
+              </p>
               <Select
                 value={f.patrol_id}
+                disabled={!isAdmin}
                 onValueChange={(v) => {
                   setF({
                     ...f,
@@ -389,14 +353,18 @@ function Profil() {
                   Patrouille staff sélectionnée
                 </div>
                 <p className="mt-0.5 text-[11px] opacity-90">
-                  Tes kilomètres comptent dans les classements Garçons et Filles, avec
-                  l&apos;étiquette Staff.
+                  Tes kilomètres contribuent aux objectifs collectifs, hors classement individuel et
+                  points.
                 </p>
               </div>
             ) : (
               <div className="space-y-1.5">
                 <Label htmlFor="profil-annee">Année scout</Label>
-                <Select value={f.scout_year} onValueChange={(v) => setF({ ...f, scout_year: v })}>
+                <Select
+                  value={f.scout_year}
+                  disabled={!isAdmin}
+                  onValueChange={(v) => setF({ ...f, scout_year: v })}
+                >
                   <SelectTrigger id="profil-annee">
                     <SelectValue placeholder="Sélectionne ton année dans la troupe" />
                   </SelectTrigger>
@@ -471,24 +439,6 @@ function Profil() {
                 onChange={(e) => setF({ ...f, strava_url: e.target.value })}
                 placeholder="https://www.strava.com/athletes/..."
               />
-            </div>
-
-            <div className="rounded-xl border border-orange-200 bg-orange-50/70 p-4 dark:border-orange-900 dark:bg-orange-950/20">
-              <p className="text-sm font-semibold">Synchronise tes sorties Strava</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Associe ton compte pour importer automatiquement tes nouvelles sorties visibles par
-                l’application.
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={connectStrava}
-                disabled={connectingStrava}
-                className="mt-3 rounded-lg border-[#fc4c02]/40 font-bold text-[#d74300] hover:bg-orange-100"
-              >
-                <Link2 className="mr-2 h-4 w-4" />
-                {connectingStrava ? "Connexion…" : "Associer mon compte Strava"}
-              </Button>
             </div>
 
             <Button

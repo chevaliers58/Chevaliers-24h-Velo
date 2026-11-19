@@ -1,5 +1,7 @@
+import type { UserOptions } from "jspdf-autotable";
 import type { Activity, Patrol } from "@/lib/database";
-import { getActivitySport, SPORT_INFO } from "@/lib/database";
+import { getActivitySport, SPORT_INFO } from "@/lib/activity";
+import { TROOP_NAME } from "@/lib/troop-config";
 
 /* -------------------------------------------------------------------------- */
 /*  Types d'export                                                            */
@@ -112,56 +114,22 @@ const CREAM: [number, number, number] = [250, 245, 238];
 /*  Génération                                                                */
 /* -------------------------------------------------------------------------- */
 
-/* -------------------------------------------------------------------------- */
-/*  Chargement de jsPDF depuis un CDN (aucune installation npm nécessaire)    */
-/*  Pour mettre à jour la librairie : change simplement les numéros de        */
-/*  version dans les deux URL ci-dessous.                                      */
-/* -------------------------------------------------------------------------- */
-
-const JSPDF_URL = "https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js";
-const AUTOTABLE_URL =
-  "https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js";
-
-function loadScript(src: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const existing = document.querySelector(`script[src="${src}"]`) as HTMLScriptElement | null;
-    if (existing?.dataset.loaded === "1") return resolve();
-    const s = existing ?? document.createElement("script");
-    s.addEventListener("load", () => {
-      s.dataset.loaded = "1";
-      resolve();
-    });
-    s.addEventListener("error", () => reject(new Error(`Impossible de charger ${src}`)));
-    if (!existing) {
-      s.src = src;
-      s.async = true;
-      document.head.appendChild(s);
-    }
-  });
-}
-
-async function getJsPDF(): Promise<any> {
-  const w = window as any;
-  if (!w.jspdf?.jsPDF) await loadScript(JSPDF_URL);
-  // Le plugin se branche tout seul sur window.jspdf.jsPDF
-  if (!w.jspdf?.jsPDF?.API?.autoTable) await loadScript(AUTOTABLE_URL);
-  if (!w.jspdf?.jsPDF?.API?.autoTable) throw new Error("jsPDF n'a pas pu être initialisé.");
-  return w.jspdf.jsPDF;
-}
-
 /**
  * Génère et télécharge le PDF. Retourne le nom du fichier.
  * jsPDF n'est chargé qu'au moment de l'export : il n'alourdit pas le reste du site.
  */
 export async function generatePdf(report: Report): Promise<string> {
-  const jsPDF = await getJsPDF();
+  const [{ jsPDF }, { autoTable }] = await Promise.all([
+    import("jspdf"),
+    import("jspdf-autotable"),
+  ]);
 
   const now = new Date();
   const typeLabel = TYPE_LABELS[report.type];
   const custom = report.customLabel?.trim();
   const title = [formatDateSlash(now), typeLabel, custom].filter(Boolean).join(" - ");
 
-  const doc: any = new jsPDF({
+  const doc = new jsPDF({
     orientation: "portrait",
     unit: "mm",
     format: "a4",
@@ -181,7 +149,7 @@ export async function generatePdf(report: Report): Promise<string> {
   doc.text(title, marginX, 13);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text("ALEZAN 42 · Défi vélo scout", marginX, 21);
+  doc.text(`${TROOP_NAME} · Défi vélo scout`, marginX, 21);
 
   // --- Résumé + filtres ---
   let summary: string;
@@ -205,7 +173,7 @@ export async function generatePdf(report: Report): Promise<string> {
   doc.text(filterLines, marginX, 43.5);
   const startY = 43.5 + filterLines.length * 4 + 3;
 
-  const tableBase = {
+  const tableBase: UserOptions = {
     theme: "striped",
     styles: { fontSize: 9, cellPadding: 2.2, overflow: "linebreak", textColor: [40, 40, 40] },
     headStyles: { fillColor: BROWN, textColor: [255, 255, 255], fontStyle: "bold" },
@@ -218,7 +186,7 @@ export async function generatePdf(report: Report): Promise<string> {
     const patrolName = (id?: string | null) => report.patrols.find((p) => p.id === id)?.name ?? "-";
     const total = report.rows.reduce((s, r) => s + Number(r.km || 0), 0);
 
-    doc.autoTable({
+    autoTable(doc, {
       ...tableBase,
       startY,
       head: [["Date", "Scout", "Patrouille", "Sport", "Distance"]],
@@ -245,7 +213,7 @@ export async function generatePdf(report: Report): Promise<string> {
         3: { cellWidth: 22 },
         4: { halign: "right", cellWidth: 28, fontStyle: "bold" },
       },
-      didParseCell: (data: any) => {
+      didParseCell: (data) => {
         if (data.section === "foot" && data.column.index === 4) data.cell.styles.halign = "right";
         if (data.section === "head" && data.column.index === 4) data.cell.styles.halign = "right";
       },
@@ -263,7 +231,8 @@ export async function generatePdf(report: Report): Promise<string> {
       }
       const recap = [...byPatrol.entries()].sort((a, b) => b[1].km - a[1].km);
 
-      let y: number = doc.lastAutoTable.finalY + 12;
+      const lastTable = (doc as typeof doc & { lastAutoTable?: { finalY: number } }).lastAutoTable;
+      let y: number = (lastTable?.finalY ?? startY) + 12;
       if (y + 30 > pageH - 16) {
         doc.addPage();
         y = 20;
@@ -273,7 +242,7 @@ export async function generatePdf(report: Report): Promise<string> {
       doc.setTextColor(...BROWN);
       doc.text("Récapitulatif par patrouille", marginX, y);
 
-      doc.autoTable({
+      autoTable(doc, {
         ...tableBase,
         startY: y + 3,
         head: [["Rang", "Patrouille", "Sorties", "Distance"]],
@@ -288,7 +257,7 @@ export async function generatePdf(report: Report): Promise<string> {
           2: { cellWidth: 24 },
           3: { halign: "right", cellWidth: 32, fontStyle: "bold" },
         },
-        didParseCell: (data: any) => {
+        didParseCell: (data) => {
           if (data.section === "head" && data.column.index === 3) data.cell.styles.halign = "right";
         },
       });
@@ -316,7 +285,7 @@ export async function generatePdf(report: Report): Promise<string> {
           return p.strava_url || "-";
       }
     };
-    doc.autoTable({
+    autoTable(doc, {
       ...tableBase,
       startY,
       head: [cols.map((c) => c.label)],
@@ -332,7 +301,7 @@ export async function generatePdf(report: Report): Promise<string> {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(130, 130, 130);
-    doc.text(`ALEZAN 42 · ${stamp}`, marginX, pageH - 8);
+    doc.text(`${TROOP_NAME} · ${stamp}`, marginX, pageH - 8);
     doc.text(`Page ${i} / ${total}`, pageW - marginX, pageH - 8, { align: "right" });
   }
 

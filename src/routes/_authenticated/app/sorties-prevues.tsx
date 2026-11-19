@@ -25,7 +25,7 @@ import { WhatsAppGroupCard } from "@/components/WhatsAppGroupCard";
 import { SportIcon, SPORT_COLORS } from "@/components/SportIcon";
 import { AppSheet } from "@/components/app/AppSheet";
 import { useAuth } from "@/lib/useAuth";
-import { SPORT_INFO } from "@/lib/database";
+import { SPORT_INFO } from "@/lib/activity";
 import {
   downloadIcs,
   formatRideTime,

@@ -1,5 +1,12 @@
 -- Let signed-in members see the public display names attached to each poll choice.
 -- The function returns no email, birthday, or other profile data.
+-- The poll is obsolete; never recreate source-troupe vote tables on a clean install.
+do $migration$
+begin
+  if to_regclass('public.alezan_name_votes') is null then
+    return;
+  end if;
+  execute $definition$
 create or replace function public.alezan_name_vote_members()
 returns table (suggestion_id uuid, voter_name text)
 language sql
@@ -15,6 +22,8 @@ as $$
   where auth.uid() is not null
   order by voter_name, v.suggestion_id;
 $$;
-
-revoke all on function public.alezan_name_vote_members() from public, anon;
-grant execute on function public.alezan_name_vote_members() to authenticated;
+$definition$;
+  revoke all on function public.alezan_name_vote_members() from public, anon;
+  grant execute on function public.alezan_name_vote_members() to authenticated;
+end;
+$migration$;

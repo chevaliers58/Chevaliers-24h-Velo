@@ -1,5 +1,5 @@
 {
-  "name": "ALEZAN 42 — Défi vélo des patrouilles",
-  "description": "Concours de kilomètres à vélo entre patrouilles scoutes.",
+  "name": "Défi sportif de la troupe",
+  "description": "Concours de kilomètres et défis entre patrouilles scoutes.",
   "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -14,13 +14,9 @@ import {
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/lib/supabase";
 import { approveActivity } from "@/lib/proofStorage";
-import {
-  db,
-  type Patrol,
-  getActivitySport,
-  cleanActivityNote,
-  getPatrolEmblem,
-} from "@/lib/database";
+import type { Patrol } from "@/lib/database";
+import { getActivitySport, cleanActivityNote } from "@/lib/activity";
+import { getPatrolEmblem } from "@/lib/patrolEmblem";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -123,7 +119,6 @@ export function RecentActivityFeed({
       toast.error("Erreur lors de la validation : " + error);
       return;
     }
-    db.updateActivityStatus(activityId, "approved");
     toast.success("Sortie validée avec succès !");
     fetchActivities(true);
   };
@@ -137,10 +132,7 @@ export function RecentActivityFeed({
         // 1. Récupérer les patrouilles
         const { data: patrolsData } = await supabase.from("patrols").select("id, name, category");
 
-        let allPatrols = (patrolsData as Patrol[]) || [];
-        if (allPatrols.length === 0) {
-          allPatrols = db.getPatrols();
-        }
+        const allPatrols = (patrolsData as Patrol[]) || [];
 
         const patrolMap = new Map<string, Patrol>();
         allPatrols.forEach((p) => patrolMap.set(p.id, p));
@@ -163,8 +155,8 @@ export function RecentActivityFeed({
 
         // 3. Récupérer les activités réelles depuis Supabase
         // Visiteur sans compte : vue publique (ni lien Strava, ni photo, ni note libre).
-        // Membre connecté : détail complet.
-        const { data: actsData } = user
+        // Staff vérifié : détail complet ; les autres utilisent la projection publique.
+        const { data: actsData } = isAdmin
           ? await supabase
               .from("activities")
               .select(
@@ -237,9 +229,9 @@ export function RecentActivityFeed({
             rideDate: act.ride_date || new Date().toISOString().slice(0, 10),
             createdAt: timestampToUse,
             relativeTime: formatRelativeTime(timestampToUse),
-            stravaLink: act.strava_link,
-            proofPath: act.proof_path,
-            note: act.note,
+            stravaLink: act.strava_link ?? null,
+            proofPath: act.proof_path ?? null,
+            note: act.note ?? null,
             status: act.status || "approved",
           };
         });
@@ -268,7 +260,7 @@ export function RecentActivityFeed({
 
   useEffect(() => {
     fetchActivities();
-    return db.subscribe(() => fetchActivities(false));
+    return undefined;
   }, [fetchActivities]);
 
   return (

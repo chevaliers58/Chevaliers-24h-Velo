@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bike, ExternalLink, ImageIcon, Loader2, Medal, Trash2 } from "lucide-react";
+import { Bike, ExternalLink, Loader2, Medal, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppPageShell } from "@/components/AppPageShell";
 import {
@@ -23,7 +23,7 @@ import {
   type AppSport,
   type MyActivity,
 } from "@/lib/appData";
-import { cleanActivityNote, getActivitySport, SPORT_INFO } from "@/lib/database";
+import { cleanActivityNote, getActivitySport, SPORT_INFO } from "@/lib/activity";
 import { deleteActivity } from "@/lib/proofStorage";
 import { cn } from "@/lib/utils";
 
@@ -303,14 +303,7 @@ function ActivityDetail({
           </a>
         )}
         {!act.strava_link && act.proof_path && (
-          <a
-            href={act.proof_path}
-            target="_blank"
-            rel="noreferrer"
-            className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-muted text-[15px] font-semibold text-foreground"
-          >
-            <ImageIcon className="h-4 w-4" /> Voir la photo
-          </a>
+          <p className="text-center text-sm text-muted-foreground">Photo transmise au staff.</p>
         )}
         <button
           type="button"

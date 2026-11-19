@@ -12,8 +12,8 @@
 export type PatrolCategory = "homme" | "femme" | "staff";
 
 export const CATEGORY_LABELS: Record<PatrolCategory, string> = {
-  homme: "Garçons",
-  femme: "Filles",
+  homme: "Patrouille",
+  femme: "Patrouille",
   staff: "Staff",
 };
 
@@ -37,6 +37,16 @@ export function isStaffPatrol(p: PatrolLike): boolean {
   if (p.category === "staff") return true;
   const n = (p.name || "").toLowerCase();
   return n.includes("staff") || n.includes("chef");
+}
+
+/** Collective ranking only; does not confer staff rights. */
+export function isOtherUnitPatrol(p: PatrolLike): boolean {
+  const name = (p?.name ?? "").trim().toLowerCase();
+  return name === "autres membres de l'unité" || name === "externes";
+}
+
+export function isCollectivePatrol(p: PatrolLike): boolean {
+  return isStaffPatrol(p) || isOtherUnitPatrol(p);
 }
 
 /**

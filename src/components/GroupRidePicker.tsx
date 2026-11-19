@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { pelotonMultiplier } from "@/lib/peloton";
-import { SPORT_INFO, type ActivitySport } from "@/lib/database";
+import { SPORT_INFO, type ActivitySport } from "@/lib/activity";
 
 export type GroupChoice =
   | { mode: "seul" }

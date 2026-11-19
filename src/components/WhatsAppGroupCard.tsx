@@ -14,17 +14,20 @@ import { cn } from "@/lib/utils";
  * « Rejoindre le groupe WhatsApp des sorties » : bouton pour les membres connectés,
  * champ de modification pour les admins. Le lien n'est jamais visible sans compte.
  */
-export function WhatsAppGroupCard({
-  userId,
-  isAdmin,
-  variant = "site",
-}: {
+type WhatsAppGroupCardProps = {
   userId: string | undefined;
   isAdmin: boolean;
   variant?: "site" | "app";
-}) {
+};
+
+export function WhatsAppGroupCard(props: WhatsAppGroupCardProps) {
+  if (!props.userId) return null;
+  return <MemberWhatsAppCard key={props.userId} {...props} />;
+}
+
+function MemberWhatsAppCard({ userId, isAdmin, variant = "site" }: WhatsAppGroupCardProps) {
   const app = variant === "app";
-  const { data: url, isLoading } = useWhatsappGroupLink(!!userId);
+  const { data: url, isLoading } = useWhatsappGroupLink(userId);
   const save = useSaveWhatsappGroupLink(userId);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");

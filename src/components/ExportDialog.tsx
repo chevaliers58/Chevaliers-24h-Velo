@@ -19,7 +19,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { getActivitySport, type Patrol } from "@/lib/database";
+import { getActivitySport } from "@/lib/activity";
+import type { Patrol } from "@/lib/database";
 import { isStaffPatrol } from "@/lib/categories";
 import {
   generatePdf,
@@ -231,7 +232,7 @@ export function ExportDialog({ open, onOpenChange, patrols }: Props) {
           return;
         }
 
-        const all = await fetchAllPages<any>((from, to) =>
+        const all = await fetchAllPages((from, to) =>
           supabase.from("profiles").select("*").order("id").range(from, to),
         );
         const patrolName = (id?: string | null) => patrols.find((p) => p.id === id)?.name ?? "";
@@ -301,8 +302,12 @@ export function ExportDialog({ open, onOpenChange, patrols }: Props) {
         }
       }
       onOpenChange(false);
-    } catch (err: any) {
-      toast.error("Erreur lors de la génération : " + (err?.message || err));
+    } catch (err: unknown) {
+      const message =
+        typeof err === "object" && err !== null && "message" in err
+          ? String(err.message)
+          : String(err);
+      toast.error("Erreur lors de la génération : " + message);
     } finally {
       setBusy(false);
     }

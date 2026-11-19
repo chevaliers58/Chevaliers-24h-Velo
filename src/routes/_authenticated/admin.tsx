@@ -1,4 +1,6 @@
+import { PrivateProofButton } from "@/components/PrivateProofButton";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { TROOP_NAME } from "@/lib/troop-config";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -34,23 +36,17 @@ import {
 import { useAuth } from "@/lib/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { approveActivity, rejectActivity } from "@/lib/proofStorage";
-import {
-  db,
-  type Patrol,
-  type Profile,
-  type Activity,
-  type TimelineEvent,
-  getActivitySport,
-  cleanActivityNote,
-} from "@/lib/database";
+import type { Patrol, Profile, Activity, TimelineEvent } from "@/lib/database";
+import { getActivitySport, cleanActivityNote } from "@/lib/activity";
 import { AdminUserList } from "@/components/AdminUserList";
 import { ExportDialog } from "@/components/ExportDialog";
-import { CATEGORY_LABELS, type PatrolCategory, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
+import { CATEGORY_LABELS, isCollectivePatrol, type PatrolCategory } from "@/lib/categories";
 import { SeasonalThemeAdmin } from "@/components/SeasonalThemeAdmin";
 import { CleanupAdmin } from "@/components/CleanupAdmin";
 import { ScoutSportifAdmin, type SportifBadge } from "@/components/ScoutSportifAdmin";
 import { SportBadge } from "@/components/SportIcon";
 import { AdminActivitiesManager } from "@/components/AdminActivitiesManager";
+import { AnnualChallenges, AnnualSeasonAdmin } from "@/components/AnnualCompetition";
 import { AdminChallenges } from "@/components/AdminChallenges";
 import { AdminDistanceAwards } from "@/components/AdminDistanceAwards";
 import { ChallengesPanel } from "@/components/ChallengesPanel";
@@ -62,12 +58,12 @@ export const Route = createFileRoute("/_authenticated/admin")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Administration — ALEZAN 42" },
+      { title: `Administration — ${TROOP_NAME}` },
       {
         name: "description",
         content: "Gestion des patrouilles, des membres et validation des sorties.",
       },
-      { property: "og:title", content: "Administration — ALEZAN 42" },
+      { property: "og:title", content: `Administration — ${TROOP_NAME}` },
       { property: "og:description", content: "Espace admin du défi vélo." },
     ],
   }),
@@ -115,29 +111,8 @@ function Admin() {
     const { data: ptData } = (await supabase.from("patrols").select("*").order("name")) as {
       data: Patrol[] | null;
     };
-    const ptList = ptData && ptData.length > 0 ? ptData : db.getPatrols();
+    const ptList = ptData ?? [];
     setPatrols(ptList);
-
-    const hasStaffInDb = ptData?.some(
-      (p) => p.name.toLowerCase().includes("staff") || p.name.toLowerCase().includes("chef"),
-    );
-    if (!hasStaffInDb && ptData && ptData.length > 0) {
-      supabase
-        .from("patrols")
-        .insert({ name: TROOP_STAFF_PATROL_NAME, category: "staff" })
-        .then((res) => {
-          if (!res.error) {
-            supabase
-              .from("patrols")
-              .select("*")
-              .order("name")
-              .then((fresh) => {
-                const fData = (fresh as { data: Patrol[] | null }).data;
-                if (fData) setPatrols(fData);
-              });
-          }
-        });
-    }
 
     // 2. Profiles
     const { data: prData } = (await supabase.from("profiles").select("*")) as {
@@ -169,7 +144,7 @@ function Admin() {
     if (rolesData && rolesData.length > 0) {
       setAdmins(rolesData.map((r: { user_id: string }) => r.user_id));
     } else {
-      setAdmins(db.getAdmins());
+      setAdmins([]);
     }
 
     try {
@@ -180,10 +155,10 @@ function Admin() {
       if (tlData && tlData.length > 0) {
         setTimeline(tlData as unknown as TimelineEvent[]);
       } else {
-        setTimeline(db.getTimeline());
+        setTimeline([]);
       }
     } catch {
-      setTimeline(db.getTimeline());
+      setTimeline([]);
     }
 
     // 6. Countdowns from Supabase
@@ -193,7 +168,7 @@ function Admin() {
         .select("*")
         .order("target_date", { ascending: true });
       if (cdData) {
-        setCountdowns(cdData);
+        setCountdowns(cdData.map((item) => ({ ...item, is_active: !!item.is_active })));
       }
     } catch (err) {
       console.warn("Erreur chargement countdowns :", err);
@@ -202,7 +177,6 @@ function Admin() {
 
   useEffect(() => {
     load();
-    return db.subscribe(load);
   }, [load]);
 
   if (loading) {
@@ -246,8 +220,7 @@ function Admin() {
     if (error) {
       toast.error("Erreur : " + error);
     } else {
-      db.updateActivityStatus(act.id, "approved");
-      toast.success("Sortie validée et photo de preuve supprimée.");
+      toast.success("Sortie validée. La photo de preuve sera conservée 30 jours.");
     }
     load();
   };
@@ -257,7 +230,6 @@ function Admin() {
     if (error) {
       toast.error("Erreur : " + error);
     } else {
-      db.updateActivityStatus(act.id, "rejected");
       toast.error("Sortie refusée.");
     }
     load();
@@ -272,7 +244,7 @@ function Admin() {
       name: newPatrol.name.trim(),
       category: cat,
     })) as { error: { message: string } | null };
-    db.addPatrol(newPatrol.name.trim(), newPatrol.category);
+
     if (res?.error) {
       toast.error("Erreur : " + res.error.message);
     } else {
@@ -282,12 +254,32 @@ function Admin() {
     load();
   };
 
+  const renamePatrol = async (patrol: Patrol) => {
+    const name = window.prompt("Nouveau nom de la patrouille", patrol.name)?.trim();
+    if (!name || name === patrol.name) return;
+    if (isCollectivePatrol(patrol) || isCollectivePatrol({ name, category: patrol.category })) {
+      toast.error("Les groupes spéciaux doivent conserver leur catégorie et leur nom réservé.");
+      return;
+    }
+    if (patrols.some((p) => p.id !== patrol.id && p.name.toLowerCase() === name.toLowerCase())) {
+      toast.error("Ce nom est déjà utilisé.");
+      return;
+    }
+    const { error } = await supabase.from("patrols").update({ name }).eq("id", patrol.id);
+    if (error) {
+      toast.error("Erreur : " + error.message);
+      return;
+    }
+    toast.success("Patrouille renommée, membres et historique conservés.");
+    await load();
+  };
+
   const deletePatrol = async (id: string, name: string) => {
     if (confirm(`Supprimer la patrouille "${name}" ?`)) {
       const res = (await supabase.from("patrols").delete().eq("id", id)) as {
         error: { message: string } | null;
       };
-      db.deletePatrol(id);
+
       if (res?.error) {
         toast.error("Erreur : " + res.error.message);
       } else {
@@ -370,7 +362,7 @@ function Admin() {
               <span>Panneau d'Administration</span>
             </div>
             <h1 className="mt-2 font-display text-xl font-black text-foreground sm:text-3xl">
-              Gestion de l'ALEZAN 42
+              Gestion de {TROOP_NAME}
             </h1>
             <p className="hidden text-xs text-muted-foreground sm:block">
               Valide les kilomètres, configure les badges de la semaine et organise les patrouilles
@@ -482,19 +474,8 @@ function Admin() {
                                 ).toLocaleDateString("fr-BE")}
                               </p>
                             )}
-                          {act.proof_path && (
-                            <div className="mt-2 hidden sm:block">
-                              <a
-                                href={act.proof_path}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1.5 text-xs text-primary font-semibold hover:underline"
-                              >
-                                Voir la photo de preuve
-                                <ExternalLink className="h-3 w-3" />
-                              </a>
-                            </div>
-                          )}
+                          <PrivateProofButton path={act.proof_path} label="Photo de preuve" />
+                          <PrivateProofButton path={act.gpx_path} label="Tracé GPX" />
                           {act.strava_link && (
                             <a
                               href={act.strava_link}
@@ -508,23 +489,6 @@ function Admin() {
                           )}
                         </div>
                       </div>
-
-                      {act.proof_path && (
-                        <a
-                          href={act.proof_path}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="block overflow-hidden rounded-xl border sm:hidden"
-                          aria-label="Agrandir la photo de preuve"
-                        >
-                          <img
-                            src={act.proof_path}
-                            alt="Photo de preuve"
-                            loading="lazy"
-                            className="max-h-44 w-full bg-muted object-contain"
-                          />
-                        </a>
-                      )}
 
                       <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:self-center">
                         <Button
@@ -565,6 +529,8 @@ function Admin() {
           </TabsContent>
 
           <TabsContent value="challenges" className="space-y-6">
+            <AnnualSeasonAdmin />
+            <AnnualChallenges manage />
             <h2 className="font-display text-lg font-bold">Créer un défi</h2>
             <ChallengesPanel />
             <h2 className="font-display text-lg font-bold">
@@ -770,8 +736,7 @@ function Admin() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="homme">Garçons</SelectItem>
-                        <SelectItem value="femme">Filles</SelectItem>
+                        <SelectItem value="homme">Patrouille</SelectItem>
                         <SelectItem value="staff">👑 Staff</SelectItem>
                       </SelectContent>
                     </Select>
@@ -808,14 +773,27 @@ function Admin() {
                           </span>
                         </div>
 
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => deletePatrol(p.id, p.name)}
-                          className="text-muted-foreground hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={isCollectivePatrol(p)}
+                            onClick={() => void renamePatrol(p)}
+                            aria-label={`Renommer ${p.name}`}
+                          >
+                            <Edit3 className="mr-1 h-4 w-4" /> Renommer
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={isCollectivePatrol(p) || count > 0}
+                            onClick={() => deletePatrol(p.id, p.name)}
+                            aria-label={`Supprimer ${p.name}`}
+                            className="text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     );
                   })}

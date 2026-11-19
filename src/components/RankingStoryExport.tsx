@@ -15,19 +15,20 @@ import { computeJerseys, type JerseyCandidate } from "@/lib/jerseys";
 import { formatKm, rankPatrols, useTroopData, type AppPeriod } from "@/lib/appData";
 import { isStaffPatrol } from "@/lib/categories";
 import { toast } from "sonner";
+import { TROOP_NAME, SITE_URL } from "@/lib/troop-config";
 
 type JerseyType = "yellow" | "polka" | "white";
-type JerseyCategory = "homme" | "femme";
+type JerseyCategory = "general";
 type Section = "patrols" | JerseyType;
 interface StoryRankings {
   patrols: Array<{ name: string; km: number }>;
   holders: Array<{ type: JerseyType; category: JerseyCategory; candidate: JerseyCandidate | null }>;
 }
 const SECTION_LABELS: Record<Section, string> = {
-  patrols: "Classement des patrouilles (scouts)",
-  yellow: "Maillots jaunes (garçons et filles)",
-  polka: "Maillots à pois (garçons et filles)",
-  white: "Maillots blancs (garçons et filles)",
+  patrols: "Classement des patrouilles",
+  yellow: "Maillot jaune",
+  polka: "Maillot à pois",
+  white: "Maillot blanc",
 };
 const PERIOD_LABELS: Record<AppPeriod, string> = {
   week: "Cette semaine",
@@ -44,7 +45,7 @@ export function RankingStoryExport() {
 
   const rankings = useMemo(() => {
     if (!data) return null;
-    const patrols = rankPatrols(data, period, "all").filter((p) => !p.is_staff && p.km > 0);
+    const patrols = rankPatrols(data, period, "all").filter((p) => p.km > 0);
     const range =
       period === "week" ? currentRange("week") : period === "month" ? currentRange("month") : null;
     const profiles = data.profiles;
@@ -59,7 +60,7 @@ export function RankingStoryExport() {
     }
     const candidates: JerseyCandidate[] = profiles.map((profile) => {
       const patrol = profile.patrols;
-      const staff = isStaffPatrol(patrol) || (!patrol && !!profile.is_admin);
+      const staff = isStaffPatrol(patrol) || !!profile.is_admin;
       const total = totals.get(profile.id) ?? { km: 0, dplus: 0 };
       return {
         user_id: profile.id,
@@ -75,7 +76,7 @@ export function RankingStoryExport() {
       };
     });
     const jerseys = computeJerseys(candidates);
-    const categories: JerseyCategory[] = ["homme", "femme"];
+    const categories: JerseyCategory[] = ["general"];
     const holders: StoryRankings["holders"] = (["yellow", "polka", "white"] as const).flatMap(
       (type) =>
         categories.map((category) => ({
@@ -115,7 +116,7 @@ export function RankingStoryExport() {
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = `classement-alezan42-${period}.png`;
+      anchor.download = `classement-${TROOP_NAME.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${period}.png`;
       anchor.click();
       window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
       setOpen(false);
@@ -228,7 +229,7 @@ function drawStory(
   ctx.shadowOffsetY = 4;
   ctx.fillStyle = "#fffaf1";
   ctx.font = "italic 900 75px Georgia, 'Times New Roman', serif";
-  const title =
+  const title: [string, string] =
     period === "week"
       ? ["CLASSEMENT DE LA", "SEMAINE"]
       : period === "month"
@@ -263,11 +264,12 @@ function drawStory(
   const visibleHolders = rankings.holders.filter((holder) => sections.includes(holder.type));
   if (visibleHolders.length) {
     y = sectionTitle(ctx, "individuel", y);
-    const jerseyGroups: Array<{ type: JerseyType; holders: typeof visibleHolders }> = [
+    const groups: Array<{ type: JerseyType; holders: typeof visibleHolders }> = [
       { type: "yellow", holders: visibleHolders.filter((holder) => holder.type === "yellow") },
       { type: "polka", holders: visibleHolders.filter((holder) => holder.type === "polka") },
       { type: "white", holders: visibleHolders.filter((holder) => holder.type === "white") },
-    ].filter((group) => group.holders.length);
+    ];
+    const jerseyGroups = groups.filter((group) => group.holders.length);
     const groupHeight = Math.min(210, Math.floor((height - y - 175) / jerseyGroups.length));
     for (const group of jerseyGroups) {
       const centerY = y + groupHeight / 2;
@@ -283,8 +285,7 @@ function drawStory(
       ctx.font = "italic 700 22px Georgia, serif";
       ctx.fillText(jerseyName.toLocaleLowerCase("fr"), 270, centerY - 23);
       for (const holder of group.holders) {
-        const rowY = centerY + (holder.category === "homme" ? 20 : 60);
-        const label = holder.category === "homme" ? "1H" : "1F";
+        const rowY = centerY + 25;
         const name = holder.candidate?.display_name ?? "En attente";
         const metric = holder.candidate
           ? group.type === "polka"
@@ -294,7 +295,7 @@ function drawStory(
         ctx.fillStyle = "#fffaf1";
         ctx.font = "bold 30px Georgia, serif";
         ctx.textAlign = "left";
-        ctx.fillText(`${label}  ${name}`, 270, rowY);
+        ctx.fillText(name, 270, rowY);
         ctx.textAlign = "right";
         ctx.fillText(metric, width - 125, rowY);
       }
@@ -304,7 +305,11 @@ function drawStory(
   ctx.textAlign = "center";
   ctx.fillStyle = "rgba(255,250,241,.88)";
   ctx.font = "500 19px Georgia, serif";
-  ctx.fillText("Chaque sortie compte · alezan42-cycling.pages.dev", width / 2, height - 90);
+  ctx.fillText(
+    `Chaque sortie compte · ${SITE_URL.replace("https://", "").replace("http://", "") || TROOP_NAME}`,
+    width / 2,
+    height - 90,
+  );
 }
 
 function sectionTitle(ctx: CanvasRenderingContext2D, text: string, y: number) {
@@ -352,7 +357,7 @@ function drawJersey(ctx: CanvasRenderingContext2D, x: number, y: number, type: J
       [43, 57],
       [66, 76],
       [34, 84],
-    ]) {
+    ] as const) {
       ctx.beginPath();
       ctx.arc(dotX, dotY, 5, 0, Math.PI * 2);
       ctx.fill();

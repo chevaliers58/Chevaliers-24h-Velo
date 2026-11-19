@@ -78,10 +78,11 @@ export function CountdownBanner({ isAdmin }: { isAdmin: boolean }) {
 
       if (error) throw error;
       if (data && data.length > 0) {
-        setCountdowns(data);
-        const currentActive = data.find((c) => c.is_active) || data[0];
+        const items = data.map((c) => ({ ...c, is_active: !!c.is_active }));
+        setCountdowns(items);
+        const currentActive = items.find((c) => c.is_active) ?? items[0] ?? null;
         setActiveCountdown(currentActive);
-        setTime(calculateTimeRemaining(currentActive.target_date));
+        if (currentActive) setTime(calculateTimeRemaining(currentActive.target_date));
       }
     } catch (err) {
       console.warn("Erreur chargement comptes à rebours :", err);
@@ -134,8 +135,12 @@ export function CountdownBanner({ isAdmin }: { isAdmin: boolean }) {
 
       setManageOpen(false);
       fetchCountdowns();
-    } catch (err: any) {
-      toast.error("Erreur : " + (err.message || err));
+    } catch (err: unknown) {
+      const message =
+        typeof err === "object" && err !== null && "message" in err
+          ? String(err.message)
+          : String(err);
+      toast.error("Erreur : " + message);
     }
   };
 

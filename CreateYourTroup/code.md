@@ -2,7 +2,7 @@
 
 Ce document présente l'architecture technique, l'arborescence et les choix technologiques du projet **ALEZAN 42** (Scout Cycle Challenge). Il s'adresse à un nouveau développeur ou à une autre troupe souhaitant comprendre le code source.
 
-> 📚 Voir aussi : [`database-schema.md`](./database-schema.md) (scripts SQL) et [`CreateYourTroupe.md`](./CreateYourTroupe.md) (guide d'adaptation pour une autre troupe).
+> 📚 Voir aussi : `supabase/migrations/` (source de vérité du schéma), [`database-schema.md`](./database-schema.md) (exemples historiques non exécutables) et [`CreateYourTroupe.md`](./CreateYourTroupe.md) (guide d'adaptation).
 
 ---
 
@@ -74,7 +74,7 @@ src/
 
 ## 🗄️ Schéma de la Base de Données (Supabase)
 
-L'application repose sur plusieurs tables principales sous PostgreSQL (scripts complets dans [`database-schema.md`](./database-schema.md)) :
+L'application repose sur plusieurs tables principales sous PostgreSQL (migrations versionnées dans `supabase/migrations/`) :
 
 - **`profiles`** : informations des membres (liées à `auth.users`). Contient le nom, totem, quali, année scout, téléphone, lien Strava et la patrouille associée.
 - **`patrols`** : gestion des patrouilles de la troupe (nom, catégorie : `homme`, `femme`, `mixte`).

@@ -11,7 +11,9 @@ import {
   Users,
 } from "lucide-react";
 import { AppPageShell } from "@/components/AppPageShell";
+import { TROOP_NAME } from "@/lib/troop-config";
 import { AppCard, AppSection } from "@/components/app/AppUi";
+import { MyAnnualPoints, MyPatrolRanking } from "@/components/AnnualCompetition";
 import { SportIcon, SPORT_COLORS } from "@/components/SportIcon";
 import { useAuth } from "@/lib/useAuth";
 import {
@@ -27,7 +29,8 @@ import {
 } from "@/lib/appData";
 import { useDistanceAwards } from "@/lib/useDistanceAwards";
 import { getNextDistanceTrophy } from "@/lib/distanceTrophies";
-import { getActivitySport, getPatrolEmblem, SPORT_INFO } from "@/lib/database";
+import { getActivitySport, SPORT_INFO } from "@/lib/activity";
+import { getPatrolEmblem } from "@/lib/patrolEmblem";
 import { cn } from "@/lib/utils";
 import { ExpeditionGoal } from "@/components/ExpeditionGoal";
 import { WeeklyStreakCard } from "@/components/WeeklyStreakCard";
@@ -76,6 +79,7 @@ function AppHome() {
   const myPatrolRank = profile?.patrol_id
     ? rankOf(patrols, (p) => p.id === profile.patrol_id)
     : null;
+  const myPatrol = rankPatrols(troop.data, "all", "all").find((p) => p.id === profile?.patrol_id);
   const top = patrols.filter((p) => p.km > 0).slice(0, 3);
   const maxKm = Math.max(1, ...top.map((p) => p.km));
 
@@ -86,7 +90,7 @@ function AppHome() {
       root
       heroImage={themeBackground ?? hero}
       heroPosition={themeBackground ? "center" : "75% 68%"}
-      title={user ? `${greeting()}${name ? `, ${name}` : ""} 👋` : "ALEZAN 42"}
+      title={user ? `${greeting()}${name ? `, ${name}` : ""} 👋` : TROOP_NAME}
       description={
         user
           ? profile?.patrol_name
@@ -127,13 +131,20 @@ function AppHome() {
                 }
               />
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-3 border-t border-border/60 pt-4">
+            <div className="mt-4 grid grid-cols-3 gap-3 border-t border-border/60 pt-4">
               <div>
                 <p className="font-display text-[22px] font-black leading-none tabular-nums text-foreground">
                   {formatKm(stats.total)}
                   <span className="ml-1 text-[13px] font-bold text-muted-foreground">km</span>
                 </p>
                 <p className="mt-1 text-[13px] text-muted-foreground">Mon total</p>
+              </div>
+              <div>
+                <p className="font-display text-[22px] font-black leading-none tabular-nums text-foreground">
+                  {formatKm(myPatrol?.km ?? 0)}
+                  <span className="ml-1 text-[13px] font-bold text-muted-foreground">km</span>
+                </p>
+                <p className="mt-1 text-[13px] text-muted-foreground">Ma patrouille</p>
               </div>
               <div>
                 <p className="font-display text-[22px] font-black leading-none tabular-nums text-foreground">
@@ -208,6 +219,9 @@ function AppHome() {
           </Link>
         </AppCard>
       )}
+
+      <MyAnnualPoints />
+      <MyPatrolRanking />
 
       {/* Patrouilles de la semaine */}
       <AppSection

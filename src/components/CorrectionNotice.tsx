@@ -8,7 +8,14 @@ import { correctionMessage, type ActivityCorrection } from "@/lib/corrections";
 const supabase = supabaseClient as unknown as SupabaseClient;
 
 /** Message sur « Mes km » quand le staff a corrigé, refusé ou supprimé une sortie du scout. */
-export function CorrectionNotice({ userId, onSeen }: { userId?: string; onSeen?: () => void }) {
+type CorrectionNoticeProps = { userId?: string; onSeen?: () => void };
+
+export function CorrectionNotice(props: CorrectionNoticeProps) {
+  if (!props.userId) return null;
+  return <MemberCorrectionNotice key={props.userId} {...props} />;
+}
+
+function MemberCorrectionNotice({ userId, onSeen }: CorrectionNoticeProps) {
   const [items, setItems] = useState<ActivityCorrection[]>([]);
   const [busy, setBusy] = useState(false);
 
