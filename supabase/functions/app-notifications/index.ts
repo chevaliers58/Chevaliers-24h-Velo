@@ -1,11 +1,17 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
+import { createECDH } from "node:crypto";
+import { Buffer } from "node:buffer";
 import { isTrustedPushEndpoint } from "./endpoint.ts";
 
 const url = Deno.env.get("SUPABASE_URL")!;
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY") ?? "";
-const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
+// Prefer the owner's configured pair together; never mix naming conventions.
+const namedPublic = Deno.env.get("PUBLIC_VAPID_KEY")?.trim();
+const namedPrivate = Deno.env.get("PRIVATE_VAPID_KEY")?.trim();
+const useNamedPair = !!(namedPublic || namedPrivate);
+const vapidPublicKey = useNamedPair ? namedPublic ?? "" : Deno.env.get("VAPID_PUBLIC_KEY")?.trim() ?? "";
+const vapidPrivateKey = useNamedPair ? namedPrivate ?? "" : Deno.env.get("VAPID_PRIVATE_KEY")?.trim() ?? "";
 const vapidSubject = Deno.env.get("VAPID_SUBJECT") ?? Deno.env.get("SITE_URL") ?? "";
 const siteUrl = (Deno.env.get("SITE_URL") ?? "http://localhost:3000").replace(/\/+$/, "");
 const siteOrigin = new URL(siteUrl).origin;
@@ -48,7 +54,11 @@ async function createSundayReminders() {
   if (!settings?.weekly_enabled) return 0;
   const sunday = brusselsSunday(settings.weekly_hour);
   if (!sunday) return 0;
-  const { data: profiles, error } = await admin.from("profiles").select("id").limit(5000);
+  const { data: profiles, error } = await admin
+    .from("profiles")
+    .select("id")
+    .eq("member_approved", true)
+    .limit(5000);
   if (error) throw error;
   const rows = (profiles ?? []).map(({ id }) => ({
     user_id: id,
@@ -78,19 +88,47 @@ async function deleteExpiredReadNotifications() {
   return data?.length ?? 0;
 }
 
-async function dispatchPending() {
+function configurePush() {
   if (!vapidPublicKey || !vapidPrivateKey || !vapidSubject)
-    throw new Error("Clés VAPID absentes (VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY)");
+    throw new Error("Configuration VAPID incomplète");
+  // Verify the public key really belongs to the configured private key.
+  const ecdh = createECDH("prime256v1");
+  ecdh.setPrivateKey(Buffer.from(vapidPrivateKey, "base64url"));
+  if (!ecdh.getPublicKey().equals(Buffer.from(vapidPublicKey, "base64url")))
+    throw new Error("Paire VAPID incohérente");
   webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+}
+function pushHref(href: string) {
+  const base = new URL(siteUrl).pathname.replace(/\/+$/, "");
+  const safe = href.startsWith("/") && !href.startsWith("//") && !href.includes("\\") ? href : "/";
+  return base && safe !== base && !safe.startsWith(base + "/") ? base + safe : safe;
+}
+
+async function dispatchPending() {
+  configurePush();
   const { data: notifications, error } = await admin
     .from("app_notifications")
-    .select("id,user_id,title,body,href,push_attempts")
+    .select("id,user_id,kind,title,body,href,push_attempts")
     .is("push_sent_at", null)
     .order("created_at", { ascending: true })
     .limit(100);
   if (error) throw error;
   let delivered = 0;
   for (const notification of notifications ?? []) {
+    const { data: recipient, error: recipientError } = await admin
+      .from("profiles")
+      .select("member_approved,is_admin")
+      .eq("id", notification.user_id)
+      .maybeSingle();
+    if (recipientError) throw recipientError;
+    const staffOnly = ["new_signup", "activity_pending"].includes(notification.kind);
+    if (!recipient?.member_approved || (staffOnly && !recipient.is_admin)) {
+      await admin
+        .from("app_notifications")
+        .update({ push_sent_at: new Date().toISOString() })
+        .eq("id", notification.id);
+      continue;
+    }
     const { data: subscriptions, error: subscriptionError } = await admin
       .from("app_push_subscriptions")
       .select("endpoint,subscription")
@@ -106,8 +144,10 @@ async function dispatchPending() {
           row.subscription,
           JSON.stringify({
             title: notification.title,
-            body: notification.body,
-            url: notification.href,
+            body: staffOnly
+              ? "Ouvre l’application pour consulter cette demande."
+              : notification.body,
+            url: pushHref(notification.href),
           }),
         );
         delivered++;
@@ -159,7 +199,14 @@ Deno.serve(async (request) => {
     }
   }
 
-  if (body.action === "public-key") return json({ publicKey: vapidPublicKey });
+  if (body.action === "public-key") {
+    try {
+      configurePush();
+      return json({ publicKey: vapidPublicKey });
+    } catch {
+      return json({ error: "Configuration VAPID indisponible" }, 503);
+    }
+  }
   const token = (request.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
   const { data: authData, error: authError } = await admin.auth.getUser(token);
   if (authError || !authData.user) return json({ error: "Connexion requise" }, 401);
