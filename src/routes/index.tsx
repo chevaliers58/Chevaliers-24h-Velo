@@ -696,18 +696,19 @@ function IndexForViewer() {
             </div>
             <h1 className="mt-4 font-display text-4xl font-black leading-[1.05] tracking-[-0.02em] text-white md:text-6xl lg:col-span-2 lg:text-5xl">
               {sportMode === "course"
-                ? "Qui courra le plus loin cette semaine ?"
+                ? "Qui courra le plus cette semaine ?"
                 : sportMode === "marche"
-                  ? "Qui marchera le plus loin cette semaine ?"
-                  : "Qui pédalera le plus loin cette semaine ?"}
+                  ? "Qui marchera le plus cette semaine ?"
+                  : "Qui roulera le plus cette semaine ?"}
             </h1>
-            <p className="mobile-hero-description mt-4 max-w-2xl text-base text-bark-foreground/90 md:text-lg lg:col-span-2 lg:mt-3 lg:text-base">
+            <p className="whitespace-pre-line mobile-hero-description mt-4 mobile-hero-description mt-4 max-w-2xl text-base text-bark-foreground/90 md:text-lg lg:col-span-2 lg:mt-3 lg:text-base">
               {sportMode === "course"
-                ? "Chaque foulée compte pour ta patrouille ! Enregistre tes sorties de course à pied avec Strava ou photo de chrono, grimpe au classement dédié et fais briller tes couleurs."
+                ? "Chaque foulée compte ! Enregistre tes sorties de course à pied pour gagner un max de points et grimper au classement général pour vaincre les autres patrouilles.\nFORCE & HONNEUR !"
                 : sportMode === "marche"
-                  ? "Chaque pas compte pour ta patrouille ! Enregistre tes marches et randos avec Strava ou une capture de ton appli, grimpe au classement dédié et fais briller tes couleurs."
-                  : "Chaque kilomètre compte pour ta patrouille ! Enregistre tes sorties avec Strava ou ta photo de compteur, grimpe au classement général et fais briller tes couleurs. Toujours prêts !"}
+                  ? "Chaque pas compte ! Enregistre tes marches et randospour gagner un max de points et grimper au classement général pour vaincre les autres patrouilles.\nFORCE & HONNEUR !"
+                  : "Chaque kilomètre compte ! Enregistre tes sorties pour gagner un max de points et grimper au classement général pour vaincre les autres patrouilles.\nFORCE & HONNEUR !"}
             </p>
+
 
             {TROOP_STRAVA_CLUB_URL && (
               <a
