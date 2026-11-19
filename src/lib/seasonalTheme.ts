@@ -7,7 +7,6 @@ export type SeasonalThemeId =
   | "halloween"
   | "noel"
   | "valentin"
-  | "paques"
   | "printemps"
   | "ete"
   | "course24h"
@@ -44,7 +43,6 @@ export type StaffBirthday = string;
 /** Priorité des fêtes si plusieurs périodes se chevauchent. */
 export const CALENDAR_THEME_PRIORITY: SeasonalThemeId[] = [
   "course24h",
-  "paques",
   "carnaval",
   "valentin",
   "nationale",
@@ -114,14 +112,6 @@ export const SEASONAL_THEMES: SeasonalThemeMeta[] = [
     description: "Rose et rouge, cœurs qui tombent",
     period: "7 → 14 févr.",
     swatch: ["#fff0f3", "#e11d48", "#f9a8c4"],
-  },
-  {
-    id: "paques",
-    label: "Pâques",
-    emoji: "🐣",
-    description: "Pastel, œufs, poussins et lapin qui gambade",
-    period: "Semaine de Pâques (date variable)",
-    swatch: ["#fdfbe9", "#8b5cf6", "#facc15"],
   },
   {
     id: "printemps",
@@ -209,7 +199,6 @@ export function defaultThemeCalendar(year: number): ThemeCalendar {
   const carnavalStart = new Date(year, mardiGras.getMonth(), mardiGras.getDate() - 4);
   return {
     course24h: [{ start: "03-13", end: "03-21" }],
-    paques: [{ start: date(-6), end: date(1) }],
     carnaval: [{ start: mmddString(carnavalStart), end: mmddString(mardiGras) }],
     valentin: [{ start: "02-07", end: "02-14" }],
     nationale: [{ start: "07-18", end: "07-21" }],
@@ -327,12 +316,6 @@ export function themeForDate(
 
   // 24h vélo : la semaine avant la course (20–21 mars)
   if (inRange(v, 313, 321)) return "course24h";
-
-  // Pâques : du lundi saint au lundi de Pâques
-  const easter = easterSunday(date.getFullYear());
-  const from = new Date(easter.getFullYear(), easter.getMonth(), easter.getDate() - 6);
-  const to = new Date(easter.getFullYear(), easter.getMonth(), easter.getDate() + 1);
-  if (day >= from && day <= to) return "paques";
 
   // Carnaval : du vendredi au mardi gras (47 jours avant Pâques)
   const mardiGras = new Date(easter.getFullYear(), easter.getMonth(), easter.getDate() - 47);
