@@ -189,7 +189,7 @@ export function SiteHeader() {
                 </span>
               </div>
               <p className="text-[10px] text-amber-300/80 font-medium tracking-wide leading-none sm:text-[11px]">
-                Troupe scoute
+                by Aquila NO042 Alezan
               </p>
             </div>
           </Link>
