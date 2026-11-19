@@ -701,12 +701,12 @@ function IndexForViewer() {
                   ? "Qui marchera le plus cette semaine ?"
                   : "Qui roulera le plus cette semaine ?"}
             </h1>
-            <p className="mobile-hero-description mt-4 max-w-2xl text-base text-bark-foreground/90 md:text-lg lg:col-span-2 lg:mt-3 lg:text-base">
+            <p className="whitespace-pre-line mobile-hero-description mt-4 mobile-hero-description mt-4 max-w-2xl text-base text-bark-foreground/90 md:text-lg lg:col-span-2 lg:mt-3 lg:text-base">
               {sportMode === "course"
-                ? "Chaque foulée compte ! Enregistre tes sorties de course à pied pour gagner un max de points et grimper au classement général pour vaincre les autres patrouilles./nFORCE & HONNEUR !"
+                ? "Chaque foulée compte ! Enregistre tes sorties de course à pied pour gagner un max de points et grimper au classement général pour vaincre les autres patrouilles.\nFORCE & HONNEUR !"
                 : sportMode === "marche"
-                  ? "Chaque pas compte ! Enregistre tes marches et randospour gagner un max de points et grimper au classement général pour vaincre les autres patrouilles./nFORCE & HONNEUR !"
-                  : "Chaque kilomètre compte ! Enregistre tes sorties pour gagner un max de points et grimper au classement général pour vaincre les autres patrouilles./nFORCE & HONNEUR !"}
+                  ? "Chaque pas compte ! Enregistre tes marches et randospour gagner un max de points et grimper au classement général pour vaincre les autres patrouilles.\nFORCE & HONNEUR !"
+                  : "Chaque kilomètre compte ! Enregistre tes sorties pour gagner un max de points et grimper au classement général pour vaincre les autres patrouilles.\nFORCE & HONNEUR !"}
             </p>
 
 
