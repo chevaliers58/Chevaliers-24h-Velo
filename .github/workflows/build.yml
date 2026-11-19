@@ -97,70 +97,7 @@ jobs:
             echo "Legacy source-project configuration found."
             exit 1
           fi
-          if grep -R -nE 'ALEZAN 42|Alezan 42|Alezouille|AC42|Aquila' src public | grep -v -E '^src/components/SiteHeader\.tsx:[0-9]+:[[:space:]]*by Aquila NO042 Alezan[[:space:]]*
-            echo "Source troupe branding found in runtime files."
-            exit 1
-          fi
-      - name: Validate standalone browser scripts
-        run: |
-          node --check public/sw.js
-          node --check public/widget/troupe-km.js
-      - name: Verify deployment output
-        run: |
-          test -f .output/public/index.html
-          test -f .output/server/index.mjs
-          find .output -maxdepth 2 -type d -print
-      - name: Smoke test the built app under /velo
-        run: |
-          cat .output/nitro.json
-          node .output/server/index.mjs > /tmp/chevaliers58-server.log 2>&1 &
-          server_pid=$!
-          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
-          for attempt in $(seq 1 30); do
-            if curl --fail --silent http://127.0.0.1:3000/velo/ > /tmp/chevaliers58-home.html; then
-              break
-            fi
-            sleep 1
-          done
-          test -s /tmp/chevaliers58-home.html
-          grep -q "Chevaliers 58" /tmp/chevaliers58-home.html
-          for route in /velo/auth /velo/timeline /velo/solidarite /velo/nouveau-mot-de-passe; do
-            curl --fail --silent "http://127.0.0.1:3000$route" > /dev/null
-          done
-          client_asset=$(find .output/public/assets -type f \( -name '*.js' -o -name '*.css' \) -printf '%P\n' | head -1)
-          test -n "$client_asset"
-          asset_path="/velo/assets/$client_asset"
-          asset_status=$(curl --silent --output /dev/null --write-out '%{http_code}' "http://127.0.0.1:3000$asset_path" || true)
-          echo "Built client asset $asset_path -> HTTP $asset_status"
-          test "$asset_status" = "200"
-          for asset in /velo/sw.js /velo/widget/troupe-km.js; do
-            status=$(curl --silent --output /dev/null --write-out '%{http_code}' "http://127.0.0.1:3000$asset" || true)
-            echo "$asset -> HTTP $status"
-            test "$status" = "200"
-          done
-          for asset in /sw.js /widget/troupe-km.js; do
-            status=$(curl --silent --output /dev/null --write-out '%{http_code}' "http://127.0.0.1:3000$asset" || true)
-            echo "$asset -> HTTP $status"
-            test "$status" = "307"
-          done
-      - name: Prepare static Pages preview package
-        run: |
-          bash scripts/package-pages.sh
-          test -s .output/pages/index.html
-          test -s .output/pages/velo/index.html
-          test -s .output/pages/velo/sw.js
-          test -s .output/pages/velo/manifest.webmanifest
-          test -s .output/pages/velo/widget/troupe-km.js
-          test -s .output/pages/_headers
-          test -s .output/pages/_redirects
-      - name: Upload build output for inspection
-        uses: actions/upload-artifact@v4
-        with:
-          name: chevaliers58-build-output
-          path: .output
-          retention-days: 7
-          include-hidden-files: true
-; then
+          if grep -R -nE 'ALEZAN 42|Alezan 42|Alezouille|AC42|Aquila' src public | grep -v -E '^src/components/SiteHeader\.tsx:[0-9]+:[[:space:]]*by Aquila NO042 Alezan[[:space:]]*$'; then
             echo "Source troupe branding found in runtime files."
             exit 1
           fi
