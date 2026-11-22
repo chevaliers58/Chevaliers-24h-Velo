@@ -310,43 +310,41 @@ try {
     "existing profile loaded",
   );
   stage = "edit scout profile";
-await scoutPage.goto(base + "/profil");
-await scoutPage.getByRole("heading", { name: "Mon Profil Scout" }).waitFor();
+  await scoutPage.goto(base + "/profil");
+  await scoutPage.getByRole("heading", { name: "Mon Profil Scout" }).waitFor();
 
-await eventually(
-  async () => (await scoutPage.locator("#totem").inputValue()) === totem,
-  "existing profile loaded",
-);
-
-// Le champ Quali ne doit plus être présent.
-assert.equal(await scoutPage.locator("#quali").count(), 0);
-
-const manualProfileUrl = "https://www.strava.com/athletes/123456789";
-await scoutPage.locator("#strava").fill(manualProfileUrl);
-
-assert.equal(
-  await scoutPage.getByRole("button", { name: /Associer mon compte Strava/ }).count(),
-  0,
-);
-
-await scoutPage.getByRole("button", { name: "Enregistrer mon profil" }).click();
-
-await eventually(async () => {
-  const p = good(
-    await admin.from("profiles").select("strava_url").eq("id", scout.id).single(),
+  await eventually(
+    async () => (await scoutPage.locator("#totem").inputValue()) === totem,
+    "existing profile loaded",
   );
-  return p.strava_url === manualProfileUrl;
-}, "updated profile in database");
 
-await scoutPage.waitForURL((u) => u.pathname === "/velo/" || u.pathname === "/velo");
-await scoutPage.goto(base + "/profil");
+  // Le champ Quali ne doit plus être présent.
+  assert.equal(await scoutPage.locator("#quali").count(), 0);
 
-await eventually(
-  async () => (await scoutPage.locator("#strava").inputValue()) === manualProfileUrl,
-  "profile update persisted after navigation",
-);
+  const manualProfileUrl = "https://www.strava.com/athletes/123456789";
+  await scoutPage.locator("#strava").fill(manualProfileUrl);
 
-console.log("PASS profile edit and manual Strava link; no OAuth association");
+  assert.equal(
+    await scoutPage.getByRole("button", { name: /Associer mon compte Strava/ }).count(),
+    0,
+  );
+
+  await scoutPage.getByRole("button", { name: "Enregistrer mon profil" }).click();
+
+  await eventually(async () => {
+    const p = good(await admin.from("profiles").select("strava_url").eq("id", scout.id).single());
+    return p.strava_url === manualProfileUrl;
+  }, "updated profile in database");
+
+  await scoutPage.waitForURL((u) => u.pathname === "/velo/" || u.pathname === "/velo");
+  await scoutPage.goto(base + "/profil");
+
+  await eventually(
+    async () => (await scoutPage.locator("#strava").inputValue()) === manualProfileUrl,
+    "profile update persisted after navigation",
+  );
+
+  console.log("PASS profile edit and manual Strava link; no OAuth association");
 
   stage = "planned ride creation, responses, calendar and guest protection";
   const rideTitle = "Sortie Test Navigateur";
