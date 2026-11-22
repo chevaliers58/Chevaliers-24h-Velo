@@ -151,9 +151,7 @@ function ScoutProfileForViewer({ scoutId }: { scoutId: string }) {
     );
   }, [activities, thresholds]);
 
-  const displayName = profile?.totem
-    ? `${profile.totem}`
-    : profile?.full_name || "Scout";
+  const displayName = profile?.totem ? `${profile.totem}` : profile?.full_name || "Scout";
 
   if (loading) {
     return (

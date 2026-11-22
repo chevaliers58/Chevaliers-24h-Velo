@@ -391,9 +391,7 @@ function IndexForViewer() {
               .forEach((activity) => {
                 distanceTotals[getActivitySport(activity)] += Number(activity.km || 0);
               });
-            const displayName = p.totem
-              ? `${p.totem}`
-              : p.full_name || "Scout";
+            const displayName = p.totem ? `${p.totem}` : p.full_name || "Scout";
 
             return {
               user_id: p.id,
@@ -706,7 +704,6 @@ function IndexForViewer() {
                   ? "Chaque pas compte ! Enregistre tes marches et randospour gagner un max de points et grimper au classement général pour vaincre les autres patrouilles.\nFORCE & HONNEUR !"
                   : "Chaque kilomètre compte ! Enregistre tes sorties pour gagner un max de points et grimper au classement général pour vaincre les autres patrouilles.\nFORCE & HONNEUR !"}
             </p>
-
 
             {TROOP_STRAVA_CLUB_URL && (
               <a
