@@ -222,9 +222,7 @@ function Profil() {
                     {f.full_name || user.email?.split("@")[0] || "Scout"}
                   </span>
                   {f.totem && (
-                    <span className="italic text-xs font-bold text-primary">
-                      « {f.totem} »
-                    </span>
+                    <span className="italic text-xs font-bold text-primary">« {f.totem} »</span>
                   )}
                   {selectedPatrol ? (
                     <span className="rounded-full bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 text-[11px] font-bold text-amber-800 dark:text-amber-300">
