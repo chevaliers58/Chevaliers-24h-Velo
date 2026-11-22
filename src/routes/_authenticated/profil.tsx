@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_authenticated/profil")({
       { title: `Mon profil — ${TROOP_NAME}` },
       {
         name: "description",
-        content: "Complète ton profil scout : totem, quali, année, patrouille.",
+        content: "Complète ton profil scout : totem, année, patrouille.",
       },
     ],
   }),
@@ -36,7 +36,6 @@ export const Route = createFileRoute("/_authenticated/profil")({
 const schema = z.object({
   full_name: z.string().trim().min(1, "Nom requis").max(100),
   totem: z.string().trim().max(60).optional().nullable(),
-  quali: z.string().trim().max(60).optional().nullable(),
   scout_year: z.number().int().min(1).max(4).optional().nullable(),
   phone: z
     .string()
@@ -81,7 +80,6 @@ function Profil() {
   const [f, setF] = useState({
     full_name: "",
     totem: "",
-    quali: "",
     scout_year: "",
     phone: "",
     strava_url: "",
@@ -117,7 +115,6 @@ function Profil() {
         setF({
           full_name: p.full_name ?? "",
           totem: p.totem ?? "",
-          quali: p.quali ?? "",
           scout_year: p.scout_year ? String(p.scout_year) : "",
           phone: p.phone ?? "",
           strava_url: p.strava_url ?? "",
@@ -144,7 +141,6 @@ function Profil() {
     const parsed = schema.safeParse({
       ...f,
       totem: f.totem || null,
-      quali: f.quali || null,
       phone: f.phone || null,
       strava_url: f.strava_url || null,
       scout_year: yearVal,
@@ -179,7 +175,6 @@ function Profil() {
       email: user.email || null,
       full_name: d.full_name.trim(),
       totem: d.totem?.trim() || null,
-      quali: d.quali?.trim() || null,
       phone: d.phone?.trim() || null,
       strava_url: d.strava_url?.trim() || null,
       scout_year: d.scout_year ?? null,
@@ -227,10 +222,7 @@ function Profil() {
                     {f.full_name || user.email?.split("@")[0] || "Scout"}
                   </span>
                   {f.totem && (
-                    <span className="italic text-xs font-bold text-primary">
-                      « {f.totem}
-                      {f.quali ? ` ${f.quali}` : ""} »
-                    </span>
+                    <span className="italic text-xs font-bold text-primary">« {f.totem} »</span>
                   )}
                   {selectedPatrol ? (
                     <span className="rounded-full bg-amber-500/20 border border-amber-500/30 px-2 py-0.5 text-[11px] font-bold text-amber-800 dark:text-amber-300">
@@ -292,7 +284,7 @@ function Profil() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="totem">Totem (optionnel)</Label>
                 <Input
@@ -300,15 +292,6 @@ function Profil() {
                   value={f.totem}
                   onChange={(e) => setF({ ...f, totem: e.target.value })}
                   placeholder="Ex: Élan"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="quali">Quali (optionnel)</Label>
-                <Input
-                  id="quali"
-                  value={f.quali}
-                  onChange={(e) => setF({ ...f, quali: e.target.value })}
-                  placeholder="Ex: Généreux"
                 />
               </div>
             </div>

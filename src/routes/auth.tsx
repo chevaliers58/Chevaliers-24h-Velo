@@ -68,7 +68,6 @@ const signupSchema = z
     password: z.string().min(6, "Le mot de passe doit comporter au moins 6 caractères").max(72),
     full_name: z.string().trim().min(2, "Nom et prénom requis").max(100),
     totem: z.string().trim().max(60).optional(),
-    quali: z.string().trim().max(60).optional(),
     scout_year: z.string().min(1, "Précise ton année scout ou si tu es chef"),
     patrol_id: z.string().min(1, "Sélectionne ta patrouille"),
     phone: z.string().trim().max(25).optional(),
@@ -137,7 +136,6 @@ function AuthPage() {
     password: "",
     full_name: "",
     totem: "",
-    quali: "",
     scout_year: "",
     patrol_id: "",
     phone: "",
@@ -227,7 +225,6 @@ function AuthPage() {
                   email.split("@")[0] ||
                   "Scout",
                 totem: (meta["totem"] as string) || null,
-                quali: (meta["quali"] as string) || null,
                 scout_year: meta["scout_year"] ? Number(meta["scout_year"]) : null,
                 patrol_id:
                   meta["patrol_id"] && String(meta["patrol_id"]).includes("-")
@@ -300,7 +297,6 @@ function AuthPage() {
             full_name: d.full_name.trim(),
             name: d.full_name.trim(),
             totem: d.totem?.trim() || null,
-            quali: d.quali?.trim() || null,
             scout_year: scoutYearNum ? String(scoutYearNum) : null,
             patrol_id: targetPatrolId,
             phone: d.phone?.trim() || null,
@@ -329,7 +325,6 @@ function AuthPage() {
               email,
               full_name: d.full_name.trim(),
               totem: d.totem?.trim() || null,
-              quali: d.quali?.trim() || null,
               scout_year: scoutYearNum,
               patrol_id: targetPatrolId && targetPatrolId.includes("-") ? targetPatrolId : null,
               phone: d.phone?.trim() || null,
@@ -574,8 +569,8 @@ function AuthPage() {
                     />
                   </div>
 
-                  {/* Totem & Qualificatif */}
-                  <div className="grid grid-cols-2 gap-3">
+                  {/* Totem*/}
+                  <div className="grid grid-cols-1 gap-3">
                     <div className="space-y-1">
                       <Label htmlFor="signup-totem" className="text-xs font-semibold">
                         Totem <span className="text-muted-foreground font-normal">(optionnel)</span>
@@ -585,18 +580,6 @@ function AuthPage() {
                         placeholder="Ex: Condor"
                         value={signupForm.totem}
                         onChange={(e) => setSignupForm({ ...signupForm, totem: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label htmlFor="signup-quali" className="text-xs font-semibold">
-                        Quali <span className="text-muted-foreground font-normal">(optionnel)</span>
-                      </Label>
-                      <Input
-                        id="signup-quali"
-                        placeholder="Ex: Persévérant"
-                        value={signupForm.quali}
-                        onChange={(e) => setSignupForm({ ...signupForm, quali: e.target.value })}
                       />
                     </div>
                   </div>

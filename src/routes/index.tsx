@@ -75,7 +75,6 @@ interface LeaderboardItem {
   user_id: string;
   display_name: string;
   totem?: string | null;
-  quali?: string | null;
   full_name?: string | null;
   patrol_id: string;
   patrol_name: string;
@@ -303,7 +302,7 @@ function IndexForViewer() {
         const { data: realProfiles, error: profilesError } = await supabase
           .from("profiles_public")
           .select(
-            "id, full_name, totem, quali, patrol_id, is_admin, scout_year, patrols(id, name, category)",
+            "id, full_name, totem, patrol_id, is_admin, scout_year, patrols(id, name, category)",
           );
 
         const { data: realActs, error: activitiesError } = await supabase
@@ -317,7 +316,6 @@ function IndexForViewer() {
           id: string;
           full_name?: string | null;
           totem?: string | null;
-          quali?: string | null;
           patrol_id?: string | null;
           is_admin?: boolean | null;
           scout_year?: number | null;
@@ -393,15 +391,13 @@ function IndexForViewer() {
               .forEach((activity) => {
                 distanceTotals[getActivitySport(activity)] += Number(activity.km || 0);
               });
-            const displayName = p.totem
-              ? `${p.totem}${p.quali ? ` ${p.quali}` : ""}`
-              : p.full_name || "Scout";
+            const displayName = p.totem ? `${p.totem}` : p.full_name || "Scout";
 
             return {
               user_id: p.id,
               display_name: displayName,
               totem: p.totem ?? null,
-              quali: p.quali ?? null,
+
               full_name: p.full_name ?? null,
               patrol_id: p.patrol_id || "",
               patrol_name:
@@ -709,7 +705,6 @@ function IndexForViewer() {
                   : "Chaque kilomètre compte ! Enregistre tes sorties pour gagner un max de points et grimper au classement général pour vaincre les autres patrouilles.\nFORCE & HONNEUR !"}
             </p>
 
-
             {TROOP_STRAVA_CLUB_URL && (
               <a
                 href={TROOP_STRAVA_CLUB_URL}
@@ -740,7 +735,7 @@ function IndexForViewer() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-display font-black text-white text-base sm:text-lg">
                           {profile?.totem
-                            ? `${profile.totem}${profile.quali ? ` ${profile.quali}` : ""}`
+                            ? `${profile.totem}`
                             : profile?.full_name || user.email?.split("@")[0]}
                         </span>
                         <span className="rounded-full bg-amber-400/20 border border-amber-400/40 px-2.5 py-0.5 text-xs font-bold text-amber-300">
@@ -1342,7 +1337,7 @@ function IndexForViewer() {
                   type="text"
                   value={scoutSearch}
                   onChange={(e) => setScoutSearch(e.target.value)}
-                  placeholder="Rechercher par totem, qualificatif ou patrouille..."
+                  placeholder="Rechercher par totem, ou patrouille..."
                   className="w-full bg-background rounded-xl pl-9 pr-4 py-2 text-sm border border-input focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>

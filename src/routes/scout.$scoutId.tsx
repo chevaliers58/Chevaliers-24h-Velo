@@ -36,7 +36,6 @@ type ScoutProfile = {
   id: string;
   full_name: string | null;
   totem: string | null;
-  quali: string | null;
   scout_year: number | null;
   patrol_id: string | null;
 };
@@ -93,7 +92,7 @@ function ScoutProfileForViewer({ scoutId }: { scoutId: string }) {
       const [profileResult, activityResult] = (await Promise.all([
         supabase
           .from("profiles_public")
-          .select("id,full_name,totem,quali,scout_year,patrol_id")
+          .select("id,full_name,totem,scout_year,patrol_id")
           .eq("id", scoutId)
           .maybeSingle(),
         supabase
@@ -152,9 +151,7 @@ function ScoutProfileForViewer({ scoutId }: { scoutId: string }) {
     );
   }, [activities, thresholds]);
 
-  const displayName = profile?.totem
-    ? `${profile.totem}${profile.quali ? ` ${profile.quali}` : ""}`
-    : profile?.full_name || "Scout";
+  const displayName = profile?.totem ? `${profile.totem}` : profile?.full_name || "Scout";
 
   if (loading) {
     return (
@@ -205,7 +202,6 @@ function ScoutProfileForViewer({ scoutId }: { scoutId: string }) {
                 </Badge>
               )}
               {profile.scout_year && <Badge variant="secondary">{profile.scout_year}e année</Badge>}
-              {profile.quali && !profile.totem && <Badge variant="outline">{profile.quali}</Badge>}
             </div>
           </div>
         </CardContent>

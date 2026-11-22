@@ -10,8 +10,12 @@ const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const namedPublic = Deno.env.get("PUBLIC_VAPID_KEY")?.trim();
 const namedPrivate = Deno.env.get("PRIVATE_VAPID_KEY")?.trim();
 const useNamedPair = !!(namedPublic || namedPrivate);
-const vapidPublicKey = useNamedPair ? namedPublic ?? "" : Deno.env.get("VAPID_PUBLIC_KEY")?.trim() ?? "";
-const vapidPrivateKey = useNamedPair ? namedPrivate ?? "" : Deno.env.get("VAPID_PRIVATE_KEY")?.trim() ?? "";
+const vapidPublicKey = useNamedPair
+  ? (namedPublic ?? "")
+  : (Deno.env.get("VAPID_PUBLIC_KEY")?.trim() ?? "");
+const vapidPrivateKey = useNamedPair
+  ? (namedPrivate ?? "")
+  : (Deno.env.get("VAPID_PRIVATE_KEY")?.trim() ?? "");
 const vapidSubject = Deno.env.get("VAPID_SUBJECT") ?? Deno.env.get("SITE_URL") ?? "";
 const siteUrl = (Deno.env.get("SITE_URL") ?? "http://localhost:3000").replace(/\/+$/, "");
 const siteOrigin = new URL(siteUrl).origin;
