@@ -22,7 +22,11 @@ import { AnimationToggle } from "@/components/AnimationToggle";
 import { THEME_BOOT_SCRIPT } from "@/lib/seasonalTheme";
 import { APP_BOOT_SCRIPT } from "@/lib/standalone";
 import { supabase } from "@/integrations/supabase/client";
+import { TROOP_NAME } from "@/lib/troop-config";
 import appCss from "../styles.css?url";
+
+const BASE_URL = import.meta.env.BASE_URL;
+const assetUrl = (path: string) => `${BASE_URL}${path.startsWith("/") ? path.slice(1) : path}`;
 
 function NotFoundComponent() {
   return (
@@ -46,7 +50,7 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error }: ErrorComponentProps) {
+function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
 
@@ -73,7 +77,7 @@ function ErrorComponent({ error }: ErrorComponentProps) {
           <button
             onClick={() => {
               try {
-                localStorage.removeItem("alezan_standalone_db_v2");
+                localStorage.removeItem("chevaliers58_standalone_db_v1");
               } catch {
                 // ignore storage error
               }
@@ -86,7 +90,7 @@ function ErrorComponent({ error }: ErrorComponentProps) {
             Réessayer / Recharger
           </button>
           <a
-            href="/"
+            href={BASE_URL}
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
             Retour à l'accueil
@@ -102,13 +106,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { name: "theme-color", content: "#a84300" },
+      { name: "theme-color", content: "#173f5f" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
-      { name: "apple-mobile-web-app-title", content: "ALEZAN 42" },
-      { title: "ALEZAN 42 — Défi vélo des patrouilles" },
+      { name: "apple-mobile-web-app-title", content: TROOP_NAME },
+      { title: `${TROOP_NAME} — Défi vélo des patrouilles` },
       { name: "description", content: "Concours de kilomètres à vélo entre patrouilles scoutes." },
-      { property: "og:title", content: "ALEZAN 42 — Défi vélo des patrouilles" },
+      { property: "og:title", content: `${TROOP_NAME} — Défi vélo des patrouilles` },
       {
         property: "og:description",
         content: "Concours de kilomètres à vélo entre patrouilles scoutes.",
@@ -126,10 +130,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Archivo+Black&family=Work+Sans:wght@400;500;600&display=swap",
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
-      { rel: "icon", href: "/icon-192.png", type: "image/png", sizes: "192x192" },
-      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
-      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "icon", href: assetUrl("favicon.ico"), type: "image/x-icon" },
+      { rel: "icon", href: assetUrl("icon-192.png"), type: "image/png", sizes: "192x192" },
+      { rel: "apple-touch-icon", href: assetUrl("apple-touch-icon.png") },
+      { rel: "manifest", href: assetUrl("manifest.webmanifest") },
     ],
   }),
   // Applique le dernier thème connu avant l'affichage (évite un flash aux couleurs standard)
@@ -160,7 +164,7 @@ function RootComponent() {
   const router = useRouter();
   useEffect(() => {
     if (!import.meta.env.DEV && "serviceWorker" in navigator && window.isSecureContext) {
-      void navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {
+      void navigator.serviceWorker.register(assetUrl("sw.js"), { scope: BASE_URL }).catch(() => {
         // L’application reste utilisable même si le service worker est indisponible.
       });
     }

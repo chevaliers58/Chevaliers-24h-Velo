@@ -2,6 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SITE_URL = (Deno.env.get("SITE_URL") ?? "").replace(/\/+$/, "");
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -59,8 +60,8 @@ Deno.serve(async (req) => {
     body: JSON.stringify({
       from,
       to: recipients,
-      subject: `Alezan 42 : ${pendingCount} activités à approuver`,
-      text: `Il y a actuellement ${pendingCount} activités en attente d'approbation sur Alezan 42.\n\nOuvrir l'administration : https://alezan42-cycling.lesscoutsdemoustier.be/admin`,
+      subject: `Défi vélo scout : ${pendingCount} activités à approuver`,
+      text: `Il y a actuellement ${pendingCount} activités en attente d’approbation.\n\n${SITE_URL ? new URL("admin", `${SITE_URL}/`).toString() : "Configurez SITE_URL dans les secrets Supabase pour afficher le lien d’administration."}`,
     }),
   });
 

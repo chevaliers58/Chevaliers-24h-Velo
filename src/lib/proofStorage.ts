@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
  * Gestion des fichiers liés aux activités dans le bucket `proofs`.
  *
  * Règles :
- * - sortie validée  -> la photo de preuve est supprimée (le GPX est gardé pour la carte) ;
+ * - sortie validée  -> la photo de preuve est conservée 30 jours ; le GPX est gardé ;
  * - sortie refusée ou supprimée -> photo ET GPX sont supprimés.
  */
 
@@ -19,11 +19,13 @@ export function storagePathFromUrl(value: string | null | undefined): string | n
   const trimmed = value.trim();
   if (!trimmed) return null;
 
-  const marker = `/object/public/${BUCKET}/`;
-  const idx = trimmed.indexOf(marker);
-  let path = idx >= 0 ? trimmed.slice(idx + marker.length) : trimmed;
+  // Accepte les URL publiques historiques et les URL signées/authentifiées
+  // d'un bucket privé. Les paramètres de signature ne font pas partie du chemin.
+  const marker = new RegExp(`/object/(?:public|sign|authenticated)/${BUCKET}/`);
+  const match = trimmed.match(marker);
+  let path = match?.index !== undefined ? trimmed.slice(match.index + match[0].length) : trimmed;
 
-  // Retirer paramètres et ancre éventuels (?t=..., #...)
+  // Retirer paramètres et ancre éventuels (?token=..., #...)
   path = path.split("?")[0]?.split("#")[0] ?? "";
   try {
     path = decodeURIComponent(path);
@@ -64,20 +66,18 @@ async function loadActivityFiles(id: string): Promise<ActivityFiles | null> {
   return (data as ActivityFiles | null) ?? null;
 }
 
-/** Valide une sortie et supprime sa photo de preuve. */
+/** Valide une sortie et conserve sa photo de preuve pendant 30 jours. */
 export async function approveActivity(id: string): Promise<{ error: string | null }> {
-  const act = await loadActivityFiles(id);
-
+  // validated_at is stamped by the database trigger. The nightly cleanup
+  // removes the proof photo after 30 days; the GPX remains available.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase.from("activities") as any)
-    .update({ status: "approved", proof_path: null })
+    .update({ status: "approved" })
     .eq("id", id)
     .select("id");
   if (error) return { error: error.message };
   if (!data?.length) return { error: "Sortie introuvable ou modification non autorisée." };
 
-  // Fichier supprimé seulement une fois la validation enregistrée
-  await removeStorageFiles([act?.proof_path]);
   return { error: null };
 }
 

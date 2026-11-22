@@ -1,0 +1,10 @@
+# Extension inter-troupes — non activée
+Décision du 18/11/2026 : conserver la première troupe seule pour le lancement, permettre une seconde troupe plus tard. Le frontend possède une configuration de marque et les patrouilles ont leurs propres IDs, mais il n'existe pas de véritable isolation multi-tenant à ce jour. Ne pas simplement ajouter les patrouilles de la seconde troupe ni lui donner le rôle admin global.
+
+## Migration future
+1. Créer troupes, memberships (troupe_id,user_id,état,role) avec clés et contrôles serveur ; attribuer la troupe Chevaliers 58 aux données existantes, sans dupliquer les utilisateurs. Identifiant de troupe dans patrouilles, affectations historiques, activités, groupes, défis, lieux, notifications et réglages ; références composées empêchant les liens inter-troupes non autorisés. Choix de troupe demandé à l'inscription et confirmé par staff local.
+2. RLS : accès personnel ou admin **de la même troupe**, scopage des RPC et espaces de stockage; autoriser explicitement un administrateur de l'unité distinct si nécessaire, sans rôle implicite. Ne jamais utiliser le champ modifiable user_metadata pour autoriser.
+3. Compétition : classement interne par patrouille (points existants), individuel selon vie privée, et inter-troupes par kilométrage collectif validé ; choisir ultérieurement une comparaison normalisée si effectifs différents. Agrégats anonymisés entre troupes seulement, pas de preuve GPX/photo, coordonnées, WhatsApp, lieux de rendez-vous ou listes de mineurs exposés à l'autre troupe.
+4. UI/PWA : sélection de troupe, logo/couleurs, saison et règlement propres; isoler les caches par membre/troupe et vérifier changements de session, invitation, révocation et transferts.
+5. Tests : fixtures de deux troupes et anonymes, accès croisés refusés en RLS, RPC/Storage, répartition des points, attribution historique et doublons, aucune régression de la première troupe. Sauvegarde et reprise avant migration réelle.
+Aucune seconde troupe créée, aucune modification du modèle multi-tenant live. Coût et charge à estimer lorsque le responsable confirme les règles.

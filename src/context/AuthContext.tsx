@@ -1,7 +1,14 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import type { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { db, type Profile as DbLocalProfile, type Patrol as DbLocalPatrol } from "@/lib/database";
 import { isStaffPatrol, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
 
 export interface ScoutProfile {
@@ -17,8 +24,8 @@ export interface ScoutProfile {
   patrol_name?: string | null;
   patrol_category?: string | null;
   is_chef?: boolean;
-  is_admin?: boolean;
   onboarded: boolean;
+  member_approved?: boolean;
   created_at?: string | null | undefined;
 }
 
@@ -53,7 +60,7 @@ interface DbProfile {
   strava_url?: string | null;
   patrol_id?: string | null;
   onboarded?: boolean;
-  is_admin?: boolean;
+  member_approved?: boolean;
   created_at?: string;
   patrols?: {
     name?: string | null;
@@ -68,15 +75,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Helper to load profile & admin status from Supabase
-  const loadUserData = useCallback(async (currentUser: User | null) => {
-    if (!currentUser) {
-      setProfile(null);
-      setIsAdmin(false);
-      setLoading(false);
-      return;
-    }
+  // Ignore stale asynchronous responses after a change of identity.
+  const activeUserId = useRef<string | null>(null);
+  const requestVersion = useRef(0);
 
+  const loadUserData = useCallback(async (currentUser: User) => {
+    if (activeUserId.current !== currentUser.id) return;
+    const version = ++requestVersion.current;
+    const isCurrent = () =>
+      version === requestVersion.current && activeUserId.current === currentUser.id;
+
+    setIsAdmin(false);
     try {
       // 1. Fetch profile with patrol details
       const { data: prof, error: profError } = (await supabase
@@ -85,10 +94,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq("id", currentUser.id)
         .maybeSingle()) as { data: DbProfile | null; error: unknown };
 
-      if (!profError && prof) {
+      if (!isCurrent()) return;
+      if (profError) throw profError;
+      if (prof) {
         const patrolData = prof.patrols;
-        const isMasterAdmin = currentUser.email?.toLowerCase() === "baudeletgauthier@gmail.com";
-        const isChef = isMasterAdmin || isStaffPatrol(patrolData);
+        const isChef = isStaffPatrol(patrolData);
 
         setProfile({
           id: prof.id,
@@ -103,10 +113,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           patrol_name: patrolData?.name ?? (isChef ? TROOP_STAFF_PATROL_NAME : null),
           patrol_category: patrolData?.category ?? (isChef ? "staff" : null),
           is_chef: isChef,
-          // Droits admin : uniquement ceux enregistrés en base (user_roles -> is_admin).
-          // Être dans une patrouille staff ne rend pas admin.
-          is_admin: isMasterAdmin || !!prof.is_admin,
           onboarded: !!prof.onboarded,
+          member_approved: prof.member_approved === true,
           created_at: prof.created_at,
         });
       } else {
@@ -122,8 +130,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const metaYear = meta["scout_year"] ? Number(meta["scout_year"]) : null;
         const metaPatrol = (meta["patrol_id"] as string) || null;
         const metaPhone = (meta["phone"] as string) || null;
-        const isChef = currentUser.email?.toLowerCase() === "baudeletgauthier@gmail.com";
 
+        let profileLoaded = false;
         try {
           const { data: createdProf, error: createErr } = await supabase
             .from("profiles")
@@ -144,8 +152,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             .select("*, patrols(name, category)")
             .maybeSingle();
 
+          if (!isCurrent()) return;
           if (!createErr && createdProf) {
             const patrolData = (createdProf as DbProfile).patrols;
+            const isChef = isStaffPatrol(patrolData);
             setProfile({
               id: createdProf.id,
               email: createdProf.email ?? currentUser.email ?? null,
@@ -160,97 +170,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               patrol_category: patrolData?.category ?? (isChef ? "staff" : null),
               is_chef: isChef,
               onboarded: true,
+              member_approved: (createdProf as DbProfile).member_approved === true,
               created_at: createdProf.created_at,
             });
-            if (isChef) {
-              await supabase
-                .from("user_roles")
-                .upsert({ user_id: currentUser.id, role: "admin" }, { onConflict: "user_id,role" })
-                .catch(() => {});
-            }
-            return;
+            profileLoaded = true;
           }
         } catch (e) {
           console.warn("[AuthContext] Auto-création profil Supabase :", e);
         }
 
-        const localProf = db
-          .getProfiles()
-          .find(
-            (p: DbLocalProfile) =>
-              p.id === currentUser.id ||
-              (p.email && p.email.toLowerCase() === currentUser.email?.toLowerCase()),
-          );
-
-        if (localProf) {
-          const localPatrol = db
-            .getPatrols()
-            .find((p: DbLocalPatrol) => p.id === localProf.patrol_id);
-          const isChef =
-            currentUser.email?.toLowerCase() === "baudeletgauthier@gmail.com" ||
-            localProf.is_chef ||
-            localPatrol?.name?.toLowerCase().includes("staff");
-
-          setProfile({
-            id: localProf.id,
-            email: localProf.email,
-            full_name: localProf.full_name,
-            totem: localProf.totem,
-            quali: localProf.quali,
-            scout_year: localProf.scout_year,
-            phone: localProf.phone,
-            strava_url: localProf.strava_url,
-            patrol_id: localProf.patrol_id,
-            patrol_name: localPatrol?.name ?? (isChef ? TROOP_STAFF_PATROL_NAME : null),
-            patrol_category: localPatrol?.category ?? (isChef ? "staff" : null),
-            is_chef: !!isChef,
-            onboarded: localProf.onboarded,
-            created_at: localProf.created_at,
-          });
-        } else {
-          const meta = currentUser.user_metadata || {};
-          const metaName = (meta["full_name"] as string) || (meta["name"] as string) || null;
-          const metaTotem = (meta["totem"] as string) || null;
-          const metaQuali = (meta["quali"] as string) || null;
-          const isChef = currentUser.email?.toLowerCase() === "baudeletgauthier@gmail.com";
-
+        if (!isCurrent()) return;
+        if (!profileLoaded) {
           setProfile({
             id: currentUser.id,
             email: currentUser.email ?? null,
-            full_name: metaName || (isChef ? "Gauthier Baudelet" : "Scout"),
-            totem: metaTotem || (isChef ? "Aigle" : null),
-            quali: metaQuali || (isChef ? "Visionnaire" : null),
-            scout_year: null,
-            phone: null,
+            full_name: metaName,
+            totem: metaTotem,
+            quali: metaQuali,
+            scout_year: metaYear,
+            phone: metaPhone,
             strava_url: null,
-            patrol_id: isChef ? "patrol-staff" : null,
-            patrol_name: isChef ? TROOP_STAFF_PATROL_NAME : null,
-            is_chef: isChef,
-            onboarded: isChef,
+            patrol_id: metaPatrol && metaPatrol.includes("-") ? metaPatrol : null,
+            is_chef: false,
+            onboarded: false,
           });
         }
       }
 
-      // 2. Check admin status in profiles.is_admin, user_roles table or hardcoded master admin
-      const isMasterAdmin = currentUser.email?.toLowerCase() === "baudeletgauthier@gmail.com";
-      if (isMasterAdmin) {
-        setIsAdmin(true);
-      } else if (prof?.is_admin) {
-        setIsAdmin(true);
-      } else {
-        const { data: roleData } = (await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", currentUser.id)
-          .eq("role", "admin")
-          .maybeSingle()) as { data: { role: string } | null };
+      if (!isCurrent()) return;
+      // Les droits administrateur proviennent exclusivement de la table user_roles.
+      const { data: roleData, error: roleError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", currentUser.id)
+        .eq("role", "admin")
+        .maybeSingle();
 
-        setIsAdmin(!!roleData);
+      if (!isCurrent()) return;
+      if (roleError) {
+        console.error("[AuthContext] Impossible de vérifier le rôle administrateur :", roleError);
       }
+      setIsAdmin(!roleError && !!roleData);
     } catch (err) {
-      console.error("[AuthContext] Error loading user data:", err);
+      if (isCurrent()) {
+        setProfile(null);
+        setIsAdmin(false);
+        console.error("[AuthContext] Error loading user data:", err);
+      }
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
   }, []);
 
@@ -263,104 +231,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    // Helper to evaluate session from Supabase or local db
-    const syncSession = async () => {
-      try {
-        const res = await supabase.auth.getSession();
-        const s = (res?.data?.session ?? null) as Session | null;
-        const u = (s?.user ?? null) as User | null;
-
-        if (!mounted) return;
-
-        if (u) {
-          setSession(s);
-          setUser(u);
-          await loadUserData(u);
-          return;
-        }
-      } catch {
-        // Continue to fallback
-      }
-
-      // Check local standalone database
-      const localUser = db.getCurrentUser();
-      if (!mounted) return;
-
-      if (localUser) {
-        const fakeUser = {
-          id: localUser.id,
-          email: localUser.email,
-          aud: "authenticated",
-          role: "authenticated",
-          app_metadata: {},
-          user_metadata: {},
-          created_at: new Date().toISOString(),
-        } as unknown as User;
-
-        const fakeSession = {
-          user: fakeUser,
-          access_token: "standalone-token",
-        } as unknown as Session;
-
-        setSession(fakeSession);
-        setUser(fakeUser);
-        await loadUserData(fakeUser);
-      } else {
-        setSession(null);
-        setUser(null);
-        await loadUserData(null);
-      }
-    };
-
-    syncSession();
-
-    // Subscribe to Supabase auth updates
+    // INITIAL_SESSION also supplies the initial session. Avoid a second
+    // independently resolving getSession request.
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event: string, newSession: unknown) => {
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (!mounted) return;
-      const s = (newSession ?? null) as Session | null;
-      const u = (s?.user ?? null) as User | null;
-      if (u) {
-        setSession(s);
-        setUser(u);
-        await loadUserData(u);
-      } else {
-        syncSession();
-      }
-    });
-
-    // Also subscribe to local standalone database auth events
-    const unsubLocalAuth = db.subscribeAuth((event: string) => {
-      if (!mounted) return;
-      if (event === "SIGNED_OUT") {
-        setSession(null);
-        setUser(null);
+      const nextUser = nextSession?.user ?? null;
+      const nextId = nextUser?.id ?? null;
+      if (activeUserId.current !== nextId || !nextUser) {
+        ++requestVersion.current;
+        activeUserId.current = nextId;
         setProfile(null);
         setIsAdmin(false);
-      } else {
-        syncSession();
+        setLoading(!!nextUser);
+      }
+      setSession(nextSession);
+      setUser(nextUser);
+
+      if (nextUser) {
+        // Never make Supabase requests inside the auth callback itself.
+        const scheduledVersion = requestVersion.current;
+        window.setTimeout(() => {
+          if (
+            mounted &&
+            activeUserId.current === nextId &&
+            requestVersion.current === scheduledVersion
+          ) {
+            void loadUserData(nextUser);
+          }
+        }, 0);
       }
     });
 
     return () => {
       mounted = false;
+      ++requestVersion.current;
+      activeUserId.current = null;
       subscription.unsubscribe();
-      unsubLocalAuth();
     };
   }, [loadUserData]);
 
   const signOut = useCallback(async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch {
-      // ignore
-    }
-    db.signOut();
-    setUser(null);
-    setSession(null);
-    setProfile(null);
-    setIsAdmin(false);
+    // SIGNED_OUT invalidates pending work in the subscription.
+    const { error } = await supabase.auth.signOut();
+    if (error) console.error("[AuthContext] Déconnexion Supabase :", error);
   }, []);
 
   const value = useMemo(

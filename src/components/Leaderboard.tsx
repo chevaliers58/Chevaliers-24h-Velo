@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
+import { TROOP_NAME } from "@/lib/troop-config";
 
 export interface CyclistProfile {
   id: string;
@@ -30,6 +31,7 @@ export interface CyclistProfile {
   scout_year: number | null;
   patrol_id: string | null;
   is_chef?: boolean;
+  is_admin?: boolean;
   strava_url?: string | null;
 }
 
@@ -71,7 +73,6 @@ export interface RankedCyclist {
 }
 
 type PeriodFilter = "week" | "last" | "all";
-type CategoryFilter = "all" | "homme" | "femme" | "staff";
 
 function getWeekBoundaries(offsetWeeks: number = 0) {
   const now = new Date();
@@ -98,7 +99,6 @@ export function Leaderboard({ className }: { className?: string }) {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<PeriodFilter>("week");
-  const [category, setCategory] = useState<CategoryFilter>("all");
   const [search, setSearch] = useState<string>("");
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
@@ -110,7 +110,7 @@ export function Leaderboard({ className }: { className?: string }) {
         supabase
           .from("profiles_public")
           .select("id, full_name, totem, quali, scout_year, patrol_id, is_admin, strava_url"),
-        supabase.from("activities").select("id, user_id, ride_date, km, status, strava_link, note"),
+        supabase.from("activities_public").select("id, user_id, ride_date, km, status, note"),
         supabase.from("patrols").select("id, name, category"),
       ]);
 
@@ -184,7 +184,12 @@ export function Leaderboard({ className }: { className?: string }) {
         patrolName,
         patrolCategory,
         scoutYear: profile.scout_year,
-        isChef: Boolean(profile.is_chef || patrolName.toLowerCase().includes("staff")),
+        isChef: Boolean(
+          profile.is_chef ||
+          profile.is_admin ||
+          patrolCategory === "staff" ||
+          patrolName.toLowerCase().includes("staff"),
+        ),
         totalKm: Math.round(totalKm * 10) / 10,
         activityCount: userActivities.length,
         rank: 0,
@@ -207,20 +212,7 @@ export function Leaderboard({ className }: { className?: string }) {
   // Filter ranked cyclists based on search and category
   const filteredCyclists = useMemo(() => {
     return rankedCyclists.filter((cyclist) => {
-      // Category filter
-      if (category === "staff") {
-        if (!cyclist.isChef && !cyclist.patrolName.toLowerCase().includes("staff")) {
-          return false;
-        }
-      } else if (category === "homme") {
-        if (!cyclist.isChef && cyclist.patrolCategory !== "homme") {
-          return false;
-        }
-      } else if (category === "femme") {
-        if (!cyclist.isChef && cyclist.patrolCategory !== "femme") {
-          return false;
-        }
-      }
+      if (cyclist.isChef) return false;
 
       // Search filter
       if (search.trim()) {
@@ -233,7 +225,7 @@ export function Leaderboard({ className }: { className?: string }) {
 
       return true;
     });
-  }, [rankedCyclists, category, search]);
+  }, [rankedCyclists, search]);
 
   const top3 = useMemo(() => filteredCyclists.slice(0, 3), [filteredCyclists]);
   const rest = useMemo(() => filteredCyclists.slice(3), [filteredCyclists]);
@@ -258,7 +250,7 @@ export function Leaderboard({ className }: { className?: string }) {
               <span>Classement Général Individuel</span>
             </div>
             <h2 className="font-display text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              Les Rouleurs de l'ALEZAN 42
+              Les Rouleurs de {TROOP_NAME}
             </h2>
             <p className="text-sm text-muted-foreground">
               Données directes synchronisées en temps réel depuis Supabase
@@ -381,54 +373,6 @@ export function Leaderboard({ className }: { className?: string }) {
 
         {/* Category & Search */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Category filters */}
-          <div className="flex items-center rounded-lg border border-border bg-card p-0.5 text-xs">
-            <button
-              onClick={() => setCategory("all")}
-              className={cn(
-                "rounded-md px-2.5 py-1 font-medium transition-colors",
-                category === "all"
-                  ? "bg-muted text-foreground font-semibold"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              Tous
-            </button>
-            <button
-              onClick={() => setCategory("homme")}
-              className={cn(
-                "rounded-md px-2.5 py-1 font-medium transition-colors",
-                category === "homme"
-                  ? "bg-muted text-foreground font-semibold"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              Garçons
-            </button>
-            <button
-              onClick={() => setCategory("femme")}
-              className={cn(
-                "rounded-md px-2.5 py-1 font-medium transition-colors",
-                category === "femme"
-                  ? "bg-muted text-foreground font-semibold"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              Filles
-            </button>
-            <button
-              onClick={() => setCategory("staff")}
-              className={cn(
-                "rounded-md px-2.5 py-1 font-medium transition-colors",
-                category === "staff"
-                  ? "bg-muted text-foreground font-semibold"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              Staff
-            </button>
-          </div>
-
           {/* Search bar */}
           <div className="relative min-w-[180px] flex-1 sm:w-48 sm:flex-initial">
             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />

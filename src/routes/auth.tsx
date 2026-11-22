@@ -16,6 +16,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { TROOP_NAME } from "@/lib/troop-config";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -28,18 +29,22 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/useAuth";
-import { db } from "@/lib/database";
+
 import { ForgotPassword } from "@/components/ForgotPassword";
-import logoAlezanComplet from "@/assets/logo-alezan.png";
-import { isStaffPatrol, isTroopStaffPatrol, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
+import {
+  isStaffPatrol,
+  isOtherUnitPatrol,
+  isTroopStaffPatrol,
+  TROOP_STAFF_PATROL_NAME,
+} from "@/lib/categories";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Connexion & Inscription — ALEZAN 42" },
+      { title: `Connexion & Inscription — ${TROOP_NAME}` },
       { name: "description", content: "Connecte-toi pour enregistrer tes kilomètres à vélo." },
-      { property: "og:title", content: "Connexion & Inscription — ALEZAN 42" },
+      { property: "og:title", content: `Connexion & Inscription — ${TROOP_NAME}` },
       { property: "og:description", content: "Rejoins le défi vélo des patrouilles." },
     ],
   }),
@@ -63,7 +68,6 @@ const signupSchema = z
     password: z.string().min(6, "Le mot de passe doit comporter au moins 6 caractères").max(72),
     full_name: z.string().trim().min(2, "Nom et prénom requis").max(100),
     totem: z.string().trim().max(60).optional(),
-    quali: z.string().trim().max(60).optional(),
     scout_year: z.string().min(1, "Précise ton année scout ou si tu es chef"),
     patrol_id: z.string().min(1, "Sélectionne ta patrouille"),
     phone: z.string().trim().max(25).optional(),
@@ -132,7 +136,6 @@ function AuthPage() {
     password: "",
     full_name: "",
     totem: "",
-    quali: "",
     scout_year: "",
     patrol_id: "",
     phone: "",
@@ -215,14 +218,13 @@ function AuthPage() {
             await supabase.from("profiles").upsert(
               {
                 id: authData.user.id,
-                email: authData.user.email,
+                email: authData.user.email ?? null,
                 full_name:
                   (meta["full_name"] as string) ||
                   (meta["name"] as string) ||
                   email.split("@")[0] ||
                   "Scout",
                 totem: (meta["totem"] as string) || null,
-                quali: (meta["quali"] as string) || null,
                 scout_year: meta["scout_year"] ? Number(meta["scout_year"]) : null,
                 patrol_id:
                   meta["patrol_id"] && String(meta["patrol_id"]).includes("-")
@@ -239,17 +241,10 @@ function AuthPage() {
         }
       }
 
-      // Also keep local DB in sync
-      try {
-        db.signIn(email);
-      } catch {
-        // ignore
-      }
-
       await refreshProfile();
       setBusy(false);
       toast.success("Bon retour parmi nous !");
-      window.location.href = "/";
+      window.location.href = import.meta.env.BASE_URL;
     } catch (err: unknown) {
       setBusy(false);
       const msg = err instanceof Error ? err.message : String(err);
@@ -284,7 +279,9 @@ function AuthPage() {
       d.patrol_id === "staff" ||
       d.patrol_id === "patrol-staff" ||
       isStaffPatrol(patrols.find((p) => p.id === d.patrol_id));
-    const scoutYearNum = isStaff ? null : Number(d.scout_year);
+    const isOther = isOtherUnitPatrol(patrols.find((p) => p.id === d.patrol_id));
+    const scoutYearNum =
+      isStaff || isOther || d.scout_year === "other" ? null : Number(d.scout_year);
 
     try {
       const email = d.email.trim();
@@ -295,11 +292,11 @@ function AuthPage() {
         email,
         password,
         options: {
+          emailRedirectTo: new URL(import.meta.env.BASE_URL, window.location.origin).href,
           data: {
             full_name: d.full_name.trim(),
             name: d.full_name.trim(),
             totem: d.totem?.trim() || null,
-            quali: d.quali?.trim() || null,
             scout_year: scoutYearNum ? String(scoutYearNum) : null,
             patrol_id: targetPatrolId,
             phone: d.phone?.trim() || null,
@@ -318,8 +315,9 @@ function AuthPage() {
 
       const newUserId = authData.user?.id;
 
-      // 2. Explicitly write/upsert into public.profiles in Supabase
-      if (newUserId) {
+      // The Auth trigger creates profiles even when email confirmation is required.
+      // Only an authenticated new account may perform the optional profile upsert.
+      if (newUserId && authData.session?.user.id === newUserId) {
         try {
           const { error: profileError } = await supabase.from("profiles").upsert(
             {
@@ -327,7 +325,6 @@ function AuthPage() {
               email,
               full_name: d.full_name.trim(),
               totem: d.totem?.trim() || null,
-              quali: d.quali?.trim() || null,
               scout_year: scoutYearNum,
               patrol_id: targetPatrolId && targetPatrolId.includes("-") ? targetPatrolId : null,
               phone: d.phone?.trim() || null,
@@ -346,34 +343,17 @@ function AuthPage() {
         }
       }
 
-      // 3. Keep local DB synchronized
-      try {
-        db.signUp(email, {
-          full_name: d.full_name.trim(),
-          totem: d.totem?.trim() || null,
-          quali: d.quali?.trim() || null,
-          scout_year: scoutYearNum,
-          patrol_id: targetPatrolId,
-          phone: d.phone?.trim() || null,
-          birth_day: d.birth_day ? Number(d.birth_day) : null,
-          birth_month: d.birth_month ? Number(d.birth_month) : null,
-          is_chef: isStaff,
-        });
-      } catch {
-        // ignore
-      }
-
       await refreshProfile();
       setBusy(false);
 
       if (authData.session) {
-        toast.success("Compte scout créé avec succès dans Supabase ! Bienvenue sur l'ALEZAN 42.");
+        toast.success("Compte créé. Le staff doit maintenant valider ton inscription.");
       } else {
         toast.success(
-          "Compte créé dans Supabase ! Si la confirmation par e-mail est active, vérifie ta boîte de réception.",
+          "Compte créé. Confirme ton adresse e-mail, puis attends la validation du staff.",
         );
       }
-      window.location.href = "/";
+      window.location.href = import.meta.env.BASE_URL;
     } catch (err: unknown) {
       setBusy(false);
       const msg = err instanceof Error ? err.message : String(err);
@@ -404,13 +384,14 @@ function AuthPage() {
 
         {/* Header Icon & Title */}
         <div className="text-center">
-          <img
-            src={logoAlezanComplet}
-            alt="Alezan 42 Cycling Team"
-            className="mx-auto h-24 w-auto drop-shadow-sm"
-          />
+          <div
+            aria-label="Fleur de lys scoute"
+            className="mx-auto grid h-24 w-24 place-items-center text-7xl drop-shadow-sm"
+          >
+            ⚜️
+          </div>
           <h1 className="mt-4 font-display text-2xl sm:text-3xl font-black text-foreground">
-            Défi Vélo ALEZAN 42
+            Défi Vélo {TROOP_NAME}
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
             Plateforme officielle de comptabilisation des kilomètres de la troupe
@@ -588,8 +569,8 @@ function AuthPage() {
                     />
                   </div>
 
-                  {/* Totem & Qualificatif */}
-                  <div className="grid grid-cols-2 gap-3">
+                  {/* Totem*/}
+                  <div className="grid grid-cols-1 gap-3">
                     <div className="space-y-1">
                       <Label htmlFor="signup-totem" className="text-xs font-semibold">
                         Totem <span className="text-muted-foreground font-normal">(optionnel)</span>
@@ -599,18 +580,6 @@ function AuthPage() {
                         placeholder="Ex: Condor"
                         value={signupForm.totem}
                         onChange={(e) => setSignupForm({ ...signupForm, totem: e.target.value })}
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label htmlFor="signup-quali" className="text-xs font-semibold">
-                        Quali <span className="text-muted-foreground font-normal">(optionnel)</span>
-                      </Label>
-                      <Input
-                        id="signup-quali"
-                        placeholder="Ex: Persévérant"
-                        value={signupForm.quali}
-                        onChange={(e) => setSignupForm({ ...signupForm, quali: e.target.value })}
                       />
                     </div>
                   </div>
@@ -660,6 +629,7 @@ function AuthPage() {
                           <SelectItem value="3">3ème année</SelectItem>
                           <SelectItem value="4">4ème année (Aîné/CP)</SelectItem>
                           <SelectItem value="staff">👑 Staff</SelectItem>
+                          <SelectItem value="other">Autre membre de l’unité</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

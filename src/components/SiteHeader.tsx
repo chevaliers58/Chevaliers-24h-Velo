@@ -8,7 +8,6 @@ import {
   LogOut,
   Bike,
   LogIn,
-  HandHeart,
   MapPinned,
   X,
   ChevronRight,
@@ -18,11 +17,12 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/useAuth";
+import { TROOP_NAME } from "@/lib/troop-config";
 import { cn } from "@/lib/utils";
-import logoAlezan from "@/assets/logo-alezan-clair.png";
 import { HeaderTrim } from "@/components/SeasonalDecor";
 import { PwaInstallButton } from "@/components/PwaInstallButton";
 import { AppTabBar } from "@/components/app/AppTabBar";
+import knightLogo from "@/assets/chevaliers58-logo.svg";
 import { APP_MAX_WIDTH, isAppMode } from "@/lib/standalone";
 
 interface NavItem {
@@ -90,22 +90,23 @@ export function SiteHeader() {
   const navItems: NavItem[] = [
     {
       to: "/",
-      label: "Accueil",
-      description: "Classement hebdomadaire des patrouilles et des scouts",
+      label: "Classements",
+      description: "Classements des patrouilles et des scouts",
       icon: Trophy,
     },
     {
       to: "/timeline",
       label: "Timeline",
-      description: "Historique et grands événements de l'ALEZAN 42",
+      description: `Historique et grands événements de ${TROOP_NAME}`,
       icon: History,
     },
     {
       to: "/carte",
-      label: "Carte",
-      description: "Carte interactive des zones roulées et courues (-200m protégés)",
+      label: "Parcours GPS privés",
+      description: "Vérification des traces par le staff",
       icon: MapPinned,
       requiresAuth: true,
+      requiresAdmin: true,
     },
     {
       to: "/sorties-prevues",
@@ -114,12 +115,6 @@ export function SiteHeader() {
       description: "Proposer une sortie de groupe et s'inscrire",
       icon: CalendarClock,
       requiresAuth: true,
-    },
-    {
-      to: "/solidarite",
-      label: "Solidarité",
-      description: "Actions solidaires et kilomètres partagés",
-      icon: HandHeart,
     },
     {
       to: "/mes-km",
@@ -150,15 +145,14 @@ export function SiteHeader() {
   });
 
   const mobileItems = user
-    ? visibleItems.filter((item) => ["/", "/mes-km", "/carte", "/profil"].includes(item.to))
-    : visibleItems.filter((item) => ["/", "/timeline", "/solidarite"].includes(item.to));
+    ? visibleItems.filter((item) => ["/", "/mes-km", "/timeline", "/profil"].includes(item.to))
+    : visibleItems.filter((item) => ["/", "/timeline"].includes(item.to));
   const mobileItemIcons: Record<string, React.ComponentType<{ className?: string }>> = {
     "/": House,
     "/mes-km": Bike,
     "/carte": MapPinned,
     "/profil": CircleUserRound,
     "/timeline": History,
-    "/solidarite": HandHeart,
   };
 
   return (
@@ -172,7 +166,7 @@ export function SiteHeader() {
         <HeaderTrim />
         {/* Main Bar */}
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-3 py-2 sm:px-4 sm:py-3">
-          {/* Brand Logo & by Aquila */}
+          {/* Identité de la troupe */}
           <Link
             to="/"
             onClick={() => {
@@ -180,24 +174,22 @@ export function SiteHeader() {
             }}
             className="flex items-center gap-2.5 group shrink-0"
           >
-            <span className="grid h-9 w-12 sm:h-10 sm:w-14 place-items-center transition-transform group-hover:scale-105">
-              <img
-                src={logoAlezan}
-                alt="Logo Alezan 42 Cycling Team"
-                className="h-full w-full object-contain"
-              />
-            </span>
+            <img
+              src={knightLogo}
+              alt=""
+              className="h-10 w-12 object-contain transition-transform group-hover:scale-105 sm:h-12 sm:w-14"
+            />
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="font-display text-sm sm:text-lg font-black tracking-wider text-white">
-                  ALEZAN-42
+                  {TROOP_NAME}
                 </span>
                 <span className="hidden rounded-full bg-orange-500/20 border border-orange-500/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-300 sm:inline-block">
                   Défi Vélo
                 </span>
               </div>
               <p className="text-[10px] text-amber-300/80 font-medium tracking-wide leading-none sm:text-[11px]">
-                by Aquila 🦅
+                by Aquila NO042 Alezan
               </p>
             </div>
           </Link>

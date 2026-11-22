@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { TROOP_NAME } from "@/lib/troop-config";
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
 import {
@@ -13,7 +14,6 @@ import {
   Award,
   Footprints,
   PersonStanding,
-  MapPin,
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,16 +21,14 @@ import { Badge } from "@/components/ui/badge";
 import { DailyDistanceForm } from "@/components/DailyDistanceForm";
 import { groupSizes, pelotonMultiplier, type PelotonActivity } from "@/lib/peloton";
 import { supabase } from "@/integrations/supabase/client";
-import { gpxDownloadUrl, gpxFileName } from "@/lib/gpxDownload";
 import { deleteActivity as deleteActivityWithFiles } from "@/lib/proofStorage";
+import type { Profile } from "@/lib/database";
 import {
-  db,
-  type Profile,
   getActivitySport,
   cleanActivityNote,
   type ActivitySport,
   SPORT_INFO,
-} from "@/lib/database";
+} from "@/lib/activity";
 import { cn } from "@/lib/utils";
 import { SportBadge, SPORT_COLORS } from "@/components/SportIcon";
 import { CorrectionNotice } from "@/components/CorrectionNotice";
@@ -40,13 +38,13 @@ export const Route = createFileRoute("/_authenticated/mes-km")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Mes kilomètres — ALEZAN 42" },
+      { title: `Mes kilomètres — ${TROOP_NAME}` },
       {
         name: "description",
         content:
           "Enregistre tes sorties vélo, course à pied ou marche avec capture, Strava ou GPX.",
       },
-      { property: "og:title", content: "Mes kilomètres — ALEZAN 42" },
+      { property: "og:title", content: `Mes kilomètres — ${TROOP_NAME}` },
       {
         property: "og:description",
         content: "Ajoute tes km de vélo, course à pied et marche pour ta patrouille.",
@@ -99,12 +97,6 @@ function MesKm() {
       // ignore
     }
 
-    if (!p) {
-      p =
-        db.getProfile(user.id) ||
-        db.getProfiles().find((pr) => pr.email?.toLowerCase() === user.email?.toLowerCase()) ||
-        null;
-    }
     setProfile(p);
 
     // 2. Load patrols map
@@ -139,7 +131,7 @@ function MesKm() {
       if (groupIds.length > 0) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: linked } = (await (supabase as any)
-          .from("activities")
+          .from("activities_public")
           .select("user_id, km, status, group_ride_id")
           .in("group_ride_id", groupIds)) as { data: PelotonActivity[] | null };
         setPelotonSizes(groupSizes(linked || []));
@@ -153,7 +145,6 @@ function MesKm() {
 
   useEffect(() => {
     load();
-    return db.subscribe(load);
   }, [load]);
 
   const remove = async (a: Act) => {
@@ -162,7 +153,6 @@ function MesKm() {
       if (error) {
         toast.error("Erreur : " + error);
       } else {
-        db.deleteActivity(a.id);
         toast.success("Sortie supprimée");
       }
       load();
@@ -238,7 +228,7 @@ function MesKm() {
               </div>
               <p className="mt-1 text-xs text-bark-foreground/80">
                 {profile?.patrol_id
-                  ? `Patrouille : ${patrolMap[profile.patrol_id] || db.getPatrols().find((p) => p.id === profile.patrol_id)?.name || "Non assignée"}`
+                  ? `Patrouille : ${patrolMap[profile.patrol_id] || "Non assignée"}`
                   : "Aucune patrouille sélectionnée"}
               </p>
             </div>
@@ -460,25 +450,7 @@ function MesKm() {
                               </Badge>
                             )}
 
-                            {/* GPX badge if attached */}
-                            {a.gpx_path && (
-                              <a
-                                href={gpxDownloadUrl(
-                                  a.gpx_path,
-                                  `sortie ${a.ride_date} ${a.km} km`,
-                                )}
-                                download={gpxFileName(`sortie ${a.ride_date} ${a.km} km`)}
-                                title="Télécharger le tracé GPX"
-                              >
-                                <Badge
-                                  variant="outline"
-                                  className="text-[10px] border-cyan-400/40 bg-cyan-500/10 text-cyan-700 hover:bg-cyan-500/20 dark:text-cyan-300 gap-1 cursor-pointer"
-                                >
-                                  <MapPin className="h-2.5 w-2.5" />
-                                  <span>Tracé GPX ⤓</span>
-                                </Badge>
-                              </a>
-                            )}
+                            {a.gpx_path && <Badge variant="outline">GPX transmis au staff</Badge>}
                           </div>
 
                           <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">

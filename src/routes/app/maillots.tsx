@@ -9,9 +9,7 @@ import { isStaffPatrol } from "@/lib/categories";
 export const Route = createFileRoute("/app/maillots")({ ssr: false, component: JerseysScreen });
 
 const CATEGORIES: { id: JerseyCategory; label: string }[] = [
-  { id: "homme", label: "Garçons" },
-  { id: "femme", label: "Filles" },
-  { id: "staff", label: "Staff" },
+  { id: "general", label: "Classement général" },
 ];
 
 function JerseysScreen() {
@@ -33,13 +31,13 @@ function JerseysScreen() {
     const candidates: JerseyCandidate[] = data.profiles.flatMap((p) => {
       const t = totals.get(p.id);
       if (!t) return [];
-      const staff = isStaffPatrol(p.patrols) || (!p.patrols && !!p.is_admin);
+      const staff = isStaffPatrol(p.patrols) || !!p.is_admin;
       return [
         {
           user_id: p.id,
           display_name: p.totem || p.full_name || "Scout",
           patrol_name: p.patrols?.name ?? "",
-          category: staff ? "staff" : p.patrols?.category === "femme" ? "femme" : "homme",
+          category: staff ? "staff" : p.patrols?.category || "homme",
           is_chef: staff,
           scout_year: p.scout_year,
           km: t.km,
@@ -85,17 +83,15 @@ function JerseysScreen() {
                     : undefined
                 }
               />
-              {c.id !== "staff" && (
-                <JerseyRow
-                  kind="white"
-                  name={h.white?.display_name}
-                  detail={
-                    h.white
-                      ? `${h.white.patrol_name} · ${formatKm(h.white.km)} km · ${h.white.scout_year}${h.white.scout_year === 1 ? "re" : "e"} année`
-                      : undefined
-                  }
-                />
-              )}
+              <JerseyRow
+                kind="white"
+                name={h.white?.display_name}
+                detail={
+                  h.white
+                    ? `${h.white.patrol_name} · ${formatKm(h.white.km)} km · ${h.white.scout_year}${h.white.scout_year === 1 ? "re" : "e"} année`
+                    : undefined
+                }
+              />
             </AppCard>
           </AppSection>
         );

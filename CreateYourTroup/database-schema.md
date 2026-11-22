@@ -1,8 +1,10 @@
-# 🗄️ Schéma de la Base de Données — ALEZAN 42
+# 🗄️ Ancien schéma documentaire — base de données
 
-Ce fichier contient l'intégralité des scripts SQL nécessaires pour recréer l'architecture de la base de données dans un nouveau projet Supabase (tables, politiques RLS et configuration).
+> ⚠️ **Document historique — ne pas exécuter ces exemples SQL.** Les politiques ci-dessous sont obsolètes et certaines sont volontairement permissives pour illustrer une ancienne version. Pour installer une nouvelle troupe, utiliser exclusivement les migrations revues de `supabase/migrations/` et les tests de `supabase/tests/`. Ne jamais importer les comptes, profils, activités ou fichiers de la troupe source.
 
-**Comment l'utiliser :** ouvre ton projet sur le [Supabase Dashboard](https://supabase.com/dashboard), va dans **SQL Editor**, puis exécute les scripts dans l'ordre (les tables `profiles` et `activities` dépendent de `patrols` et de `auth.users`). Voir aussi [`CreateYourTroupe.md`](./CreateYourTroupe.md) et [`code.md`](./code.md).
+Ce fichier conserve des exemples de l'ancien schéma pour référence et comparaison uniquement. Il ne décrit pas exactement le schéma actuel et ne doit jamais être exécuté, même partiellement.
+
+**Installation d'une nouvelle troupe :** suivre le [README](../README.md) et appliquer exclusivement les migrations versionnées de `supabase/migrations/`. Le seul script SQL manuel prévu après les migrations est `supabase/bootstrap_admin.sql`, pour attribuer le premier rôle administrateur. Voir aussi [`CreateYourTroupe.md`](./CreateYourTroupe.md) et [`code.md`](./code.md).
 
 ---
 

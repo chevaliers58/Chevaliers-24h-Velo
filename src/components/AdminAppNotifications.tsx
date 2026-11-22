@@ -58,11 +58,12 @@ const notificationType: Record<string, string> = {
   distance_milestone: "Palier de kilomètres",
   individual_distance_milestone: "Palier individuel",
   troop_distance_milestone: "Palier de la troupe",
-  aquila_distance_milestone: "Palier scout (Aquila)",
-  activity_pending: "Sortie à valider (Aquila)",
+  activity_pending: "Sortie à valider",
   weekly_reminder: "Rappel du dimanche",
   new_signup: "Nouvelle inscription",
   challenge_received: "Défi reçu",
+  planned_ride: "Nouvelle sortie collective",
+  planned_ride_cancelled: "Sortie collective annulée",
 };
 
 export function AdminAppNotifications() {
@@ -173,7 +174,7 @@ export function AdminAppNotifications() {
         kind: "manual",
         title: title.trim(),
         body: body.trim(),
-        href: "/",
+        href: import.meta.env.BASE_URL,
       })),
     );
     setLoading(false);
@@ -182,7 +183,7 @@ export function AdminAppNotifications() {
       return;
     }
     toast.success(
-      `Notification envoyée à ${selected.length} scout${selected.length > 1 ? "s" : ""}. Le push arrivera dans les instants qui suivent.`,
+      `Notification envoyée à ${selected.length} scout${selected.length > 1 ? "s" : ""}. Le push dépend de l’activation sur les appareils.`,
     );
     setTitle("");
     setBody("");

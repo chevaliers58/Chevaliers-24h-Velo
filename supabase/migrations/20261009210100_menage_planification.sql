@@ -15,7 +15,7 @@ select cron.schedule(
   '0 2 * * *',
   $job$
     select net.http_post(
-      url := 'https://civblymnwigeayfecujp.supabase.co/functions/v1/menage',
+      url := 'https://qxlsdauqoivqhoojlrwk.supabase.co/functions/v1/menage',
       headers := jsonb_build_object(
         'Content-Type', 'application/json',
         'x-cron-secret', (select valeur from menage_prive.cle)

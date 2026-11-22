@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { TROOP_NAME } from "@/lib/troop-config";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
@@ -15,15 +16,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SportBadge } from "@/components/SportIcon";
 import { CumulativeDistanceLevels } from "@/components/DistanceTrophies";
 import { supabase } from "@/integrations/supabase/client";
-import { SPORT_INFO, getActivitySport, type ActivitySport } from "@/lib/database";
+import { SPORT_INFO, getActivitySport, type ActivitySport } from "@/lib/activity";
 import { getBestSingleActivityDistances } from "@/lib/distanceTrophies";
 import { useDistanceAwards } from "@/lib/useDistanceAwards";
+import { useAuth } from "@/lib/useAuth";
 
 export const Route = createFileRoute("/scout/$scoutId")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Profil scout — ALEZAN 42" },
+      { title: `Profil scout — ${TROOP_NAME}` },
       { name: "description", content: "Profil, sorties validées et badges de distance." },
     ],
   }),
@@ -34,7 +36,6 @@ type ScoutProfile = {
   id: string;
   full_name: string | null;
   totem: string | null;
-  quali: string | null;
   scout_year: number | null;
   patrol_id: string | null;
 };
@@ -67,6 +68,14 @@ function SportIcon({ sport }: { sport: ActivitySport }) {
 
 function ScoutProfilePage() {
   const { scoutId } = Route.useParams();
+  const { user, loading } = useAuth();
+  // A public view can return different names for members and visitors.
+  // Never retain another viewer's response or query anonymously before Auth initializes.
+  if (!user && loading) return <main className="min-h-screen bg-background" />;
+  return <ScoutProfileForViewer key={`${user?.id ?? "anonymous"}:${scoutId}`} scoutId={scoutId} />;
+}
+
+function ScoutProfileForViewer({ scoutId }: { scoutId: string }) {
   const { thresholds } = useDistanceAwards();
   const [profile, setProfile] = useState<ScoutProfile | null>(null);
   const [patrolName, setPatrolName] = useState<string | null>(null);
@@ -83,7 +92,7 @@ function ScoutProfilePage() {
       const [profileResult, activityResult] = (await Promise.all([
         supabase
           .from("profiles_public")
-          .select("id,full_name,totem,quali,scout_year,patrol_id")
+          .select("id,full_name,totem,scout_year,patrol_id")
           .eq("id", scoutId)
           .maybeSingle(),
         supabase
@@ -142,9 +151,7 @@ function ScoutProfilePage() {
     );
   }, [activities, thresholds]);
 
-  const displayName = profile?.totem
-    ? `${profile.totem}${profile.quali ? ` ${profile.quali}` : ""}`
-    : profile?.full_name || "Scout";
+  const displayName = profile?.totem ? `${profile.totem}` : profile?.full_name || "Scout";
 
   if (loading) {
     return (
@@ -195,7 +202,6 @@ function ScoutProfilePage() {
                 </Badge>
               )}
               {profile.scout_year && <Badge variant="secondary">{profile.scout_year}e année</Badge>}
-              {profile.quali && !profile.totem && <Badge variant="outline">{profile.quali}</Badge>}
             </div>
           </div>
         </CardContent>

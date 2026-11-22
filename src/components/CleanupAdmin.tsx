@@ -66,18 +66,25 @@ export function CleanupAdmin() {
 
   const load = useCallback(async () => {
     const thirty = new Date(Date.now() - 30 * 864e5).toISOString();
-    const [r, p, a, pend] = await Promise.all([
+    const [r, p, a, pend, roles] = await Promise.all([
       supabase.from("cleanup_runs").select("*").order("ran_at", { ascending: false }).limit(5),
-      supabase.from("profiles").select("id, full_name, totem, created_at, is_admin"),
+      supabase.from("profiles").select("id, full_name, totem, created_at"),
       supabase.from("activities").select("user_id, ride_date"),
       supabase
         .from("activities")
         .select("id", { count: "exact", head: true })
         .eq("status", "pending")
         .lt("created_at", thirty),
+      supabase.from("user_roles").select("user_id").eq("role", "admin"),
     ]);
     setRuns((r.data as Run[] | null) ?? []);
-    setMembers((p.data as Member[] | null) ?? []);
+    const adminIds = new Set((roles.data ?? []).map((role) => role.user_id));
+    setMembers(
+      ((p.data as Omit<Member, "is_admin">[] | null) ?? []).map((member) => ({
+        ...member,
+        is_admin: adminIds.has(member.id),
+      })),
+    );
     const last = new Map<string, string>();
     for (const act of (a.data ?? []) as { user_id: string; ride_date: string }[]) {
       const prev = last.get(act.user_id);

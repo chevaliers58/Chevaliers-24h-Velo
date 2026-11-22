@@ -1,3 +1,5 @@
+import { TROOP_NAME } from "@/lib/troop-config";
+
 export type AlezanContext =
   | "general"
   | "home"
@@ -48,7 +50,7 @@ const PAGE_QUOTES: Partial<Record<AlezanContext, string[]>> = {
     "Un classement fiable, c'est un défi plus motivant. Merci de veiller au peloton !",
   ],
   welcome: [
-    "Content de te retrouver ! Connecte-toi et rejoins le peloton de l'Alezan 42.",
+    `Content de te retrouver ! Connecte-toi et rejoins le peloton des ${TROOP_NAME}.`,
     "Bienvenue dans l'équipe : ton prochain kilomètre commence ici !",
   ],
   general: [
