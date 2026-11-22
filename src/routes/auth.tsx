@@ -570,8 +570,8 @@ function AuthPage() {
                   </div>
 
                   {/* Totem*/}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-3">
+                  <div className="grid grid-cols-1 gap-3">
+                    <div className="space-y-1">
                       <Label htmlFor="signup-totem" className="text-xs font-semibold">
                         Totem <span className="text-muted-foreground font-normal">(optionnel)</span>
                       </Label>
