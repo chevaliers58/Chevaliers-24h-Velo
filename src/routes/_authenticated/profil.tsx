@@ -223,7 +223,7 @@ function Profil() {
                   </span>
                   {f.totem && (
                     <span className="italic text-xs font-bold text-primary">
-                      « {f.totem) »
+                      « {f.totem} »
                     </span>
                   )}
                   {selectedPatrol ? (
@@ -287,7 +287,7 @@ function Profil() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-3">
+              <div className="space-y-1.5">
                 <Label htmlFor="totem">Totem (optionnel)</Label>
                 <Input
                   id="totem"
