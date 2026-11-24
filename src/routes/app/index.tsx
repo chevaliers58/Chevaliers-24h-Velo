@@ -86,13 +86,15 @@ function AppHome() {
       root
       heroImage={themeBackground ?? hero}
       heroPosition={themeBackground ? "center" : "75% 68%"}
-      title={user ? `${greeting()}${name ? `, ${name}` : ""} 👋` : "ALEZAN 42"}
+      title={user ? `${greeting()}${name ? `${name}` : ""}` : "CHEVALIERS 58"}
       description={
         user
           ? profile?.patrol_name
-            ? `Patrouille ${profile.patrol_name}`
+            ? profile?.patrol_name == "Staff Chevaliers"
+              ? "Staff Chevaliers" 
+              : `Patrouille ${profile.patrol_name}`
             : "Prêt pour une nouvelle sortie ?"
-          : "Le défi kilomètres des patrouilles"
+          : "En route vers les 24 !"
       }
     >
       {user ? (
