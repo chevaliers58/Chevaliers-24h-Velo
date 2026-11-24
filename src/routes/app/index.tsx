@@ -90,15 +90,15 @@ function AppHome() {
       root
       heroImage={themeBackground ?? hero}
       heroPosition={themeBackground ? "center" : "75% 68%"}
-      title={user ? `${greeting()}${name ? `, ${name}` : ""} 👋` : TROOP_NAME}
+      title={user ? `${greeting()}${name ? ` ${name}` : ""}` : TROOP_NAME}
       description={
         user
           ? profile?.patrol_name
             ? profile?.patrol_name == "Staff Chevaliers"
               ? "Staff Chevaliers" 
-              : `Patrouille ${profile.patrol_name}`
+              : `${profile.patrol_name}`
             : "Prêt pour une nouvelle sortie ?"
-          : "En route vers les 24 !"
+          : "Tous en forme aux 24 !"
       }
     >
       {user ? (
