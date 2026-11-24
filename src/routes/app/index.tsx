@@ -19,6 +19,7 @@ import { useAuth } from "@/lib/useAuth";
 import {
   daysUntil,
   formatKm,
+  formatM,
   periodRange,
   rankOf,
   rankPatrols,
@@ -53,18 +54,19 @@ function AppHome() {
   // Même photo que l'accueil du site : celle du thème si l'admin en a mis une
   const { background: themeBackground } = useSeasonalTheme();
 
-  const month = periodRange("month")!;
+  const week = periodRange("week")!;
   const stats = useMemo(() => {
     const acts = mine.data ?? [];
-    const inMonth = acts.filter((a) => a.ride_date >= month.from && a.ride_date <= month.to);
-    const approved = inMonth.filter((a) => a.status === "approved");
+    const approved = acts.filter((a) => a.status === "approved");
+    const inWeek = acts.filter((a) => a.ride_date >= week.from && a.ride_date <= week.to);
     return {
-      total: acts.filter((a) => a.status === "approved").reduce((s, a) => s + Number(a.km || 0), 0),
-      km: approved.reduce((s, a) => s + Number(a.km || 0), 0),
-      rides: approved.length,
+      total: approved.reduce((sum, a) => sum + Number(a.km || 0), 0),
+      km: inWeek.reduce((sum, a) => sum + Number(a.km || 0), 0),
+      elevation: approved.reduce((sum, a) => sum + Number(a.elevation_m || 0), 0),
+      rides: inWeek.length,
       pending: acts
         .filter((a) => a.status === "pending")
-        .reduce((s, a) => s + Number(a.km || 0), 0),
+        .reduce((sum, a) => sum + Number(a.km || 0), 0),
     };
   }, [mine.data, month.from, month.to]);
 
@@ -106,7 +108,7 @@ function AppHome() {
             <div className="grid grid-cols-[minmax(0,1fr)_7.5rem] items-center gap-1">
               <div className="min-w-0">
                 <p className="text-[13px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  Mes km ce mois-ci
+                  Mes km cette semaine
                 </p>
                 <p className="mt-1 font-display text-[44px] font-black leading-none tracking-tight text-foreground">
                   {formatKm(stats.km)}
@@ -141,10 +143,10 @@ function AppHome() {
               </div>
               <div>
                 <p className="font-display text-[22px] font-black leading-none tabular-nums text-foreground">
-                  {formatKm(myPatrol?.km ?? 0)}
+                  {formatM(stats.elevation)}
                   <span className="ml-1 text-[13px] font-bold text-muted-foreground">km</span>
                 </p>
-                <p className="mt-1 text-[13px] text-muted-foreground">Ma patrouille</p>
+                <p className="mt-1 text-[13px] text-muted-foreground">Mon dénivelé</p>
               </div>
               <div>
                 <p className="font-display text-[22px] font-black leading-none tabular-nums text-foreground">
