@@ -15,8 +15,10 @@ import {
   type AppPeriod,
   type AppSport,
 } from "@/lib/appData";
-import { getPatrolEmblem, SPORT_INFO } from "@/lib/database";
+import { SPORT_INFO } from "@/lib/activity";
+import { getPatrolColor, getPatrolEmblem } from "@/lib/patrolEmblem";
 import { cn } from "@/lib/utils";
+import { AnnualPatrolPoints, MyPatrolRanking } from "@/components/AnnualCompetition";
 import { RankingStoryExport } from "@/components/RankingStoryExport";
 
 export const Route = createFileRoute("/app/classement")({ ssr: false, component: RankingScreen });
@@ -66,6 +68,9 @@ function RankingScreen() {
   return (
     <AppPageShell root title="Classement">
       <div className="space-y-3">
+        <Link to="/app/maillots" className="text-sm font-semibold text-primary">
+          Maillots jaune, à pois et blanc
+        </Link>
         {profile?.is_chef && (
           <div className="flex justify-end">
             <RankingStoryExport />
@@ -93,13 +98,13 @@ function RankingScreen() {
             value={group}
             onChange={setGroup}
             options={[
-              { value: "all", label: "Tout le monde" },
+              { value: "all", label: "Général (hors staff)" },
+              { value: "young", label: "Jeunes (1re et 2e)" },
               { value: "scouts", label: "Scouts (1re à 4e)" },
               { value: "1", label: "1re" },
               { value: "2", label: "2e" },
               { value: "3", label: "3e" },
               { value: "4", label: "4e" },
-              { value: "staff", label: "Staff" },
             ]}
           />
         )}
@@ -121,6 +126,8 @@ function RankingScreen() {
         />
       </div>
 
+      {view === "patrols" && <AnnualPatrolPoints />}
+      <MyPatrolRanking />
       {isLoading ? (
         <AppEmpty title="Chargement du classement…" />
       ) : ranked.length === 0 ? (
@@ -151,7 +158,14 @@ function RankingScreen() {
                   <span className="w-7 shrink-0 text-center text-[17px] font-bold tabular-nums text-muted-foreground">
                     {i < 3 ? MEDALS[i] : i + 1}
                   </span>
-                  {r.lead && <span className="text-xl leading-none">{r.lead}</span>}
+                  {r.lead && (
+                    <span
+                      className="rounded-xl border-2 p-1 text-xl leading-none"
+                      style={{ borderColor: getPatrolColor(r.title) }}
+                    >
+                      {r.lead}
+                    </span>
+                  )}
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[16px] font-semibold text-foreground">
                       {r.title}

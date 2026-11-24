@@ -22,51 +22,19 @@ import {
   Filter,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { db, type Patrol, getPatrolEmblem } from "@/lib/database";
+import type { Patrol } from "@/lib/database";
+import { getPatrolColor, getPatrolEmblem } from "@/lib/patrolEmblem";
+import { fetchStaffCollectiveDistances, type StaffCollectiveDistance } from "@/lib/staffCollective";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { isStaffPatrol, matchesCategory, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
+import { isCollectivePatrol, isTroopStaffPatrol } from "@/lib/categories";
 
 export interface PatrolDailyContributionChartProps {
   className?: string;
   compact?: boolean;
   height?: number;
-}
-
-// Couleurs harmonieuses associées à chaque patrouille
-const PATROL_COLORS: Record<string, string> = {
-  lynx: "#f59e0b", // Amber
-  gazelles: "#ec4899", // Rose
-  girafes: "#eab308", // Yellow
-  marmottes: "#a855f7", // Purple
-  cougars: "#3b82f6", // Blue
-  condors: "#06b6d4", // Cyan
-  jaguars: "#10b981", // Emerald
-  bisons: "#84cc16", // Lime
-  faucons: "#6366f1", // Indigo
-  staff: "#f97316", // Orange
-};
-
-function getPatrolColor(name: string, index: number): string {
-  const n = name.toLowerCase();
-  for (const [key, color] of Object.entries(PATROL_COLORS)) {
-    if (n.includes(key)) return color;
-  }
-  const defaultColors = [
-    "#f59e0b",
-    "#3b82f6",
-    "#10b981",
-    "#ec4899",
-    "#8b5cf6",
-    "#06b6d4",
-    "#f97316",
-    "#84cc16",
-    "#eab308",
-    "#6366f1",
-  ];
-  return defaultColors[index % defaultColors.length];
 }
 
 interface RawActivity {
@@ -162,9 +130,10 @@ export function PatrolDailyContributionChart({
   height = 360,
 }: PatrolDailyContributionChartProps) {
   const [chartMode, setChartMode] = useState<"stacked" | "grouped">("stacked");
-  const [categoryFilter, setCategoryFilter] = useState<"all" | "homme" | "femme" | "staff">("all");
+  const [categoryFilter, setCategoryFilter] = useState<"all" | "scouts" | "staff">("all");
   const [patrols, setPatrols] = useState<Patrol[]>([]);
   const [activities, setActivities] = useState<RawActivity[]>([]);
+  const [staffDistances, setStaffDistances] = useState<StaffCollectiveDistance[]>([]);
   const [profiles, setProfiles] = useState<
     Array<{
       id: string;
@@ -188,26 +157,7 @@ export function PatrolDailyContributionChart({
         .select("id, name, category, created_at")
         .order("name", { ascending: true });
 
-      let loadedPatrols = (patrolsData as Patrol[]) || [];
-      if (loadedPatrols.length === 0) {
-        loadedPatrols = db.getPatrols();
-      }
-
-      // S'assurer que le Staff est présent
-      const hasStaff = loadedPatrols.some(
-        (p) => p.name.toLowerCase().includes("staff") || p.name.toLowerCase().includes("chef"),
-      );
-      if (!hasStaff) {
-        loadedPatrols = [
-          ...loadedPatrols,
-          {
-            id: "staff",
-            name: TROOP_STAFF_PATROL_NAME,
-            category: "staff",
-            created_at: new Date().toISOString(),
-          },
-        ];
-      }
+      const loadedPatrols = (patrolsData as Patrol[]) || [];
       setPatrols(loadedPatrols);
 
       // 2. Définir la plage des 7 derniers jours
@@ -230,6 +180,8 @@ export function PatrolDailyContributionChart({
       const loadedActivities = (actsData as RawActivity[]) || [];
       const loadedProfiles = profsData || [];
 
+      const collective = await fetchStaffCollectiveDistances(minDateStr);
+      setStaffDistances(collective);
       setActivities(loadedActivities);
       setProfiles(
         loadedProfiles.map((p) => ({
@@ -242,6 +194,7 @@ export function PatrolDailyContributionChart({
     } catch (err) {
       console.warn("Erreur chargement données graphiques :", err);
       setActivities([]);
+      setStaffDistances([]);
       setProfiles([]);
     } finally {
       setLoading(false);
@@ -251,7 +204,7 @@ export function PatrolDailyContributionChart({
 
   useEffect(() => {
     loadData();
-    return db.subscribe(() => loadData(false));
+    return undefined;
   }, [loadData]);
 
   // Map des patrouilles
@@ -264,8 +217,10 @@ export function PatrolDailyContributionChart({
   // Patrouilles filtrées par catégorie
   const filteredPatrols = useMemo(() => {
     return patrols.filter((p) => {
-      // Les patrouilles staff apparaissent aussi chez les Garçons et les Filles
-      return matchesCategory(p.category, isStaffPatrol(p), categoryFilter);
+      return (
+        categoryFilter === "all" ||
+        (categoryFilter === "staff" ? isCollectivePatrol(p) : !isCollectivePatrol(p))
+      );
     });
   }, [patrols, categoryFilter]);
 
@@ -344,8 +299,15 @@ export function PatrolDailyContributionChart({
       targetDay.totalKm = Math.round((targetDay.totalKm + km) * 10) / 10;
     });
 
+    staffDistances.forEach((row) => {
+      const day = days.find((d) => d.date === row.ride_date);
+      if (!day) return;
+      const id = row.patrol_id || patrols.find((p) => isTroopStaffPatrol(p))?.id;
+      if (id) day[id] = Number(day[id] || 0) + Number(row.km);
+      day.totalKm = Math.round((day.totalKm + Number(row.km)) * 10) / 10;
+    });
     return days;
-  }, [activities, profiles, patrols]);
+  }, [activities, staffDistances, profiles, patrols]);
 
   // Statistiques résumées des 7 derniers jours
   const stats = useMemo(() => {
@@ -526,19 +488,11 @@ export function PatrolDailyContributionChart({
             </Button>
             <Button
               size="sm"
-              variant={categoryFilter === "homme" ? "default" : "outline"}
-              onClick={() => setCategoryFilter("homme")}
+              variant={categoryFilter === "scouts" ? "default" : "outline"}
+              onClick={() => setCategoryFilter("scouts")}
               className="h-7 text-xs px-2.5"
             >
-              Garçons
-            </Button>
-            <Button
-              size="sm"
-              variant={categoryFilter === "femme" ? "default" : "outline"}
-              onClick={() => setCategoryFilter("femme")}
-              className="h-7 text-xs px-2.5"
-            >
-              Filles
+              Scouts
             </Button>
             <Button
               size="sm"
@@ -546,7 +500,7 @@ export function PatrolDailyContributionChart({
               onClick={() => setCategoryFilter("staff")}
               className="h-7 text-xs px-2.5"
             >
-              Staff
+              Staff et autres membres
             </Button>
           </div>
         </div>
@@ -585,7 +539,7 @@ export function PatrolDailyContributionChart({
 
                 {/* Générer les Barres pour chaque patrouille active */}
                 {filteredPatrols.map((patrol, idx) => {
-                  const color = getPatrolColor(patrol.name, idx);
+                  const color = getPatrolColor(patrol.name);
                   const isLastPatrol = idx === filteredPatrols.length - 1;
 
                   return (
@@ -594,7 +548,7 @@ export function PatrolDailyContributionChart({
                       dataKey={patrol.id}
                       name={patrol.name}
                       fill={color}
-                      stackId={chartMode === "stacked" ? "patrolStack" : undefined}
+                      {...(chartMode === "stacked" ? { stackId: "patrolStack" } : {})}
                       radius={
                         chartMode === "stacked"
                           ? isLastPatrol
@@ -613,8 +567,8 @@ export function PatrolDailyContributionChart({
 
         {/* Légende interactive avec indicateur de couleur et nom de patrouille */}
         <div className="flex flex-wrap items-center justify-center gap-2 pt-2 border-t border-border/40 text-xs">
-          {filteredPatrols.map((patrol, idx) => {
-            const color = getPatrolColor(patrol.name, idx);
+          {filteredPatrols.map((patrol) => {
+            const color = getPatrolColor(patrol.name);
             const icon = getPatrolEmblem(patrol.name);
             return (
               <div

@@ -15,7 +15,7 @@ export function getActivityStreak(rideDates: Array<string | null | undefined>, t
   let newer = latest;
   for (let i = dates.length - 2; i >= 0; i -= 1) {
     const date = dates[i];
-    if (daysBetween(date, newer) > 5) break;
+    if (!date || daysBetween(date, newer) > 5) break;
     oldest = date;
     newer = date;
   }

@@ -21,6 +21,16 @@ update public.activities set validated_at = created_at
 create or replace function public.stamp_validated_at()
 returns trigger language plpgsql set search_path = public as $$
 begin
+  -- Browser clients cannot backdate or postpone automatic retention.
+  if current_user in ('anon', 'authenticated')
+     or coalesce(auth.jwt()->>'role', '') in ('anon', 'authenticated') then
+    if tg_op = 'INSERT' then
+      new.created_at := now();
+    else
+      new.created_at := old.created_at;
+      new.validated_at := old.validated_at;
+    end if;
+  end if;
   if new.status = 'approved' and (tg_op = 'INSERT' or old.status is distinct from 'approved') then
     new.validated_at := now();
   elsif new.status <> 'approved' then
@@ -34,7 +44,7 @@ revoke execute on function public.stamp_validated_at() from public, anon, authen
 drop trigger if exists trg_stamp_validated_at on public.activities;
 -- après trg_set_activity_status (ordre alphabétique des triggers BEFORE)
 create trigger trg_stamp_validated_at
-  before insert or update of status on public.activities
+  before insert or update on public.activities
   for each row execute function public.stamp_validated_at();
 
 -- Journal des ménages (lisible par les admins)

@@ -8,11 +8,11 @@ delete from public.activity_corrections; -- entrées laissées par les tests pr�
 
 -- Scout 1 : une sortie Strava (validée) et deux photos (en attente)
 set role authenticated; select pg_temp.as_user('22222222-2222-2222-2222-222222222222');
-insert into public.activities (id, user_id, km, ride_date, strava_link, note) values
-  ('eeeeeeee-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222', 45, '2026-10-03', 'https://strava.com/a/301', 'Tour'),
-  ('eeeeeeee-0000-0000-0000-000000000002', '22222222-2222-2222-2222-222222222222', 12, '2026-10-04', null, null),
-  ('eeeeeeee-0000-0000-0000-000000000003', '22222222-2222-2222-2222-222222222222', 8, '2026-10-05', null, null),
-  ('eeeeeeee-0000-0000-0000-000000000004', '22222222-2222-2222-2222-222222222222', 3, '2026-10-06', 'https://strava.com/a/302', null);
+insert into public.activities (id, user_id, km, ride_date, strava_link, note, proof_path) values
+  ('eeeeeeee-0000-0000-0000-000000000001', '22222222-2222-2222-2222-222222222222', 45, '2026-10-03', 'https://strava.com/a/301', 'Tour', null),
+  ('eeeeeeee-0000-0000-0000-000000000002', '22222222-2222-2222-2222-222222222222', 12, '2026-10-04', null, null, 'synthetic-photo-2.png'),
+  ('eeeeeeee-0000-0000-0000-000000000003', '22222222-2222-2222-2222-222222222222', 8, '2026-10-05', null, null, 'synthetic-photo-3.png'),
+  ('eeeeeeee-0000-0000-0000-000000000004', '22222222-2222-2222-2222-222222222222', 3, '2026-10-06', 'https://strava.com/a/302', null, null);
 
 -- Verrou : le scout ne peut plus changer les km de sa sortie validée…
 update public.activities set km = 450, ride_date = '2026-10-04', note = '[course] Tour'

@@ -6,8 +6,7 @@ import {
   CalendarDays,
   CircleUserRound,
   Compass,
-  HandHeart,
-  History,
+  ListChecks,
   LogIn,
   LogOut,
   MapPinned,
@@ -19,8 +18,9 @@ import {
 import { AppPageShell } from "@/components/AppPageShell";
 import { AppCard, AppList, AppListRow, AppSection } from "@/components/app/AppUi";
 import { AnimationToggle } from "@/components/AnimationToggle";
+import { TROOP_NAME } from "@/lib/troop-config";
 import { useAuth } from "@/lib/useAuth";
-import { getPatrolEmblem } from "@/lib/database";
+import { getPatrolEmblem } from "@/lib/patrolEmblem";
 
 export const Route = createFileRoute("/app/plus")({ ssr: false, component: MoreScreen });
 
@@ -97,33 +97,27 @@ function MoreScreen() {
             title="Sorties de la troupe"
           />
           <AppListRow to="/app/compte-a-rebours" icon={CalendarClock} title="Compte à rebours" />
-          <AppListRow to="/timeline" icon={History} title="Ligne du temps" />
-          {user && (
+          {isAdmin && (
             <AppListRow
               to="/carte"
               icon={MapPinned}
               iconClassName="bg-sky-500/12 text-sky-600"
-              title="Carte des parcours"
+              title="Parcours GPS privés"
             />
           )}
-          <AppListRow
-            to="/solidarite"
-            icon={HandHeart}
-            iconClassName="bg-pink-500/12 text-pink-600"
-            title="Solidarité"
-          />
         </AppList>
       </AppSection>
 
       {user && (
         <AppSection title="Moi">
           <AppList>
+            <AppListRow to="/app/mes-kms" icon={ListChecks} title="Mes sorties" />
             <AppListRow
               icon={Bell}
               iconClassName="bg-primary/12 text-primary"
               title="Notifications"
               subtitle="Messages de la troupe, activer les alertes"
-              onClick={() => window.dispatchEvent(new Event("alezan:open-app-notifications"))}
+              onClick={() => window.dispatchEvent(new Event("troupe:open-app-notifications"))}
             />
             <AppListRow
               to="/app/trophees"
@@ -165,7 +159,9 @@ function MoreScreen() {
       )}
 
       <div className="space-y-1 pb-2 text-center text-[12px] text-muted-foreground/80">
-        <p>ALEZAN 42 · version {__APP_VERSION__}</p>
+        <p>
+          {TROOP_NAME} · version {__APP_VERSION__}
+        </p>
         <AnimationToggle />
       </div>
     </AppPageShell>

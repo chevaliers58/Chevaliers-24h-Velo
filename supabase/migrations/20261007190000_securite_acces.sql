@@ -120,9 +120,21 @@ create or replace function public.set_activity_status()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare is_adm boolean := auth.uid() is not null and public.has_role(auth.uid(), 'admin');
 begin
+  -- Preserve the submission form's existing accepted Strava domains, but
+  -- enforce the same rule for direct API clients. A manual link is not an
+  -- independently verified automatic import.
+  new.strava_link := nullif(btrim(new.strava_link), '');
+  if new.strava_link is not null
+     and new.strava_link !~* '^https://(www\.)?strava\.(com|app\.link)/' then
+    raise exception 'Lien Strava invalide' using errcode = '23514';
+  end if;
+
   if tg_op = 'INSERT' then
+    if nullif(btrim(new.proof_path), '') is null and new.strava_link is null then
+      raise exception 'Preuve requise : capture d''écran ou lien Strava' using errcode = '23514';
+    end if;
     if not is_adm then
-      new.status := case when nullif(btrim(coalesce(new.strava_link, '')), '') is not null
+      new.status := case when new.strava_link is not null
                          then 'approved'::activity_status
                          else 'pending'::activity_status end;
     end if;
@@ -135,6 +147,9 @@ begin
   return new;
 end; $$;
 
+-- The initial INSERT-only trigger would override approved photo submissions
+-- by administrators. The consolidated trigger above now enforces proofs too.
+drop trigger if exists activity_status_guard on public.activities;
 drop trigger if exists trg_set_activity_status on public.activities;
 create trigger trg_set_activity_status
   before insert or update on public.activities
@@ -191,6 +206,9 @@ returns boolean language sql stable security definer set search_path = public as
   );
 $$;
 
+revoke execute on function public.owns_proof_object(text) from public, anon;
+grant execute on function public.owns_proof_object(text) to authenticated;
+
 create policy "preuves lecture proprietaire ou admin" on storage.objects
   for select to authenticated
   using (bucket_id = 'proofs' and public.owns_proof_object(name));
@@ -208,7 +226,13 @@ create policy "preuves suppression proprietaire ou admin" on storage.objects
 -- ---------------------------------------------------------------------
 -- 6. Fonctions : search_path fixé, fonctions internes non appelables via l'API
 -- ---------------------------------------------------------------------
-alter function public.delete_rejected_activity() set search_path = public;
+do $guard$
+begin
+  if to_regprocedure('public.delete_rejected_activity()') is not null then
+    execute 'alter function public.delete_rejected_activity() set search_path = public';
+    execute 'revoke execute on function public.delete_rejected_activity() from public, anon, authenticated';
+  end if;
+end $guard$;
 
 -- Ancienne fonction vide, attachée à aucun trigger.
 drop function if exists public.handle_activity_action();
@@ -218,15 +242,18 @@ returns void language plpgsql security definer set search_path = public as $$
 declare uid uuid;
 begin
   if not public.has_role(auth.uid(), 'admin') then raise exception 'Interdit'; end if;
-  select id into uid from public.profiles where lower(email) = lower(_email);
+  select id into uid
+    from auth.users
+   where lower(email) = lower(btrim(_email))
+     and email_confirmed_at is not null;
   if uid is null then
     raise exception 'Aucun compte avec cet email (la personne doit d''abord se connecter une fois)';
   end if;
   if _make_admin then
     insert into public.user_roles(user_id, role) values (uid, 'admin') on conflict do nothing;
   else
-    if lower(_email) = 'baudeletgauthier@gmail.com' then
-      raise exception 'Admin principal non modifiable';
+    if uid = auth.uid() then
+      raise exception 'Impossible de retirer ses propres droits administrateur';
     end if;
     delete from public.user_roles where user_id = uid and role = 'admin';
   end if;
@@ -236,9 +263,7 @@ revoke execute on function public.set_admin_by_email(text, boolean) from public,
 grant execute on function public.set_admin_by_email(text, boolean) to authenticated;
 
 -- Fonctions de trigger : jamais appelées directement par le site.
-revoke execute on function public.delete_rejected_activity() from public, anon, authenticated;
 revoke execute on function public.set_activity_status() from public, anon, authenticated;
 revoke execute on function public.protect_profile_admin_flag() from public, anon, authenticated;
 revoke execute on function public.sync_profile_admin_flag() from public, anon, authenticated;
 revoke execute on function public.handle_new_user() from public, anon, authenticated;
-revoke execute on function public.auto_confirm_user() from public, anon, authenticated;

@@ -1,0 +1,110 @@
+name: Validate clean database installation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "supabase/**"
+      - ".github/workflows/database-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  fresh-database:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Supabase CLI (pinned v2)
+        uses: supabase/setup-cli@v3
+        with:
+          version: 2.122.1
+      - name: Prepare isolated local project
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/chevaliers-db"
+          cd "$RUNNER_TEMP/chevaliers-db"
+          supabase init
+          mkdir -p supabase/migrations
+          cp "$GITHUB_WORKSPACE"/supabase/migrations/*.sql supabase/migrations/
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          # Never call any live Supabase project from a local database test.
+          count = 0
+          for p in Path("supabase/migrations").glob("*.sql"):
+              data = p.read_text(encoding="utf-8")
+              data, n = re.subn(r"https?://[A-Za-z0-9-]+\.supabase\.co/functions/v1/", "http://127.0.0.1:1/functions/v1/", data)
+              count += n
+              p.write_text(data, encoding="utf-8")
+          if count != 3:
+              raise SystemExit(f"Unexpected scheduled Edge endpoints: {count}; review before proceeding")
+          config = Path("supabase/config.toml")
+          data, n = re.subn(r"(?m)^major_version\s*=\s*\d+", "major_version = 17", config.read_text())
+          if n != 1:
+              raise SystemExit("Check local PostgreSQL version configuration")
+          config.write_text(data)
+          PY
+      - name: Start local database and replay migrations
+        working-directory: ${{ runner.temp }}/chevaliers-db
+        run: |
+          supabase db start
+          supabase db reset --local --no-seed
+          supabase migration list --local
+      - name: Verify clean application schema and permissions
+        working-directory: ${{ runner.temp }}/chevaliers-db
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
+            -f "$GITHUB_WORKSPACE/supabase/tests/fresh_install_smoke.sql"
+      - name: Test planned rides, private WhatsApp link and alert threshold
+        run: |
+          for test in test_sorties_prevues.sql test_lien_whatsapp.sql test_pending_activity_email_alert.sql; do
+            psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
+              -f "$GITHUB_WORKSPACE/supabase/tests/$test"
+          done
+      - name: Test group rides, walk, corrections, birthdays, achievements and themes
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
+            -f "$GITHUB_WORKSPACE/supabase/tests/secondary_smoke.sql"
+      - name: Validate staged annual points candidate (isolated only)
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
+            -f "$GITHUB_WORKSPACE/supabase/staged/annual_points.sql" \
+            -f "$GITHUB_WORKSPACE/supabase/tests/annual_points_candidate.sql"
+      - name: Validate staged private proofs candidate (isolated only)
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
+            -f "$GITHUB_WORKSPACE/supabase/staged/private_proofs_candidate.sql" \
+            -f "$GITHUB_WORKSPACE/supabase/tests/private_proofs_candidate.sql"
+      - name: Validate personalization seed (isolated only)
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
+            -f "$GITHUB_WORKSPACE/supabase/staged/personalization.sql" \
+            -f "$GITHUB_WORKSPACE/supabase/tests/personalization_candidate.sql"
+      - name: Validate official season gate (isolated only)
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
+            -f "$GITHUB_WORKSPACE/supabase/staged/official_season_gate.sql" \
+            -f "$GITHUB_WORKSPACE/supabase/tests/official_season_gate.sql"
+      - name: Validate staff collective-only projection (isolated only)
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
+            -f "$GITHUB_WORKSPACE/supabase/staged/staff_collective_privacy.sql" \
+            -f "$GITHUB_WORKSPACE/supabase/tests/staff_collective_privacy.sql"
+      - name: Validate authoritative administrator flag (isolated only)
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
+            -f "$GITHUB_WORKSPACE/supabase/staged/admin_role_mirror.sql" \
+            -f "$GITHUB_WORKSPACE/supabase/tests/admin_role_mirror.sql"
+      - name: Validate membership approval and collective rankings (isolated only)
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -X -v ON_ERROR_STOP=1 \
+            -f "$GITHUB_WORKSPACE/supabase/staged/member_approval_collective.sql" \
+            -f "$GITHUB_WORKSPACE/supabase/tests/member_approval_collective.sql"
+      - name: Stop local stack
+        if: always()
+        working-directory: ${{ runner.temp }}/chevaliers-db
+        run: supabase stop --no-backup

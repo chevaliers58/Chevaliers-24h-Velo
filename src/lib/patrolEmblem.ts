@@ -1,0 +1,88 @@
+const PATROL_EMOJI_STORAGE_KEY = "chevaliers58_patrol_emojis";
+
+export function getCustomPatrolEmojis(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(PATROL_EMOJI_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function setCustomPatrolEmoji(patrolIdOrName: string, emoji: string) {
+  try {
+    const map = getCustomPatrolEmojis();
+    map[patrolIdOrName.toLowerCase().trim()] = emoji.trim();
+    localStorage.setItem(PATROL_EMOJI_STORAGE_KEY, JSON.stringify(map));
+  } catch {
+    // Ignore storage errors for optional visual preferences.
+  }
+}
+
+export function getPatrolEmblem(patrolName?: string | null, patrolId?: string | null): string {
+  if (!patrolName) return "⚜️";
+
+  const customMap = getCustomPatrolEmojis();
+  const customById = patrolId ? customMap[patrolId.toLowerCase().trim()] : undefined;
+  if (customById) return customById;
+
+  const nameKey = patrolName.toLowerCase().trim();
+  if (customMap[nameKey]) return customMap[nameKey];
+
+  const emojiPrefixMatch = patrolName.match(
+    /^([\p{Emoji_Presentation}\p{Extended_Pictographic}])/u,
+  );
+  if (emojiPrefixMatch?.[1]) return emojiPrefixMatch[1];
+
+  const n = nameKey;
+  if (n.includes("baladin") || n.includes("castor") || n.includes("nuton")) return "🧸";
+  if (
+    n.includes("louvet") ||
+    n.includes("seeonee") ||
+    n.includes("waingunga") ||
+    n.includes("loup") ||
+    n.includes("meute")
+  ) {
+    return "🐺";
+  }
+  if (n.includes("lynx")) return "🐱";
+  if (n.includes("gazelle")) return "🦌";
+  if (n.includes("girafe")) return "🦒";
+  if (n.includes("marmotte")) return "🦫";
+  if (n.includes("puma") || n.includes("cougar")) return "🐈";
+  if (n.includes("guépard") || n.includes("guepard") || n.includes("ocelot")) return "🐆";
+  if (n.includes("panthère")) return "🐆";
+  if (n.includes("condor") || n.includes("aigle")) return "🦅";
+  if (n.includes("jaguar")) return "🐆";
+  if (n.includes("tigre")) return "🐅";
+  if (n.includes("bison") || n.includes("buffle")) return "🦬";
+  if (n.includes("faucon") || n.includes("épervier")) return "🦅";
+  if (n.includes("pimiento") || n.includes("piment")) return "🌶️";
+  if (n.includes("empire")) return "🏛️";
+  if (n.includes("cerf") || n.includes("chevreuil") || n.includes("élan")) return "🦌";
+  if (n.includes("renard")) return "🦊";
+  if (n.includes("ours")) return "🐻";
+  if (n.includes("lion")) return "🦁";
+  if (n.includes("écureuil")) return "🐿️";
+  if (n.includes("dauphin")) return "🐬";
+  if (
+    n.includes("staff") ||
+    n.includes("chef") ||
+    n.includes("maîtrise") ||
+    n.includes("routi") ||
+    n.includes("clan")
+  ) {
+    return "👑";
+  }
+  return "⚜️";
+}
+
+/** Official patrol colours. Neutral blue-grey for other groups. */
+export function getPatrolColor(name?: string | null): string {
+  const key = (name || "").toLowerCase().trim();
+  if (key === "pumas") return "#E5B513";
+  if (key === "guépards" || key === "guepards") return "#C93643";
+  if (key === "ocelots") return "#3074C4";
+  if (key === "jaguars") return "#268651";
+  return "#64748B";
+}

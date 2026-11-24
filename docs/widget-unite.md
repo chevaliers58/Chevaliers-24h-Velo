@@ -1,14 +1,25 @@
 # Widget « Défi kilomètres » pour le site de l'unité
 
-Fichier : `public/widget/alezan42-km.js`, publié avec le site à
-`https://alezan42-cycling.lesscoutsdemoustier.be/widget/alezan42-km.js`.
+Fichier : `public/widget/troupe-km.js`, publié avec le site à
+`https://19-58.net/velo/widget/troupe-km.js`.
 
 ## Code à coller sur le site de l'unité
 
+Remplace les valeurs entre chevrons par le domaine de l'application et la clé publishable du projet Supabase de ta troupe. La clé `sb_publishable_...` est conçue pour être publique ; ne jamais utiliser une clé `sb_secret_...` ou `service_role`.
+
 ```html
-<div data-alezan42-km data-sections="total,patrouilles,scouts" data-period="semaine"></div>
-<script src="https://alezan42-cycling.lesscoutsdemoustier.be/widget/alezan42-km.js" defer></script>
+<div data-troupe-km data-sections="total,patrouilles,scouts" data-period="semaine"></div>
+<script
+  src="https://19-58.net/velo/widget/troupe-km.js"
+  data-supabase-url="https://qxlsdauqoivqhoojlrwk.supabase.co"
+  data-supabase-key="sb_publishable_..."
+  data-site-url="https://19-58.net/velo"
+  data-troupe-name="Chevaliers 58"
+  defer
+></script>
 ```
+
+Le script refuse de charger des données si l'URL Supabase, la clé publishable ou l'URL du site ne sont pas configurées.
 
 ## Options
 
@@ -18,7 +29,8 @@ Fichier : `public/widget/alezan42-km.js`, publié avec le site à
 | `data-period` | `semaine`, `mois`, `tout` | `semaine` |
 | `data-limit` | nombre de lignes par classement (1 à 20) | `5` |
 | `data-theme` | `clair`, `sombre` | `clair` |
-| `data-titre` | texte libre | `Défi kilomètres ALEZAN 42` |
+| `data-titre` | texte libre | `Défi kilomètres de la troupe` |
+| `data-troupe-name` | nom affiché sous le total | `la troupe` |
 
 ## Taille automatique
 
@@ -36,6 +48,6 @@ Plusieurs blocs peuvent être placés sur la même page ; le script n'est charg�
 ## Données et vie privée
 
 Le widget lit uniquement les vues publiques (`profiles_public`, `activities_public`, `patrols`)
-avec la clé publique, comme un visiteur sans compte : km validés, patrouilles, totem ou
+avec la clé publishable, comme un visiteur sans compte : km validés, patrouilles, totem ou
 « Prénom I. ». Le classement « scouts » exclut le staff. Pas de cookie ; les données sont gardées
-5 minutes dans le navigateur (sessionStorage). Style isolé (Shadow DOM) : le site hôte ne le casse pas.
+5 minutes dans le navigateur (`sessionStorage`). Style isolé (Shadow DOM) : le site hôte ne le casse pas.

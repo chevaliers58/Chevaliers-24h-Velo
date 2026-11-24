@@ -1,17 +1,17 @@
 /**
- * Maillots du défi, calculés pour chaque catégorie (Garçons, Filles, Staff) :
+ * Maillots du défi, calculés pour les scouts uniquement (hors staff) :
  * - maillot jaune : le plus de kilomètres ;
  * - maillot à pois (grimpeur) : le plus de dénivelé positif (D+) ;
  * - maillot blanc (meilleur jeune) : le plus de kilomètres parmi les scouts de
- *   1re et 2e année (Garçons et Filles uniquement, jamais le staff).
+ *   1re et 2e année (jamais le staff).
  *
  * Seules les sorties validées sont comptées (le calcul reçoit des totaux déjà filtrés
  * par période, sport et statut).
  */
 
-export type JerseyCategory = "homme" | "femme" | "staff";
+export type JerseyCategory = "general";
 
-export const JERSEY_CATEGORIES: JerseyCategory[] = ["homme", "femme", "staff"];
+export const JERSEY_CATEGORIES: JerseyCategory[] = ["general"];
 
 export interface JerseyCandidate {
   user_id: string;
@@ -27,20 +27,20 @@ export interface JerseyCandidate {
 export interface JerseyHolders {
   yellow: JerseyCandidate | null;
   climber: JerseyCandidate | null;
-  /** Maillot blanc : meilleur 1re/2e année (toujours null pour le staff) */
+  /** Maillot blanc : meilleur 1re/2e année */
   white: JerseyCandidate | null;
 }
 
 /** Années qui peuvent porter le maillot blanc */
 export const WHITE_JERSEY_YEARS = [1, 2];
 
-export const isWhiteJerseyEligible = (c: Pick<JerseyCandidate, "scout_year">) =>
-  WHITE_JERSEY_YEARS.includes(Number(c.scout_year));
+export const isWhiteJerseyEligible = (
+  c: Pick<JerseyCandidate, "scout_year" | "category" | "is_chef">,
+) => !c.is_chef && c.category !== "staff" && WHITE_JERSEY_YEARS.includes(Number(c.scout_year));
 
-/** Catégorie de maillot d'un participant : le staff a ses propres maillots. */
-export function jerseyCategoryOf(c: Pick<JerseyCandidate, "category" | "is_chef">): JerseyCategory {
-  if (c.is_chef || c.category === "staff") return "staff";
-  return c.category === "femme" ? "femme" : "homme";
+/** Les scouts concourent ensemble pour les maillots jaune et à pois. */
+export function jerseyCategoryOf(): JerseyCategory {
+  return "general";
 }
 
 function best(
@@ -75,7 +75,7 @@ export function computeJerseys(
 ): Record<JerseyCategory, JerseyHolders> {
   const result = {} as Record<JerseyCategory, JerseyHolders>;
   for (const cat of JERSEY_CATEGORIES) {
-    const inCat = candidates.filter((c) => jerseyCategoryOf(c) === cat);
+    const inCat = candidates.filter((c) => !c.is_chef && c.category !== "staff");
     result[cat] = {
       yellow: best(
         inCat,
@@ -87,14 +87,11 @@ export function computeJerseys(
         (c) => c.dplus,
         (c) => c.km,
       ),
-      white:
-        cat === "staff"
-          ? null
-          : best(
-              inCat.filter(isWhiteJerseyEligible),
-              (c) => c.km,
-              (c) => c.dplus,
-            ),
+      white: best(
+        inCat.filter(isWhiteJerseyEligible),
+        (c) => c.km,
+        (c) => c.dplus,
+      ),
     };
   }
   return result;

@@ -57,7 +57,9 @@ end;
 $$;
 
 drop trigger if exists trg_z_flag_duplicate_strava_activity on public.activities;
-create trigger trg_z_flag_duplicate_strava_activity
+drop trigger if exists trg_set_z_flag_duplicate_strava_activity on public.activities;
+-- Run after trg_set_activity_status but before trg_stamp_validated_at.
+create trigger trg_set_z_flag_duplicate_strava_activity
   before insert or update of user_id, ride_date, strava_link on public.activities
   for each row execute function public.flag_duplicate_strava_activity();
 

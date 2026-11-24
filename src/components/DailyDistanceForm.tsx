@@ -20,10 +20,13 @@ import { supabase } from "@/lib/supabase";
 import { GroupRidePicker, type GroupChoice } from "@/components/GroupRidePicker";
 import { removeStorageFiles } from "@/lib/proofStorage";
 import { parseElevation } from "@/lib/jerseys";
+import { processAndCropGpx } from "@/lib/gpxUtils";
 import { useAuth } from "@/lib/useAuth";
 import { useSeasonalTheme } from "@/context/SeasonalThemeContext";
 import { buildEncouragement } from "@/lib/encouragement";
-import { db, type Patrol, type ActivitySport, getPatrolEmblem, SPORT_INFO } from "@/lib/database";
+import type { Patrol } from "@/lib/database";
+import { type ActivitySport, SPORT_INFO } from "@/lib/activity";
+import { getPatrolEmblem } from "@/lib/patrolEmblem";
 import { SportIcon, SPORT_COLORS } from "@/components/SportIcon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,8 +41,8 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { isStaffPatrol, TROOP_STAFF_PATROL_NAME } from "@/lib/categories";
-import { CHALLENGE_START, CHALLENGE_START_LABEL } from "@/lib/challengeStart";
+import { isStaffPatrol } from "@/lib/categories";
+import { brusselsDate, useChallengeSeason } from "@/lib/challengeStart";
 
 export interface DailyDistanceFormProps {
   /** Callback fired after a successful submission */
@@ -53,7 +56,7 @@ export interface DailyDistanceFormProps {
     sport?: ActivitySport;
   }) => void;
   /** Optional preselected patrol ID */
-  defaultPatrolId?: string;
+  defaultPatrolId?: string | undefined;
   /** Custom title for the form card */
   title?: string;
   /** Custom description */
@@ -85,69 +88,6 @@ type OpenChallengeRow = {
   };
 };
 
-// Fonction utilitaire pour calculer la distance Haversine en mètres entre deux points GPS
-function getDistanceFromLatLonInMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371000;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-}
-
-// Fonction pour rogner les 200 premiers et derniers mètres du GPX (vie privée)
-async function processAndCropGpx(file: File): Promise<string> {
-  const text = await file.text();
-  const parser = new DOMParser();
-  const xmlDoc = parser.parseFromString(text, "text/xml");
-  const trkpts = Array.from(xmlDoc.getElementsByTagName("trkpt"));
-
-  if (trkpts.length < 3) return text;
-
-  const points = trkpts.map((pt) => ({
-    lat: parseFloat(pt.getAttribute("lat") || "0"),
-    lon: parseFloat(pt.getAttribute("lon") || "0"),
-    node: pt,
-  }));
-
-  let distFromStart = 0;
-  const distancesFromStart: number[] = [0];
-  for (let i = 1; i < points.length; i++) {
-    distFromStart += getDistanceFromLatLonInMeters(
-      points[i - 1].lat,
-      points[i - 1].lon,
-      points[i].lat,
-      points[i].lon,
-    );
-    distancesFromStart.push(distFromStart);
-  }
-
-  const totalDist = distancesFromStart[distancesFromStart.length - 1];
-
-  // Filtre pour masquer 200m au début et 200m à la fin
-  const filteredTrkpts = points.filter((_, index) => {
-    const dStart = distancesFromStart[index];
-    const dEnd = totalDist - dStart;
-    return dStart >= 200 && dEnd >= 200;
-  });
-
-  if (filteredTrkpts.length < 2) return text;
-
-  const parentTrkseg = filteredTrkpts[0].node.parentElement;
-  if (parentTrkseg) {
-    parentTrkseg.innerHTML = "";
-    filteredTrkpts.forEach((p) => parentTrkseg.appendChild(p.node));
-  }
-
-  const serializer = new XMLSerializer();
-  return serializer.serializeToString(xmlDoc);
-}
-
 export function DailyDistanceForm({
   onSuccess,
   defaultPatrolId,
@@ -158,6 +98,7 @@ export function DailyDistanceForm({
 }: DailyDistanceFormProps) {
   const { user, profile, isAdmin, refreshProfile } = useAuth();
   const { theme } = useSeasonalTheme();
+  const season = useChallengeSeason();
 
   // Form states
   const [sport, setSport] = useState<ActivitySport>("velo");
@@ -166,7 +107,7 @@ export function DailyDistanceForm({
   const [appDetailsOpen, setAppDetailsOpen] = useState(false);
   const [appOtherDate, setAppOtherDate] = useState(false);
   const [elevationM, setElevationM] = useState("");
-  const [rideDate, setRideDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [rideDate, setRideDate] = useState(() => brusselsDate());
   const [selectedPatrolId, setSelectedPatrolId] = useState<string>(defaultPatrolId || "");
   const [openChallenges, setOpenChallenges] = useState<
     Array<{
@@ -218,25 +159,12 @@ export function DailyDistanceForm({
 
       if (error) throw error;
 
-      let list = (data as Patrol[]) || [];
+      const list = (data as Patrol[]) || [];
 
-      const hasStaff = list.some((p) => isStaffPatrol(p));
-      if (!hasStaff) {
-        list = [
-          ...list,
-          {
-            id: "staff",
-            name: TROOP_STAFF_PATROL_NAME,
-            category: "staff",
-            created_at: new Date().toISOString(),
-          },
-        ];
-      }
       setPatrols(list);
     } catch (err) {
-      console.warn("Erreur chargement patrouilles depuis Supabase, repli local:", err);
-      const localPatrols = db.getPatrols();
-      setPatrols(localPatrols);
+      console.error("Erreur chargement des patrouilles depuis Supabase :", err);
+      setPatrols([]);
     } finally {
       setLoadingPatrols(false);
     }
@@ -310,7 +238,7 @@ export function DailyDistanceForm({
         return;
       }
       setGpxFile(file);
-      toast.success(`Fichier GPX "${file.name}" attaché (vie privée protégée)`);
+      toast.success(`Fichier GPX "${file.name}" attaché (vérifié avant envoi)`);
     }
   };
 
@@ -334,10 +262,8 @@ export function DailyDistanceForm({
       return;
     }
 
-    if (!rideDate || rideDate < CHALLENGE_START) {
-      toast.error(
-        `Le défi a commencé le ${CHALLENGE_START_LABEL} : les sorties d'avant ne comptent pas.`,
-      );
+    if (!season.ready || !rideDate || rideDate < season.start || rideDate > season.latest) {
+      toast.error(season.message);
       return;
     }
 
@@ -380,8 +306,8 @@ export function DailyDistanceForm({
       }
     }
 
-    const trimmedStrava = stravaUrl.trim();
-    if (activeTab === "strava" && trimmedStrava) {
+    const trimmedStrava = activeTab === "strava" ? stravaUrl.trim() : "";
+    if (activeTab === "strava") {
       if (!/^https:\/\/(www\.)?strava\.(com|app\.link)\//i.test(trimmedStrava)) {
         toast.error(
           "Lien Strava invalide. Il doit commencer par https://www.strava.com/activities/...",
@@ -398,6 +324,8 @@ export function DailyDistanceForm({
     setSubmitting(true);
 
     try {
+      // Validate and redact before any profile update or proof upload.
+      const croppedGpx = gpxFile ? await processAndCropGpx(gpxFile) : null;
       const selectedPatrol = patrols.find((p) => p.id === selectedPatrolId);
       const patrolName = selectedPatrol ? selectedPatrol.name : "Patrouille";
 
@@ -417,33 +345,27 @@ export function DailyDistanceForm({
 
       const targetUserId = realUser.id;
 
-      // Upsert profile
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await (supabase.from("profiles") as any).upsert(
-          {
-            id: targetUserId,
-            email: realUser.email || user?.email || "scout@alezan42.fr",
-            full_name: profile?.full_name || realUser.email?.split("@")[0] || "Scout",
-            totem: profile?.totem || null,
-            quali: profile?.quali || null,
-            patrol_id:
-              selectedPatrolId && isUUID(selectedPatrolId)
-                ? selectedPatrolId
-                : profile?.patrol_id || null,
-            onboarded: true,
-          },
-          { onConflict: "id" },
-        );
-        if (refreshProfile) {
-          await refreshProfile();
-        }
-      } catch (err) {
-        console.warn("Synchronisation du profil avec la patrouille sélectionnée :", err);
-      }
+      // Ensure the authenticated member has a profile before creating an activity.
+      const { error: profileError } = await supabase.from("profiles").upsert(
+        {
+          id: targetUserId,
+          email: realUser.email || user?.email || null,
+          full_name: profile?.full_name || realUser.email?.split("@")[0] || "Scout",
+          totem: profile?.totem || null,
+          quali: profile?.quali || null,
+          patrol_id:
+            selectedPatrolId && isUUID(selectedPatrolId)
+              ? selectedPatrolId
+              : profile?.patrol_id || null,
+          onboarded: true,
+        },
+        { onConflict: "id" },
+      );
+      if (profileError) throw profileError;
+      await refreshProfile();
 
       // 5. Envoi de l'image de preuve vers Supabase Storage
-      let proofPublicUrl: string | null = null;
+      let proofObjectPath: string | null = null;
       if (proofFile && activeTab === "photo") {
         const fileExt =
           (proofFile.name.split(".").pop() || "")
@@ -454,7 +376,7 @@ export function DailyDistanceForm({
 
         const { error: uploadError } = await supabase.storage
           .from("proofs")
-          .upload(fileName, proofFile, { upsert: true });
+          .upload(fileName, proofFile, { upsert: false });
 
         if (uploadError) {
           toast.error("Erreur lors de l'envoi de la preuve : " + uploadError.message);
@@ -462,41 +384,25 @@ export function DailyDistanceForm({
           return;
         }
 
-        const { data: urlData } = supabase.storage.from("proofs").getPublicUrl(fileName);
-        proofPublicUrl = urlData.publicUrl;
+        proofObjectPath = fileName;
       }
 
-      // 6. Traitement et envoi optionnel du fichier GPX (rogné 200m début/fin)
-      let gpxPublicUrl: string | null = null;
-      if (gpxFile) {
-        try {
-          const croppedContent = await processAndCropGpx(gpxFile);
-          const gpxBlob = new Blob([croppedContent], { type: "application/gpx+xml" });
-          const gpxFileName = `${targetUserId}_${Date.now()}_${crypto.randomUUID()}.gpx`;
-
-          const { error: gpxUploadError } = await supabase.storage
-            .from("proofs")
-            .upload(gpxFileName, gpxBlob, { upsert: true });
-
-          if (!gpxUploadError) {
-            const { data: gpxUrlData } = supabase.storage.from("proofs").getPublicUrl(gpxFileName);
-            gpxPublicUrl = gpxUrlData.publicUrl;
-          } else if (selectedChallenge?.route_validation || selectedChallenge?.gpx_template_path) {
-            toast.error("Impossible d’envoyer le GPX requis pour ce défi.");
-            setSubmitting(false);
-            return;
-          }
-        } catch (err) {
-          console.warn("Erreur lors du traitement GPX :", err);
-          if (selectedChallenge?.route_validation || selectedChallenge?.gpx_template_path) {
-            toast.error("Impossible de préparer le GPX requis pour ce défi.");
-            setSubmitting(false);
-            return;
-          }
+      // 6. Upload only the already-redacted track. Never silently omit it.
+      let gpxObjectPath: string | null = null;
+      if (croppedGpx) {
+        const gpxBlob = new Blob([croppedGpx], { type: "application/gpx+xml" });
+        const gpxFileName = `${targetUserId}_${Date.now()}_${crypto.randomUUID()}.gpx`;
+        const { error: gpxUploadError } = await supabase.storage
+          .from("proofs")
+          .upload(gpxFileName, gpxBlob, { upsert: false });
+        if (gpxUploadError) {
+          await removeStorageFiles([proofObjectPath]);
+          throw new Error("Impossible d’envoyer le GPX : " + gpxUploadError.message);
         }
+        gpxObjectPath = gpxFileName;
       }
 
-      const isAutoApproved = !!(trimmedStrava || isAdmin || profile?.is_admin);
+      const isAutoApproved = isAdmin;
       const activityStatus: "approved" | "pending" = isAutoApproved ? "approved" : "pending";
 
       const finalNote =
@@ -546,8 +452,8 @@ export function DailyDistanceForm({
         elevation_m: elevation,
         ride_date: rideDate,
         strava_link: trimmedStrava || null,
-        proof_path: proofPublicUrl,
-        gpx_path: gpxPublicUrl, // <-- Enregistre le lien du GPX épuré pour la carte interactive
+        proof_path: proofObjectPath,
+        gpx_path: gpxObjectPath,
         note: finalNote,
         status: activityStatus,
         group_ride_id: groupRideId,
@@ -562,15 +468,16 @@ export function DailyDistanceForm({
 
       if (insertError) {
         // La sortie n'a pas été créée : ne pas laisser de fichiers orphelins
-        await removeStorageFiles([proofPublicUrl, gpxPublicUrl]);
+        await removeStorageFiles([proofObjectPath, gpxObjectPath]);
         if (createdGroupId) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           await (supabase as any).from("group_rides").delete().eq("id", createdGroupId);
         }
         console.error("Erreur insertion activités Supabase :", insertError);
         toast.error(
-          insertError.message?.includes("date_debut_defi")
-            ? `Le défi a commencé le ${CHALLENGE_START_LABEL} : les sorties d'avant ne comptent pas.`
+          insertError.message?.includes("date_debut_defi") ||
+            insertError.message?.includes("saison_chevaliers")
+            ? season.message
             : "Erreur Supabase : " + insertError.message,
         );
         setSubmitting(false);
@@ -582,23 +489,6 @@ export function DailyDistanceForm({
         createdData?.status === "approved" || createdData?.status === "pending"
           ? createdData.status
           : activityStatus;
-
-      const localActivity = db.addActivity({
-        id: createdData?.id,
-        user_id: targetUserId,
-        km: kmNumber,
-        ride_date: rideDate,
-        strava_link: trimmedStrava || null,
-        proof_path: proofPublicUrl,
-        gpx_path: gpxPublicUrl,
-        sport,
-        note: finalNote,
-        status: finalStatus,
-      });
-
-      if (profile && selectedPatrolId) {
-        db.updateProfile(targetUserId, { patrol_id: selectedPatrolId });
-      }
 
       const sportLabel = SPORT_INFO[sport].label;
 
@@ -662,7 +552,7 @@ export function DailyDistanceForm({
 
       if (onSuccess) {
         onSuccess({
-          id: createdData?.id || localActivity.id,
+          id: createdData.id,
           km: kmNumber,
           ride_date: rideDate,
           patrol_id: selectedPatrolId,
@@ -733,7 +623,7 @@ export function DailyDistanceForm({
           <MapPin className="h-3.5 w-3.5 text-primary" />
           {selectedChallengeForForm?.route_validation || selectedChallengeForForm?.gpx_template_path
             ? "Fichier GPX requis pour ce défi"
-            : "Fichier GPX du parcours (optionnel pour la carte de la troupe)"}
+            : "Fichier GPX du parcours (optionnel, réservé au staff)"}
         </Label>
         <div className="flex items-center gap-3">
           <label className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-border p-3 text-xs font-semibold text-muted-foreground hover:border-primary hover:text-foreground transition-all">
@@ -767,19 +657,16 @@ export function DailyDistanceForm({
         </div>
         <p className="text-[11px] text-muted-foreground">
           🔒 <strong>Vie privée :</strong> Les 200 premiers et derniers mètres de ton tracé GPX
-          seront automatiquement rognés pour masquer ton départ et ton arrivée.
+          seront rognés et les métadonnées supprimées. Un tracé trop court ou trop peu détaillé sera
+          refusé ; un parcours en boucle peut toutefois repasser près du départ.
         </p>
       </div>
     </>
   );
 
   function renderAppForm() {
-    const iso = (d: Date) =>
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    const today = iso(new Date());
-    const yesterdayDate = new Date();
-    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-    const yesterday = iso(yesterdayDate);
+    const today = season.today;
+    const yesterday = brusselsDate(new Date(Date.now() - 86400000));
     const dateMode = appOtherDate
       ? "other"
       : rideDate === today
@@ -904,7 +791,7 @@ export function DailyDistanceForm({
             </button>
             <button
               type="button"
-              disabled={joiningGroup || yesterday < CHALLENGE_START}
+              disabled={joiningGroup || yesterday < season.start || yesterday > season.latest}
               className={pill(dateMode === "yesterday")}
               onClick={() => {
                 setAppOtherDate(false);
@@ -930,8 +817,8 @@ export function DailyDistanceForm({
               onChange={(e) => setRideDate(e.target.value)}
               disabled={joiningGroup}
               className="h-12 rounded-2xl bg-card text-[16px]"
-              min={CHALLENGE_START}
-              max={today}
+              min={season.start}
+              max={season.latest}
               required
             />
           )}
@@ -1006,7 +893,7 @@ export function DailyDistanceForm({
           <Select
             value={selectedPatrolId}
             onValueChange={(val) => setSelectedPatrolId(val)}
-            disabled={loadingPatrols || submitting}
+            disabled={loadingPatrols || submitting || (!isAdmin && !!profile?.patrol_id)}
           >
             <SelectTrigger
               id="patrol-select"
@@ -1100,9 +987,10 @@ export function DailyDistanceForm({
 
         {/* Bouton d'envoi */}
         <div className="pt-1">
+          {!season.ready && <p className="mb-2 text-sm text-muted-foreground">{season.message}</p>}
           <Button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || !season.ready}
             className={cn(
               "h-14 w-full rounded-2xl text-[17px] font-bold shadow-sm",
               sport === "course"
@@ -1222,14 +1110,14 @@ export function DailyDistanceForm({
                   Patrouille associée <span className="text-destructive">*</span>
                 </Label>
                 <span className="text-[11px] text-muted-foreground">
-                  Les kilomètres compteront pour cette patrouille
+                  Affectation confirmée par le staff
                 </span>
               </div>
 
               <Select
                 value={selectedPatrolId}
                 onValueChange={(val) => setSelectedPatrolId(val)}
-                disabled={loadingPatrols || submitting}
+                disabled={loadingPatrols || submitting || (!isAdmin && !!profile?.patrol_id)}
               >
                 <SelectTrigger
                   id="patrol-select"
@@ -1368,14 +1256,11 @@ export function DailyDistanceForm({
                   onChange={(e) => setRideDate(e.target.value)}
                   disabled={joiningGroup}
                   className="h-12 rounded-xl shadow-xs"
-                  min={CHALLENGE_START}
-                  max={new Date().toISOString().slice(0, 10)}
+                  min={season.start}
+                  max={season.latest}
                   required
                 />
-                <p className="text-[11px] text-muted-foreground">
-                  Par défaut : aujourd&apos;hui (modifiable si la sortie date d&apos;hier). Seules
-                  les sorties depuis le {CHALLENGE_START_LABEL} comptent.
-                </p>
+                <p className="text-[11px] text-muted-foreground">{season.message}</p>
               </div>
             </div>
 
@@ -1515,9 +1400,10 @@ export function DailyDistanceForm({
               />
             </div>
 
+            {!season.ready && <p className="text-sm text-muted-foreground">{season.message}</p>}
             <Button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || !season.ready}
               size="lg"
               className={cn(
                 "h-auto min-h-11 w-full whitespace-normal rounded-xl py-3 font-display font-black text-sm sm:text-base shadow-md gap-2 transition-all",

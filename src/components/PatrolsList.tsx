@@ -51,7 +51,7 @@ export interface PatrolWithStats {
   totalKm: number;
   membersCount: number;
   contributorsCount: number;
-  topContributor?: { name: string; km: number };
+  topContributor?: { name: string; km: number } | undefined;
   members: PatrolMemberStat[];
   rank: number;
   percentage: number;
@@ -191,8 +191,7 @@ export function PatrolsList({
               }
 
               if (matchedPatrol) {
-                if (!statsMap[matchedPatrol.id]) statsMap[matchedPatrol.id] = [];
-                statsMap[matchedPatrol.id].push({
+                (statsMap[matchedPatrol.id] ??= []).push({
                   userId: row.user_id,
                   displayName: row.display_name || "Scout",
                   km: userKm,
@@ -245,8 +244,7 @@ export function PatrolsList({
                 (p) => p.id === patrolId || (isTroopStaffPatrol(p) && patrolId === "staff"),
               );
               if (matchedPatrol) {
-                if (!statsMap[matchedPatrol.id]) statsMap[matchedPatrol.id] = [];
-                statsMap[matchedPatrol.id].push({
+                (statsMap[matchedPatrol.id] ??= []).push({
                   userId: uid,
                   displayName: profile?.totem || profile?.full_name || "Scout",
                   km,
@@ -296,10 +294,8 @@ export function PatrolsList({
 
       // Trier les membres par kilomètres décroissants
       const sortedMembers = [...members].sort((a, b) => b.km - a.km);
-      const topContributor =
-        sortedMembers.length > 0
-          ? { name: sortedMembers[0].displayName, km: sortedMembers[0].km }
-          : undefined;
+      const top = sortedMembers[0];
+      const topContributor = top ? { name: top.displayName, km: top.km } : undefined;
 
       return {
         id: p.id,

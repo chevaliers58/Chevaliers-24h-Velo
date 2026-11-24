@@ -1,3 +1,4 @@
+import { PrivateProofButton } from "@/components/PrivateProofButton";
 import { useCallback, useEffect, useState } from "react";
 import { Check, ExternalLink, Pencil, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
@@ -138,8 +139,6 @@ export function AdminChallenges() {
     const p = scouts.find((x) => x.id === id);
     return p?.totem || p?.full_name || "Scout";
   };
-  const fileUrl = (path: string | null | undefined) =>
-    path ? supabase.storage.from("proofs").getPublicUrl(path).data.publicUrl : null;
   const startEdit = (challenge: Challenge) => {
     setEditing(challenge.id);
     setEditTitle(challenge.title);
@@ -453,8 +452,6 @@ export function AdminChallenges() {
         entries.map((entry) => {
           const challenge = entry.scout_challenges;
           const activity = entry.activity_id ? activities[entry.activity_id] : undefined;
-          const expectedUrl = fileUrl(challenge?.gpx_template_path);
-          const submittedUrl = fileUrl(activity?.gpx_path);
           const canReview = activity?.status === "approved";
           return (
             <div key={entry.id} className="flex flex-col gap-3 rounded-xl border bg-card p-4">
@@ -478,26 +475,8 @@ export function AdminChallenges() {
                   </p>
                 )}
                 <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                  {expectedUrl && (
-                    <a
-                      className="inline-flex items-center gap-1 text-primary underline"
-                      href={expectedUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Tracé demandé <ExternalLink className="h-3 w-3" />
-                    </a>
-                  )}
-                  {submittedUrl && (
-                    <a
-                      className="inline-flex items-center gap-1 text-primary underline"
-                      href={submittedUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Tracé soumis <ExternalLink className="h-3 w-3" />
-                    </a>
-                  )}
+                  <PrivateProofButton path={challenge?.gpx_template_path} label="Tracé demandé" />
+                  <PrivateProofButton path={activity?.gpx_path} label="Tracé soumis" />
                   {activity?.strava_link && (
                     <a
                       className="inline-flex items-center gap-1 text-primary underline"
@@ -508,16 +487,7 @@ export function AdminChallenges() {
                       Voir Strava <ExternalLink className="h-3 w-3" />
                     </a>
                   )}
-                  {activity?.proof_path && (
-                    <a
-                      className="inline-flex items-center gap-1 text-primary underline"
-                      href={activity.proof_path}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Voir la preuve <ExternalLink className="h-3 w-3" />
-                    </a>
-                  )}
+                  <PrivateProofButton path={activity?.proof_path} label="Preuve" />
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2 border-t pt-3">

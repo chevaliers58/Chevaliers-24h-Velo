@@ -40,7 +40,10 @@ export function ForgotPassword({ initialEmail = "" }: { initialEmail?: string })
     // On ne révèle jamais si l'adresse existe : même message dans tous les cas.
     await supabase.auth
       .resetPasswordForEmail(value, {
-        redirectTo: `${window.location.origin}/nouveau-mot-de-passe`,
+        redirectTo: new URL(
+          `${import.meta.env.BASE_URL}nouveau-mot-de-passe`,
+          window.location.origin,
+        ).href,
       })
       .catch(() => undefined);
     setBusy(false);
@@ -52,7 +55,8 @@ export function ForgotPassword({ initialEmail = "" }: { initialEmail?: string })
       {done ? (
         <p className="text-xs text-foreground">
           Si un compte existe pour <strong>{email.trim()}</strong>, un lien pour choisir un nouveau
-          mot de passe vient d&apos;être envoyé (pense à regarder dans les spams).
+          mot de passe devrait arriver si le service d&apos;e-mail est disponible (pense à regarder
+          dans les spams).
           <br />
           <strong>Rien reçu après quelques minutes ?</strong> Demande à un animateur : il peut te
           donner un mot de passe temporaire.

@@ -19,7 +19,9 @@ begin
   if _password is null or length(_password) < 6 or length(_password) > 72 then
     raise exception 'Le mot de passe doit faire entre 6 et 72 caractères';
   end if;
-  if _user_id <> auth.uid() and public.has_role(_user_id, 'admin') then
+  if _user_id <> auth.uid() and exists (
+    select 1 from public.user_roles where user_id = _user_id and role = 'admin'
+  ) then
     raise exception 'Impossible de modifier le mot de passe d''un autre admin';
   end if;
 

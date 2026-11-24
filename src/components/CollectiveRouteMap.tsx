@@ -12,12 +12,12 @@ import {
   Navigation,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { db } from "@/lib/database";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { fetchStaffCollectiveDistances } from "@/lib/staffCollective";
 
 export interface Waypoint {
   id: string;
@@ -89,10 +89,12 @@ export function CollectiveRouteMap({ className, overrideKm }: CollectiveRouteMap
         let kmSum = 0;
         if (actsData && actsData.length > 0) {
           kmSum = actsData
-            .filter((a) => a.status === "approved" || a.status === "pending")
+            .filter((a) => a.status === "approved")
             .reduce((sum, item) => sum + (Number(item.km) || 0), 0);
         }
 
+        const collective = await fetchStaffCollectiveDistances();
+        kmSum += collective.reduce((sum, row) => sum + Number(row.km), 0);
         setTotalKm(Math.round(kmSum * 10) / 10);
       } catch (err) {
         console.warn("Erreur chargement kilomètres collectifs :", err);
@@ -108,7 +110,7 @@ export function CollectiveRouteMap({ className, overrideKm }: CollectiveRouteMap
   useEffect(() => {
     loadWaypoints();
     loadCollectiveDistance();
-    return db.subscribe(() => loadCollectiveDistance(false));
+    return undefined;
   }, [loadCollectiveDistance]);
 
   // Calcul des étapes actuelles et suivantes
@@ -157,8 +159,9 @@ export function CollectiveRouteMap({ className, overrideKm }: CollectiveRouteMap
       nextIdx = waypoints.length - 1;
     }
 
-    const next = waypoints[nextIdx];
-    const prev = waypoints[Math.max(0, nextIdx - 1)];
+    // The empty case is handled above; both indices are bounded by the array.
+    const next = waypoints[nextIdx]!;
+    const prev = waypoints[Math.max(0, nextIdx - 1)]!;
 
     const kmRemaining = Math.max(0, next.target_km - totalKm);
     const segmentSpan = next.target_km - prev.target_km;
@@ -166,7 +169,7 @@ export function CollectiveRouteMap({ className, overrideKm }: CollectiveRouteMap
     const stagePercent =
       segmentSpan > 0 ? Math.min(100, Math.max(0, (segmentProgress / segmentSpan) * 100)) : 100;
 
-    const maxExpeditionKm = waypoints[waypoints.length - 1].target_km || 1;
+    const maxExpeditionKm = waypoints.at(-1)?.target_km || 1;
     const overallPercent = Math.min(100, Math.max(0, (totalKm / maxExpeditionKm) * 100));
     // Tracé coloré : avance d'étape en étape (les étapes sont régulièrement espacées)
     const prevIdx = Math.max(0, nextIdx - 1);
@@ -209,6 +212,7 @@ export function CollectiveRouteMap({ className, overrideKm }: CollectiveRouteMap
     return waypoints.reduce((acc, pt, idx) => {
       if (idx === 0) return `M ${pt.x} ${pt.y}`;
       const prev = waypoints[idx - 1];
+      if (!prev) return acc;
       const cx1 = prev.x + (pt.x - prev.x) * 0.5;
       const cy1 = prev.y;
       const cx2 = prev.x + (pt.x - prev.x) * 0.5;
