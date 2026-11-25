@@ -68,7 +68,7 @@ function AppHome() {
         .filter((a) => a.status === "pending")
         .reduce((sum, a) => sum + Number(a.km || 0), 0),
     };
-  }, [mine.data, month.from, month.to]);
+  }, [mine.data, week.from, week.to]);
 
   const nextTrophy = useMemo(
     () => (mine.data ? getNextDistanceTrophy(mine.data, thresholds.single_ride) : null),
