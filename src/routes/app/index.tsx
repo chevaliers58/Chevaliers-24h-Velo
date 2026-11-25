@@ -144,7 +144,7 @@ function AppHome() {
               <div>
                 <p className="font-display text-[22px] font-black leading-none tabular-nums text-foreground">
                   {formatM(stats.elevation)}
-                  <span className="ml-1 text-[13px] font-bold text-muted-foreground">km</span>
+                  <span className="ml-1 text-[13px] font-bold text-muted-foreground">m</span>
                 </p>
                 <p className="mt-1 text-[13px] text-muted-foreground">Mon dénivelé</p>
               </div>
