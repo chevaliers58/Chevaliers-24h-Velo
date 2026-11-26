@@ -190,6 +190,8 @@ export function rankOf<T extends { km: number }>(rows: T[], match: (row: T) => b
 
 const nf = new Intl.NumberFormat("fr-BE", { maximumFractionDigits: 1 });
 export const formatKm = (km: number) => nf.format(km);
+export const formatM = (m: number) => nf.format(m);
+
 
 export interface MyActivity {
   id: string;

@@ -19,6 +19,7 @@ import { useAuth } from "@/lib/useAuth";
 import {
   daysUntil,
   formatKm,
+  formatM,
   periodRange,
   rankOf,
   rankPatrols,
@@ -36,6 +37,10 @@ import { ExpeditionGoal } from "@/components/ExpeditionGoal";
 import { WeeklyStreakCard } from "@/components/WeeklyStreakCard";
 import { useSeasonalTheme } from "@/context/SeasonalThemeContext";
 import hero from "@/assets/hero.jpg";
+import { useQuery } from "@tanstack/react-query";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
+import { isCollectivePatrol } from "@/lib/categories";
 
 export const Route = createFileRoute("/app/")({ ssr: false, component: AppHome });
 
@@ -44,10 +49,59 @@ function greeting() {
   return h < 6 ? "Bonne nuit" : h < 12 ? "Bonjour" : h < 18 ? "Salut" : "Bonsoir";
 }
 
+const db = supabase as unknown as SupabaseClient;
+
 function AppHome() {
-  const { user, profile } = useAuth();
+  const { user, profile, isAdmin } = useAuth();
   const troop = useTroopData();
   const mine = useMyActivities(user?.id);
+  const isScout =
+    !isAdmin &&
+    !isCollectivePatrol({
+      name: profile?.patrol_name,
+      category: profile?.patrol_category,
+    }) &&
+    [1, 2, 3, 4].includes(Number(profile?.scout_year));
+
+  const pointsQuery = useQuery<{ points: number; km: number }[]>({
+    queryKey: ["my-annual-points", user?.id],
+    enabled: !!user && isScout,
+    retry: false,
+    queryFn: async () => {
+      const { data, error } = await db.rpc("annual_my_points");
+
+      if (error) throw error;
+
+      return data ?? [];
+    },
+  });
+
+  const rankingQuery = useQuery<
+    { user_id: string; display_name: string; km: number }[]
+  >({
+    queryKey: ["private-patrol-ranking", user?.id, isAdmin],
+    enabled: !!user && !isScout,
+    retry: false,
+    queryFn: async () => {
+      const { data, error } = await db.rpc("annual_my_patrol_ranking");
+
+      if (error) throw error;
+
+      return data ?? [];
+    },
+  });
+
+  const rankedMembers = (rankingQuery.data ?? []).filter(
+    (member) => Number(member.km) > 0,
+  );
+
+  const rankIndex = rankedMembers.findIndex(
+    (member) => member.user_id === user?.id,
+  );
+
+  const myRank = rankIndex >= 0 ? rankIndex + 1 : null;
+
+  const myPoints = pointsQuery.data?.[0]?.points ?? 0;
   const event = useNextEvent();
   const { thresholds } = useDistanceAwards();
   // Même photo que l'accueil du site : celle du thème si l'admin en a mis une
@@ -56,15 +110,16 @@ function AppHome() {
   const month = periodRange("month")!;
   const stats = useMemo(() => {
     const acts = mine.data ?? [];
+    const approved = acts.filter((a) => a.status === "approved");
     const inMonth = acts.filter((a) => a.ride_date >= month.from && a.ride_date <= month.to);
-    const approved = inMonth.filter((a) => a.status === "approved");
     return {
-      total: acts.filter((a) => a.status === "approved").reduce((s, a) => s + Number(a.km || 0), 0),
-      km: approved.reduce((s, a) => s + Number(a.km || 0), 0),
-      rides: approved.length,
+      total: approved.reduce((sum, a) => sum + Number(a.km || 0), 0),
+      km: inMonth.reduce((sum, a) => sum + Number(a.km || 0), 0),
+      elevation: approved.reduce((sum, a) => sum + Number(a.elevation_m || 0), 0),
+      rides: inMonth.length,
       pending: acts
         .filter((a) => a.status === "pending")
-        .reduce((s, a) => s + Number(a.km || 0), 0),
+        .reduce((sum, a) => sum + Number(a.km || 0), 0),
     };
   }, [mine.data, month.from, month.to]);
 
@@ -105,7 +160,7 @@ function AppHome() {
         <>
           {/* Mon mois */}
           <AppCard className="p-5">
-            <div className="grid grid-cols-[minmax(0,1fr)_7.5rem] items-center gap-1">
+            <div className="grid grid-cols-[minmax(0,1fr)_8.25rem] items-center gap-1">
               <div className="min-w-0">
                 <p className="text-[13px] font-semibold uppercase tracking-wide text-muted-foreground">
                   Mes km ce mois-ci
@@ -125,13 +180,26 @@ function AppHome() {
                   )}
                 </p>
               </div>
-              <ExpeditionGoal
-                totalKm={troopKm}
-                variant="mini"
-                onOpen={(id) =>
-                  void navigate({ to: "/app/expedition", search: { etape: id } } as never)
-                }
-              />
+              <div className="flex min-w-0 flex-col items-center rounded-xl border border-border/60 bg-muted/30 px-1 py-2">
+                <p className="mt-0.5 font-display text-[15px] font-black leading-none tabular-nums text-foreground">
+                  {formatKm(troopKm)}
+                  <span className="ml-1 text-[10px] font-semibold text-muted-foreground">km</span>
+                </p>
+
+                <p className="text-[8px] font-semibold uppercase leading-tight text-muted-foreground">
+                 parcourus par la troupe
+                </p>
+
+              <div className="mt-2 w-full">
+                <ExpeditionGoal
+                  totalKm={troopKm}
+                  variant="mini"
+                  onOpen={(id) =>
+                    void navigate({ to: "/app/expedition", search: { etape: id } } as never)
+                  }
+                />
+              </div>
+            </div>
             </div>
             <div className="mt-4 grid grid-cols-3 gap-3 border-t border-border/60 pt-4">
               <div>
@@ -143,17 +211,40 @@ function AppHome() {
               </div>
               <div>
                 <p className="font-display text-[22px] font-black leading-none tabular-nums text-foreground">
-                  {formatKm(myPatrol?.km ?? 0)}
-                  <span className="ml-1 text-[13px] font-bold text-muted-foreground">km</span>
+                  {formatM(stats.elevation)}
+                  <span className="ml-1 text-[13px] font-bold text-muted-foreground">m</span>
                 </p>
-                <p className="mt-1 text-[13px] text-muted-foreground">Ma patrouille</p>
+                <p className="mt-1 text-[13px] text-muted-foreground">Mon dénivelé total</p>
               </div>
-              <div>
-                <p className="font-display text-[22px] font-black leading-none tabular-nums text-foreground">
-                  {formatKm(troopKm)}
-                  <span className="ml-1 text-[13px] font-bold text-muted-foreground">km</span>
+              <div className="min-w-0">
+                <p className="font-display text-[20px] sm:text-[22px] font-black leading-none tabular-nums text-foreground">
+                  {isScout ? (
+                    pointsQuery.isPending ? (
+                      "…"
+                    ) : pointsQuery.isError ? (
+                      "—"
+                    ) : (
+                      <>
+                        {Number(pointsQuery.data?.[0]?.points ?? 0).toLocaleString("fr-BE", {
+                          maximumFractionDigits: 2,
+                        })}
+                        <span className="ml-1 text-[13px] font-bold text-muted-foreground">
+                          pts
+                        </span>
+                      </>
+                    )
+                  ) : rankingQuery.isPending ? (
+                    "…"
+                  ) : rankingQuery.isError || myRank === null ? (
+                    "—"
+                  ) : (
+                    `${myRank}e`
+                  )}
                 </p>
-                <p className="mt-1 text-[13px] text-muted-foreground">Toute la troupe</p>
+
+                <p className="mt-1 text-[13px] text-muted-foreground">
+                  {isScout ? "Mes points" : "Classement général"}
+                </p>
               </div>
             </div>
             <Link
