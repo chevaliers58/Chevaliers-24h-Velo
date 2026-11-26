@@ -179,13 +179,13 @@ function AppHome() {
                 </p>
               </div>
               <div className="flex min-w-0 flex-col items-center rounded-xl border border-border/60 bg-muted/30 px-1 py-2">
-                <p className="text-[9px] font-semibold uppercase leading-tight text-muted-foreground">
-                  Total troupe
-                </p>
-
                 <p className="mt-0.5 font-display text-[15px] font-black leading-none tabular-nums text-foreground">
                   {formatKm(troopKm)}
                   <span className="ml-1 text-[10px] font-semibold text-muted-foreground">km</span>
+                </p>
+
+                <p className="text-[8px] font-semibold uppercase leading-tight text-muted-foreground">
+                 parcourus par la troupe
                 </p>
 
               <div className="mt-2 w-full">
@@ -241,7 +241,7 @@ function AppHome() {
                 </p>
 
                 <p className="mt-1 text-[13px] text-muted-foreground">
-                  {isScout ? "Mes points" : "Rang privé"}
+                  {isScout ? "Mes points" : "Classement général"}
                 </p>
               </div>
             </div>
