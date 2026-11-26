@@ -37,8 +37,12 @@ import { ExpeditionGoal } from "@/components/ExpeditionGoal";
 import { WeeklyStreakCard } from "@/components/WeeklyStreakCard";
 import { useSeasonalTheme } from "@/context/SeasonalThemeContext";
 import hero from "@/assets/hero.jpg";
+import { useQuery } from "@tanstack/react-query";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/app/")({ ssr: false, component: AppHome });
+const db = supabase as unknown as SupabaseClient;
 
 function greeting() {
   const h = new Date().getHours();
@@ -49,6 +53,22 @@ function AppHome() {
   const { user, profile } = useAuth();
   const troop = useTroopData();
   const mine = useMyActivities(user?.id);
+  const isScout = [1, 2, 3, 4].includes(Number(profile?.scout_year))
+    && profile?.patrol_category !== "staff"
+    && !profile?.is_chef;
+
+  const pointsQuery = useQuery<{ points: number; km: number }[]>({
+    queryKey: ["my-annual-points", user?.id],
+    enabled: !!user && isScout,
+    retry: false,
+    queryFn: async () => {
+      const { data, error } = await db.rpc("annual_my_points");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const myPoints = pointsQuery.data?.[0]?.points ?? 0;
   const event = useNextEvent();
   const { thresholds } = useDistanceAwards();
   // Même photo que l'accueil du site : celle du thème si l'admin en a mis une
@@ -155,10 +175,9 @@ function AppHome() {
               </div>
               <div>
                 <p className="font-display text-[22px] font-black leading-none tabular-nums text-foreground">
-                  {formatKm(troopKm)}
-                  <span className="ml-1 text-[13px] font-bold text-muted-foreground">km</span>
-                </p>
-                <p className="mt-1 text-[13px] text-muted-foreground">Toute la troupe</p>
+                  {pointsQuery.isPending ? "…" : pointsQuery.isError
+                    ? "Indisponible"
+                    : myPoints.toLocaleString("fr-BE", { maximumFractionDigits: 2 })}
               </div>
             </div>
             <Link
