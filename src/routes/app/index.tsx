@@ -125,6 +125,11 @@ function AppHome() {
                   )}
                 </p>
               </div>
+              <p className="font-display text-[22px] font-black leading-none tabular-nums text-foreground">
+                  {formatKm(troopKm)}
+                  <span className="ml-1 text-[13px] font-bold text-muted-foreground">km</span>
+              </p>
+              <p className="mt-1 text-[13px] text-muted-foreground">parcourus par la troupe</p>
               <ExpeditionGoal
                 totalKm={troopKm}
                 variant="mini"
@@ -132,11 +137,6 @@ function AppHome() {
                   void navigate({ to: "/app/expedition", search: { etape: id } } as never)
                 }
               />
-              <p className="mt-1 text-[13px] text-muted-foreground">Toute la troupe</p>
-              <p className="font-display text-[22px] font-black leading-none tabular-nums text-foreground">
-                  {formatKm(troopKm)}
-                  <span className="ml-1 text-[13px] font-bold text-muted-foreground">km</span>
-              </p>
             </div>
             <div className="mt-4 grid grid-cols-3 gap-3 border-t border-border/60 pt-4">
               <div>
