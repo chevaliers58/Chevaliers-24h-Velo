@@ -54,21 +54,21 @@ function AppHome() {
   // Même photo que l'accueil du site : celle du thème si l'admin en a mis une
   const { background: themeBackground } = useSeasonalTheme();
 
-  const week = periodRange("week")!;
+  const month = periodRange("month")!;
   const stats = useMemo(() => {
     const acts = mine.data ?? [];
     const approved = acts.filter((a) => a.status === "approved");
-    const inWeek = acts.filter((a) => a.ride_date >= week.from && a.ride_date <= week.to);
+    const inMonth = acts.filter((a) => a.ride_date >= month.from && a.ride_date <= month.to);
     return {
       total: approved.reduce((sum, a) => sum + Number(a.km || 0), 0),
-      km: inWeek.reduce((sum, a) => sum + Number(a.km || 0), 0),
+      km: inMonth.reduce((sum, a) => sum + Number(a.km || 0), 0),
       elevation: approved.reduce((sum, a) => sum + Number(a.elevation_m || 0), 0),
-      rides: inWeek.length,
+      rides: inMonth.length,
       pending: acts
         .filter((a) => a.status === "pending")
         .reduce((sum, a) => sum + Number(a.km || 0), 0),
     };
-  }, [mine.data, week.from, week.to]);
+  }, [mine.data, month.from, month.to]);
 
   const nextTrophy = useMemo(
     () => (mine.data ? getNextDistanceTrophy(mine.data, thresholds.single_ride) : null),
@@ -108,7 +108,7 @@ function AppHome() {
             <div className="grid grid-cols-[minmax(0,1fr)_7.5rem] items-center gap-1">
               <div className="min-w-0">
                 <p className="text-[13px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  Mes km cette semaine
+                  Mes km ce mois-ci
                 </p>
                 <p className="mt-1 font-display text-[44px] font-black leading-none tracking-tight text-foreground">
                   {formatKm(stats.km)}
